@@ -42,7 +42,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "desktop": "npm run build && cargo run --manifest-path src-tauri/Cargo.toml",
-    "desktop:build": "tauri build",
+    "desktop:build": "tauri build --config src-tauri/tauri.bundle.conf.json",
     "site:dev": "npm run dev --workspace site",
     "site:build": "turbo run build --filter=site"
   },

@@ -33,8 +33,9 @@ Initial public release, MIT-licensed. Everything below is new.
   shown before download, and non-commercial weights need explicit confirmation.
 - **Local library**: one SQLite file and a folder of WAVs under `~/.soundbox`;
   works offline once weights are downloaded.
-- **Desktop shell** (`npm run desktop`) built on Tauri 2 that starts and
-  supervises the server. No signed installers yet.
+- **Desktop app** for Windows and macOS (Apple silicon and Intel), built on
+  Tauri 2: an installer that carries its own Node and server, starts and
+  supervises the server, and stops it on exit. Not signed yet.
 - Optional local **artwork** (cover art, voice avatars) via stable-diffusion.cpp.
 
 ### Security

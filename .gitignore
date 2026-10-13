@@ -38,3 +38,8 @@ Thumbs.db
 
 # Local Claude Code state: worktrees, personal agents and launch configs.
 .claude/
+
+# Desktop packaging: the staged server and the downloaded Node it ships with
+# (scripts/desktop-stage.mjs). Rebuilt for each target; never committed.
+/build/
+/src-tauri/binaries/

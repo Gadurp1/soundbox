@@ -102,7 +102,11 @@ Not a feature-for-feature comparison — the shape of the trade is the point.
 
 ## Quick start
 
-Requires **Node 22.12+** and `git`. No Python, no torch, no GPU-specific wheel to
+**Just want the app?** Download the Windows or macOS installer from
+[Releases](https://github.com/Gadurp1/soundbox/releases) — it needs nothing
+else installed. See [Desktop app](#desktop-app) for the first-launch prompts.
+
+**From source:** requires **Node 22.12+** and `git`. No Python, no torch, no GPU-specific wheel to
 pick. A GPU makes generation take seconds instead of minutes, but CPU works.
 The optional desktop shell (`npm run desktop`) additionally needs **Rust**
 (stable, via [rustup](https://rustup.rs)) and the
@@ -336,15 +340,19 @@ if you bind it anywhere else.
 
 ## Desktop app
 
-`npm run desktop` builds the app and runs it in a Tauri shell that starts and
-supervises the server for you. `npm run desktop:build` produces a platform
-installer through Tauri's bundler (NSIS on Windows). Both still expect Node and
-the built server on the machine — the shell does not bundle a runtime — and
-there is no signed release yet. Building it requires **Rust** (stable, installed
-with [rustup](https://rustup.rs)) plus the
+Installers for **Windows** and **macOS** (Apple silicon and Intel) are on the
+[Releases page](https://github.com/Gadurp1/soundbox/releases). They carry their
+own Node and server, so nothing else needs installing. They are not signed
+yet: Windows asks you to confirm through SmartScreen, and macOS through
+System Settings → Privacy & Security — [docs/DESKTOP.md](docs/DESKTOP.md#installing)
+walks through both.
+
+From a checkout, `npm run desktop` builds the app and runs it in the Tauri
+shell, and `npm run desktop:build` produces an installer for the machine you
+are on. Both need **Rust** (stable, via [rustup](https://rustup.rs)) plus the
 [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS
 (WebView2 and the MSVC build tools on Windows, Xcode Command Line Tools on
-macOS, `webkit2gtk` and friends on Linux). See [docs/DESKTOP.md](docs/DESKTOP.md).
+macOS, `webkit2gtk` and friends on Linux).
 
 ## Where things live
 

@@ -99,13 +99,10 @@ export function hostnameOf(hostHeader: string): string {
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 /** The built UI, if it was bundled. `HERE` is `server/src` in dev and
- *  `server/dist` when built; the Python served its own copy from inside the
- *  package, so the shared one is the fallback. */
+ *  `server/dist` when built, so `server/web` is one level up from either —
+ *  in a checkout and in the desktop app's installed copy alike. */
 function uiDir(): string | null {
-  const candidates = [
-    resolve(HERE, "..", "web"),
-    resolve(HERE, "..", "..", "backend", "src", "soundbox", "web"),
-  ];
+  const candidates = [resolve(HERE, "..", "web")];
   for (const dir of candidates) {
     if (existsSync(dir) && statSync(dir).isDirectory()) return dir;
   }

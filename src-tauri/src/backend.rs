@@ -3,8 +3,9 @@
 //! The desktop app is a thin shell: the server already serves the built
 //! frontend at `/` (see `scripts/build.mjs`, which stages `app/dist` into
 //! `server/web`), exposes the HTTP API, and hosts the MCP server. So this
-//! process does not bundle any web assets of its own — it launches the server
-//! and points a webview at it.
+//! process has no web assets of its own — it launches the server and points
+//! a webview at it. An installed app carries that server and a Node to run it
+//! (see `scripts/desktop-stage.mjs`); a checkout supplies both itself.
 
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
@@ -21,6 +22,15 @@ use std::os::windows::process::CommandExt;
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 pub const DEFAULT_PORT: u16 = 17494;
+
+/// Where the server lives: a directory holding `server/`, laid out like the
+/// repo. `bundled` is true for the copy installed with the app, which brings
+/// its own Node — and must run on it, because its native modules were built
+/// for that Node's ABI rather than whatever is on PATH.
+pub struct ServerHome {
+    pub root: PathBuf,
+    pub bundled: bool,
+}
 
 /// A server we are responsible for stopping when the app exits.
 ///
@@ -138,16 +148,29 @@ pub fn wait_until_healthy(port: u16, timeout: Duration) -> bool {
 
 /// Locate the Node interpreter to run the server with.
 ///
-/// Order matters: an explicit override wins, then whatever is on PATH. Unlike
-/// the old Python shell, this does not need a project-local venv — Node has
-/// no per-project interpreter convention, and `server/node_modules` holds
-/// dependencies, not a runtime.
-pub fn find_node() -> Option<PathBuf> {
+/// Order matters: an explicit override wins; then, for the installed server,
+/// the Node installed beside this executable (Tauri puts an `externalBin`
+/// there, named without its target triple); then whatever is on PATH, which
+/// is what a checkout's dependencies were built against.
+pub fn find_node(bundled: bool) -> Option<PathBuf> {
     if let Ok(explicit) = std::env::var("SOUNDBOX_NODE") {
         let p = PathBuf::from(explicit);
         if p.is_file() {
             return Some(p);
         }
+    }
+
+    if bundled {
+        let name = if cfg!(windows) { "node.exe" } else { "node" };
+        if let Some(beside) = std::env::current_exe()
+            .ok()
+            .and_then(|exe| exe.parent().map(|dir| dir.join(name)))
+        {
+            if beside.is_file() {
+                return Some(beside);
+            }
+        }
+        log_line("no bundled Node beside the executable; falling back to PATH");
     }
 
     let names: &[&str] = if cfg!(windows) { &["node.exe", "node"] } else { &["node"] };
@@ -200,24 +223,21 @@ fn find_server_entry(project_root: &Path) -> Result<ServerEntry, String> {
 }
 
 /// Spawn the server, optionally with extra env.
-fn spawn_server(
-    project_root: &Path,
-    port: u16,
-    env: &[(&str, String)],
-) -> Result<Child, String> {
-    let entry = find_server_entry(project_root)?;
-    let server_dir = project_root.join("server");
+fn spawn_server(home: &ServerHome, port: u16, env: &[(&str, String)]) -> Result<Child, String> {
+    let root = node_friendly(&home.root);
+    let entry = find_server_entry(&root)?;
+    let server_dir = root.join("server");
 
     let mut cmd = match &entry {
         ServerEntry::Built(js) => {
-            let node = find_node().ok_or_else(|| {
+            let node = find_node(home.bundled).ok_or_else(|| {
                 "Could not find a Node.js interpreter.\n\n\
                  Node 22.12+ is required; set SOUNDBOX_NODE to an interpreter that has \
                  it if it is not on PATH. See docs/INSTALL.md."
                     .to_string()
             })?;
             log_line(&format!("starting server: {} {} --port {port}", node.display(), js.display()));
-            let mut c = Command::new(&node);
+            let mut c = Command::new(node_friendly(&node));
             c.arg(js);
             c
         }
@@ -257,7 +277,7 @@ fn spawn_server(
 }
 
 /// Start the server, or adopt one already running.
-pub fn start(project_root: &Path, port: u16) -> Result<Backend, String> {
+pub fn start(home: &ServerHome, port: u16) -> Result<Backend, String> {
     if is_healthy(port) {
         log_line(&format!(
             "server already running on {port}; adopting it rather than starting a second copy"
@@ -265,7 +285,7 @@ pub fn start(project_root: &Path, port: u16) -> Result<Backend, String> {
         return Ok(Backend { owned: Vec::new() });
     }
 
-    let child = spawn_server(project_root, port, &[])?;
+    let child = spawn_server(home, port, &[])?;
 
     Ok(Backend { owned: vec![child] })
 }
@@ -325,10 +345,41 @@ mod kill_on_close {
     }
 }
 
-fn log_line(msg: &str) {
-    // Deliberately stdout rather than a logging crate: this shell has exactly
-    // one job and a handful of lifecycle events. The server writes its own
-    // rotating log under the data directory, which is where real diagnosis
-    // happens (see docs/INSTALL.md#troubleshooting).
-    println!("[soundbox-desktop] {msg}");
+/// Where the shell's own few lines go: `soundbox-desktop.log` in the temp
+/// directory, as well as stdout.
+///
+/// Deliberately not a logging crate: this shell has exactly one job and a
+/// handful of lifecycle events. But a release build on Windows has no console
+/// at all, so stdout alone made "the server never started" undiagnosable in
+/// the one build users run. The server writes its own rotating log under the
+/// data directory, which is where everything after launch is (see
+/// docs/INSTALL.md#troubleshooting).
+pub fn log_path() -> PathBuf {
+    std::env::temp_dir().join("soundbox-desktop.log")
+}
+
+pub fn log_line(msg: &str) {
+    let line = format!("[soundbox-desktop] {msg}");
+    println!("{line}");
+    if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(log_path()) {
+        let _ = writeln!(file, "{line}");
+    }
+}
+
+/// A path Node can take as an argument.
+///
+/// Paths Tauri resolves can come back in Windows' verbatim form
+/// (`\\?\C:\...`), which Win32 accepts and Node's module loader does not:
+/// it reads the prefix as part of a relative path and cannot find the entry
+/// script. Drive-letter verbatim paths are plain paths with a prefix, so the
+/// prefix comes off; anything else (UNC, device paths) is left alone.
+fn node_friendly(path: &Path) -> PathBuf {
+    let text = path.to_string_lossy();
+    if let Some(rest) = text.strip_prefix(r"\\?\") {
+        let bytes = rest.as_bytes();
+        if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
+            return PathBuf::from(rest);
+        }
+    }
+    path.to_path_buf()
 }

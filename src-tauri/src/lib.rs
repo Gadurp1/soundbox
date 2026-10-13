@@ -51,12 +51,13 @@ fn restart_backend(app: tauri::AppHandle) -> Result<(), String> {
         }
     }
 
-    let root = find_project_root().ok_or_else(|| {
-        "Could not find the Soundbox project. Set SOUNDBOX_PROJECT_ROOT to your checkout."
+    let home = find_server_home(&app).ok_or_else(|| {
+        "Could not find the Soundbox server. Reinstall the app, or set \
+         SOUNDBOX_PROJECT_ROOT to a checkout."
             .to_string()
     })?;
     let port = backend::DEFAULT_PORT;
-    let started = backend::start(&root, port)?;
+    let started = backend::start(&home, port)?;
     *state.backend.lock().unwrap() = Some(started);
 
     if !backend::wait_until_healthy(port, STARTUP_TIMEOUT) {
@@ -65,14 +66,16 @@ fn restart_backend(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// Find the Soundbox checkout by walking up from the executable, then the
-/// working directory, looking for the server package.
+/// Find the server to run: an explicit checkout, the copy installed with the
+/// app, or the checkout this executable was built in — in that order.
 ///
-/// This shell runs against a real checkout: it does not yet bundle a Node
-/// interpreter or the server source (that is the packaging work this build
-/// deliberately defers). Failing loudly with a findable reason beats silently
-/// launching nothing.
-fn find_project_root() -> Option<PathBuf> {
+/// An installer carries the built server, its dependencies and a Node of its
+/// own under `$RESOURCE/app` (staged by `scripts/desktop-stage.mjs`), laid out
+/// like the repo so the server finds its UI and data the same way in both.
+/// A checkout has none of that bundled, which is why `bundled` is reported:
+/// it decides which Node runs the server. Failing loudly with a findable
+/// reason beats silently launching nothing.
+fn find_server_home(app: &tauri::AppHandle) -> Option<backend::ServerHome> {
     fn has_backend(dir: &std::path::Path) -> bool {
         dir.join("server").join("package.json").is_file()
     }
@@ -80,8 +83,26 @@ fn find_project_root() -> Option<PathBuf> {
     if let Ok(explicit) = std::env::var("SOUNDBOX_PROJECT_ROOT") {
         let p = PathBuf::from(explicit);
         if has_backend(&p) {
-            return Some(p);
+            return Some(backend::ServerHome { root: p, bundled: false });
         }
+    }
+
+    if let Ok(resources) = app.path().resource_dir() {
+        let installed = resources.join("app");
+        if installed.join("server").join("dist").join("cli.js").is_file() {
+            return Some(backend::ServerHome { root: installed, bundled: true });
+        }
+    }
+
+    find_checkout().map(|root| backend::ServerHome { root, bundled: false })
+}
+
+/// The checkout this executable lives in, found by walking up from it (and
+/// then from the working directory) to the server package — the
+/// `npm run desktop` case.
+fn find_checkout() -> Option<PathBuf> {
+    fn has_backend(dir: &std::path::Path) -> bool {
+        dir.join("server").join("package.json").is_file()
     }
 
     let mut starts: Vec<PathBuf> = Vec::new();
@@ -135,24 +156,27 @@ pub fn run() {
             // on the main thread — the splash would never paint.
             std::thread::spawn(move || {
                 let notify = |stage: &str, message: &str| {
+                    if stage == "error" {
+                        backend::log_line(&format!("error: {message}"));
+                    }
                     let _ = handle.emit("backend-status", serde_json::json!({
                         "stage": stage,
                         "message": message,
                     }));
                 };
 
-                let Some(root) = find_project_root() else {
+                let Some(home) = find_server_home(&handle) else {
                     notify(
                         "error",
-                        "Could not find the Soundbox project. Set SOUNDBOX_PROJECT_ROOT to your \
-                         checkout, or launch the app from inside it.",
+                        "Could not find the Soundbox server. Reinstall the app, or set \
+                         SOUNDBOX_PROJECT_ROOT to a checkout.",
                     );
                     return;
                 };
 
                 notify("starting", "Starting the Soundbox server…");
                 let port = backend::DEFAULT_PORT;
-                match backend::start(&root, port) {
+                match backend::start(&home, port) {
                     Ok(handle_backend) => {
                         let state = handle.state::<AppState>();
                         *state.backend.lock().unwrap() = Some(handle_backend);

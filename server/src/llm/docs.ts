@@ -38,6 +38,10 @@ export interface DocSection {
   heading: string;
   /** Heading depth, so a match on an `##` can outrank one on an `######`. */
   level: number;
+  /** The headings this one sits under, outermost first. "## Connecting" has
+   *  no text of its own — it is all in "### HTTP" and "### stdio" — so a
+   *  question about connecting has to be able to find it through them. */
+  parents: string[];
   body: string;
 }
 
@@ -54,20 +58,28 @@ export function splitSections(source: string, markdown: string): DocSection[] {
   let level = 1;
   let body: string[] = [];
   let fenced = false;
+  /** Open headings by depth; index 0 is `#`. */
+  const open: (string | undefined)[] = [];
 
   const flush = (): void => {
     const text = body.join("\n").trim();
-    if (text) out.push({ source, heading, level, body: text });
+    const parents = open.slice(0, level - 1).filter((h): h is string => h !== undefined);
+    if (text) out.push({ source, heading, level, parents, body: text });
     body = [];
   };
 
-  for (const line of markdown.split("\n")) {
+  // CRLF as well as LF: a Windows checkout (and so a Windows-built installer)
+  // has CRLF docs, and with a trailing \r on every line no heading matched —
+  // each file came through as one section titled with its own name.
+  for (const line of markdown.split(/\r?\n/)) {
     if (line.trimStart().startsWith("```")) fenced = !fenced;
     const match = fenced ? null : /^(#{1,6})\s+(.*)$/.exec(line);
     if (match) {
       flush();
       level = match[1]!.length;
       heading = match[2]!.trim();
+      open.length = level;
+      open[level - 1] = heading;
       continue;
     }
     body.push(line);
@@ -131,7 +143,23 @@ export function terms(text: string): string[] {
   return text
     .toLowerCase()
     .split(/[^a-z0-9]+/)
-    .filter((w) => w.length > 2 && !STOPWORDS.has(w));
+    .filter((w) => w.length > 2 && !STOPWORDS.has(w))
+    .map(stem);
+}
+
+/**
+ * Fold the endings that most often separate a question from the heading
+ * that answers it — "connect" and "## Connecting", "client" and "clients".
+ * Deliberately crude: it only has to make the same word meet itself, and a
+ * real stemmer's edge cases matter less here than its dependency would.
+ */
+function stem(word: string): string {
+  for (const suffix of ["ing", "ly", "ed", "es", "s"]) {
+    if (word.length > suffix.length + 3 && word.endsWith(suffix)) {
+      return word.slice(0, -suffix.length);
+    }
+  }
+  return word;
 }
 
 /**
@@ -142,6 +170,10 @@ export function terms(text: string): string[] {
  * "licence" in a paragraph about something else is exactly the match worth
  * losing to "## Licences" next door. Shallow headings win ties for the same
  * reason — an `##` covers its subject, an `#####` covers a corner of it.
+ *
+ * The file's own name counts a little too: everything in `docs/MCP.md` is
+ * about MCP, so its "## Connecting" should beat a passing "## MCP" summary
+ * in the API reference for "how do I connect an MCP client?".
  */
 export function findSections(question: string, limit = 4): DocSection[] {
   const wanted = new Set(terms(question));
@@ -150,11 +182,15 @@ export function findSections(question: string, limit = 4): DocSection[] {
   return allSections()
     .map((section) => {
       const heads = new Set(terms(section.heading));
+      const above = new Set(section.parents.flatMap(terms));
       const bodies = new Set(terms(section.body));
+      const file = new Set(terms(section.source.replace(/\.md$/i, "")));
       let score = 0;
       for (const word of wanted) {
         if (heads.has(word)) score += 8;
+        else if (above.has(word)) score += 4;
         else if (bodies.has(word)) score += 1;
+        if (file.has(word)) score += 3;
       }
       // A section that matches only one word of a six-word question is
       // usually a coincidence; require either a heading hit or real overlap.

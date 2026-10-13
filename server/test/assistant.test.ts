@@ -91,9 +91,29 @@ describe("splitSections", () => {
     const sections = splitSections("docs/X.md", "## Empty\n\n## Full\ntext");
     expect(sections.map((s) => s.heading)).toEqual(["Full"]);
   });
+
+  // A Windows checkout has CRLF docs. With the \r left on, no heading
+  // matched and each file came through as one section.
+  it("splits CRLF markdown the same as LF", () => {
+    const crlf = splitSections("docs/X.md", "# Title\r\nintro\r\n\r\n## Models\r\nabout models");
+    const lf = splitSections("docs/X.md", "# Title\nintro\n\n## Models\nabout models");
+    expect(crlf).toEqual(lf);
+  });
+
+  // "## Connecting" with nothing of its own but "### HTTP" and "### stdio"
+  // must still be findable as being about connecting.
+  it("records the headings a section sits under", () => {
+    const sections = splitSections("docs/X.md", "# Guide\n## Connecting\n### HTTP\nuse /mcp\n## Other\nx");
+    expect(sections[0]).toMatchObject({ heading: "HTTP", parents: ["Guide", "Connecting"] });
+    expect(sections[1]).toMatchObject({ heading: "Other", parents: ["Guide"] });
+  });
 });
 
 describe("terms", () => {
+  it("lets a word meet its own -ing, -s and -ly forms", () => {
+    expect(terms("connecting clients commercially")).toEqual(terms("connect client commercial"));
+  });
+
   it("drops words too common here to tell two sections apart", () => {
     expect(terms("How do I pick a model for my sound?")).not.toContain("model");
     expect(terms("How do I pick a model for my sound?")).toContain("pick");

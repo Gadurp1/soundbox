@@ -7,12 +7,27 @@
  * a timeline that does not exist.
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { Database } from "../src/db.js";
 
-function storyWith(lines: { text?: string; track?: number; start?: number; dur?: number }[]) {
+/*
+ * Every database a test opens is closed after it. Left open, better-sqlite3
+ * finalizes its statements when the worker's Node environment is already gone
+ * at exit, and the process aborts — which takes the whole test run with it.
+ */
+const opened: Database[] = [];
+function openDb(): Database {
   const db = new Database(":memory:");
+  opened.push(db);
+  return db;
+}
+afterEach(() => {
+  for (const db of opened.splice(0)) db.close();
+});
+
+function storyWith(lines: { text?: string; track?: number; start?: number; dur?: number }[]) {
+  const db = openDb();
   const now = new Date().toISOString();
   db.createStory("story-1", "A story", now);
   lines.forEach((line, i) =>
@@ -79,7 +94,7 @@ describe("a story's timeline preview", () => {
   });
 
   it("has an empty timeline for a story with no lines, not a missing one", () => {
-    const db = new Database(":memory:");
+    const db = openDb();
     db.createStory("empty", "Nothing yet", new Date().toISOString());
     expect(db.listStories(50, true)[0]!.timeline).toEqual([]);
   });
