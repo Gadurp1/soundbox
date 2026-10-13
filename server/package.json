@@ -38,7 +38,7 @@
     "@opentelemetry/sdk-metrics": "^2.10.0",
     "@opentelemetry/sdk-trace-node": "^2.10.0",
     "@opentelemetry/semantic-conventions": "^1.43.0",
-    "better-sqlite3": "^11.8.1",
+    "better-sqlite3": "^12.11.1",
     "fastify": "^5.2.1",
     "wavefile": "^11.0.0",
     "zod": "^3.24.1"
