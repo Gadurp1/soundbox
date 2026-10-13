@@ -6,15 +6,31 @@
  */
 
 import BetterSqlite3 from "better-sqlite3";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { HistoryStore } from "../src/history.js";
 
 let store: HistoryStore;
 let seq: number;
 
-beforeEach(() => {
+/*
+ * Every connection a test opens is closed after it. Left open,
+ * better-sqlite3 finalizes its statements after the worker's Node
+ * environment is gone at exit, and the process aborts — taking the whole
+ * run with it (seen on Linux, Node 24).
+ */
+const opened: BetterSqlite3.Database[] = [];
+function connect(): BetterSqlite3.Database {
   const conn = new BetterSqlite3(":memory:");
+  opened.push(conn);
+  return conn;
+}
+afterEach(() => {
+  for (const conn of opened.splice(0)) conn.close();
+});
+
+beforeEach(() => {
+  const conn = connect();
   conn.pragma("foreign_keys = ON");
   // `conversations.story_id` references it; the real schema builds this.
   conn.exec("CREATE TABLE stories (id TEXT PRIMARY KEY)");
@@ -62,7 +78,7 @@ describe("conversations", () => {
   });
 
   it("folds threads an older database already doubled up", () => {
-    const conn = new BetterSqlite3(":memory:");
+    const conn = connect();
     conn.exec("CREATE TABLE stories (id TEXT PRIMARY KEY)");
     conn.prepare("INSERT INTO stories (id) VALUES (?)").run("story-1");
     // The schema as it was, without the unique index.

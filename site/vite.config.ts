@@ -40,10 +40,11 @@ export default defineConfig({
     /**
      * One copy of each of these, whichever tree they are reached through.
      *
-     * The site has its own `node_modules` — it must, because `vite-react-ssg`
-     * needs react-router 6 while the app it borrows components from is on 7 —
-     * and without this the app's components resolve React from the repo root
-     * while the site's own files resolve it here. Two Reacts is the
+     * Two router majors live in this repo: `vite-react-ssg` needs react-router
+     * 6, so 6 is a root devDependency and sits at the root, while the app it
+     * borrows components from has its own 7 under `app/node_modules`. Without
+     * this the app's components would resolve their own copies while the
+     * site's files resolve the root's. Two Reacts is the
      * "Cannot read properties of null (reading 'useCallback')" crash: the
      * second copy's dispatcher is never installed.
      *
@@ -67,9 +68,10 @@ export default defineConfig({
    * Bundle every dependency into the SSR pass rather than leaving them for
    * Node to resolve.
    *
-   * The site has its own `node_modules` (it must — `vite-react-ssg` needs
-   * react-router 6 while the app it borrows components from is on 7). An
-   * externalised dependency is resolved by Node, not by Vite, so `lucide-react`
+   * The app and the site resolve some packages from different trees (the
+   * app's react-router 7 is nested under `app/node_modules`; the site renders
+   * with the root's 6, which `vite-react-ssg` needs). An externalised
+   * dependency is resolved by Node, not by Vite, so `lucide-react`
    * would `require("react")` and walk up to the repo root while the renderer
    * itself used the copy of `react-dom` next door. Two Reacts, and every
    * component that touches a context dies with "Cannot read properties of null
