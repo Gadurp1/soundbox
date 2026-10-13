@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Minimal surface for the splash window. The real app is served over HTTP by the backend and uses no Tauri IPC at all, so it needs no permissions here — only the splash listens for startup events.",
+  "windows": ["main"],
+  "permissions": ["core:default", "core:event:allow-listen", "opener:default"]
+}

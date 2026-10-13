@@ -1,0 +1,124 @@
+/**
+ * The take, as one document two panels share.
+ *
+ * The MIDI panel is a performance surface — press keys, notes arrive — and the
+ * piano roll is an editing surface for the same notes. If each owned its own
+ * list, playing a phrase and then fixing the one note you fluffed would mean
+ * copying it between panels, which is not a workflow anyone would choose.
+ *
+ * So the notes, the instrument that renders them, and what to ask a model for
+ * afterwards all live here, and both panels are views of it. Neither is
+ * required: closing the roll leaves the recorder working, and vice versa.
+ *
+ * Not persisted. A take becomes a clip on the timeline the moment it is worth
+ * keeping, and that clip is what the story stores — see `midi-panel.tsx` for
+ * why the story keeps audio rather than notes.
+ */
+
+import { create } from "zustand";
+
+import { DEFAULT_INSTRUMENT, quantize } from "@/lib/midi";
+import type { MidiNote } from "@/lib/midi";
+
+/** A note plus the identity the roll needs to drag it. Notes arrive from a
+ *  keyboard, a file and a mouse, and "the third one at 1.2s" stops being a
+ *  stable way to refer to one the moment you move it. */
+export interface RollNote extends MidiNote {
+  id: string;
+}
+
+interface MidiState {
+  notes: RollNote[];
+  instrument: string;
+  /** Only the roll's grid uses this — the recorder measures in seconds, since
+   *  a take played to no click has no beat to be in. */
+  bpm: number;
+  /** What to ask a model for once the dry take is placed. */
+  prompt: string;
+  /** Cover strength: 1 follows the take closely, 0 invents. */
+  strength: number;
+  /** Which note the roll has selected, for keyboard edits and deletion. */
+  selectedId: string | null;
+
+  setInstrument: (id: string) => void;
+  setBpm: (bpm: number) => void;
+  setPrompt: (prompt: string) => void;
+  setStrength: (strength: number) => void;
+  select: (id: string | null) => void;
+
+  /** Replace everything — an imported file, or a cleared take. */
+  setNotes: (notes: MidiNote[]) => void;
+  /** Append, keeping the list sorted. Live playing arrives in release order. */
+  addNotes: (notes: MidiNote[]) => RollNote[];
+  updateNote: (id: string, patch: Partial<MidiNote>) => void;
+  removeNote: (id: string) => void;
+  /**
+   * Snap every note's start to a grid, in seconds.
+   *
+   * An edit, not a filter. It used to be a render-time setting on the
+   * recorder, which was survivable while the notes were only ever drawn as a
+   * strip — but the roll shows the notes themselves, and a roll showing one
+   * thing while Place renders another is a roll you cannot trust. Applying it
+   * to the take makes the roll the truth.
+   */
+  quantizeNotes: (gridS: number) => void;
+  clear: () => void;
+}
+
+let counter = 0;
+/** Ids are per-session and never leave the browser, so a counter is enough —
+ *  and unlike a random id it stays readable in a React key. */
+function withId(note: MidiNote): RollNote {
+  counter += 1;
+  return { ...note, id: `n${counter}` };
+}
+
+function sorted(notes: RollNote[]): RollNote[] {
+  return [...notes].sort((a, b) => a.start_s - b.start_s || a.note - b.note);
+}
+
+export const useMidiStore = create<MidiState>((set) => ({
+  notes: [],
+  instrument: DEFAULT_INSTRUMENT,
+  bpm: 100,
+  // The thing this feature was built to make, and a worked example of the shape
+  // that gets a usable cover: an instrument, how it is played, and the room —
+  // not an adjective.
+  prompt: "solo violin, warm vibrato, sustained bowing, large concert hall",
+  strength: 0.8,
+  selectedId: null,
+
+  setInstrument: (instrument) => set({ instrument }),
+  setBpm: (bpm) => set({ bpm: Math.min(240, Math.max(20, Math.round(bpm) || 100)) }),
+  setPrompt: (prompt) => set({ prompt }),
+  setStrength: (strength) => set({ strength }),
+  select: (selectedId) => set({ selectedId }),
+
+  setNotes: (notes) => set({ notes: sorted(notes.map(withId)), selectedId: null }),
+  addNotes: (notes) => {
+    const added = notes.map(withId);
+    set((s) => ({ notes: sorted([...s.notes, ...added]) }));
+    return added;
+  },
+  updateNote: (id, patch) =>
+    set((s) => ({
+      notes: sorted(s.notes.map((n) => (n.id === id ? { ...n, ...patch } : n))),
+    })),
+  removeNote: (id) =>
+    set((s) => ({
+      notes: s.notes.filter((n) => n.id !== id),
+      selectedId: s.selectedId === id ? null : s.selectedId,
+    })),
+  quantizeNotes: (gridS) =>
+    set((s) =>
+      gridS <= 0
+        ? s
+        : { notes: sorted(s.notes.map((n) => ({ ...n, ...quantizeOne(n, gridS) }))) },
+    ),
+  clear: () => set({ notes: [], selectedId: null }),
+}));
+
+/** `quantize` from lib/midi works on plain notes; this keeps the id. */
+function quantizeOne(note: RollNote, gridS: number): { start_s: number } {
+  return { start_s: quantize([note], gridS)[0]!.start_s };
+}

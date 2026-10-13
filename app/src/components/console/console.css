@@ -1,0 +1,582 @@
+/*
+ * Console — the hardware skin.
+ *
+ * Everything the /console view needs that isn't a Tailwind utility: the panel
+ * material, the LED and 7-segment glows, knob/fader geometry. Scoped under
+ * `.console` so none of it leaks into the rest of the app, and driven by a
+ * small set of tokens so light mode is a cream-and-black desk instead of a
+ * dark rack, rather than the same rack with the lights on.
+ *
+ * The one colour with intent is the teal accent — the app's primary token,
+ * used exactly where hardware would use it: lit LEDs, segment displays, the
+ * pointer line on a knob. Everything else is metal, paint and shadow.
+ */
+
+.console {
+  /* dark rack (default): charcoal panels, black bezels, teal lamps */
+  --cx-panel: oklch(0.24 0.004 60);
+  --cx-panel-hi: oklch(0.29 0.004 60);
+  --cx-panel-lo: oklch(0.19 0.004 60);
+  --cx-bezel: oklch(0.13 0.003 60);
+  --cx-line: oklch(1 0 0 / 9%);
+  --cx-engrave: oklch(0.72 0.01 70);
+  --cx-engrave-dim: oklch(0.55 0.01 70);
+  --cx-lamp: var(--primary);
+  --cx-lamp-glow: oklch(0.68 0.13 195 / 55%);
+  --cx-lamp-off: oklch(0.32 0.03 195);
+  --cx-seg-bg: oklch(0.11 0.01 60);
+  --cx-seg-ghost: oklch(0.68 0.13 195 / 10%);
+  --cx-knob: oklch(0.34 0.004 60);
+  --cx-knob-hi: oklch(0.44 0.004 60);
+  --cx-knob-lo: oklch(0.2 0.004 60);
+  --cx-cap: oklch(0.86 0.01 70);
+  --cx-cap-lo: oklch(0.7 0.01 70);
+  --cx-nameplate: oklch(0.9 0.01 70);
+  --cx-red: oklch(0.6 0.2 25);
+  --cx-green: oklch(0.72 0.17 145);
+  --cx-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  color: var(--cx-engrave);
+}
+
+:root:not(.dark) .console {
+  /* light desk: cream/putty panels, dark engraving, same teal lamps */
+  --cx-panel: oklch(0.9 0.012 80);
+  --cx-panel-hi: oklch(0.95 0.01 80);
+  --cx-panel-lo: oklch(0.84 0.014 80);
+  --cx-bezel: oklch(0.32 0.006 60);
+  --cx-line: oklch(0 0 0 / 12%);
+  --cx-engrave: oklch(0.3 0.01 60);
+  --cx-engrave-dim: oklch(0.5 0.01 60);
+  --cx-lamp: oklch(0.53 0.13 195);
+  --cx-lamp-glow: oklch(0.53 0.13 195 / 45%);
+  --cx-lamp-off: oklch(0.7 0.03 60);
+  --cx-seg-bg: oklch(0.2 0.01 60);
+  --cx-seg-ghost: oklch(0.68 0.13 195 / 12%);
+  --cx-knob: oklch(0.36 0.006 60);
+  --cx-knob-hi: oklch(0.46 0.006 60);
+  --cx-knob-lo: oklch(0.22 0.006 60);
+  --cx-cap: oklch(0.96 0.005 80);
+  --cx-cap-lo: oklch(0.8 0.008 80);
+  --cx-nameplate: oklch(0.25 0.01 60);
+}
+
+/* ------------------------------------------------------------ panel */
+
+.cx-panel {
+  position: relative;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, var(--cx-panel-hi) 0%, var(--cx-panel) 18%, var(--cx-panel) 82%, var(--cx-panel-lo) 100%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 8%),
+    inset 0 -1px 0 oklch(0 0 0 / 35%),
+    0 1px 2px oklch(0 0 0 / 40%),
+    0 10px 30px -18px oklch(0 0 0 / 60%);
+  border: 1px solid oklch(0 0 0 / 45%);
+}
+:root:not(.dark) .cx-panel {
+  border-color: oklch(0 0 0 / 18%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 70%),
+    inset 0 -1px 0 oklch(0 0 0 / 12%),
+    0 1px 2px oklch(0 0 0 / 15%),
+    0 10px 30px -18px oklch(0 0 0 / 30%);
+}
+
+/* brushed-metal grain, very quiet */
+.cx-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    90deg,
+    oklch(1 0 0 / 0%) 0px,
+    oklch(1 0 0 / 1.6%) 1px,
+    oklch(0 0 0 / 0%) 2px,
+    oklch(0 0 0 / 1.6%) 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+/* engraved section title */
+.cx-title {
+  font-family: var(--cx-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cx-engrave-dim);
+  text-shadow: 0 1px 0 oklch(1 0 0 / 6%);
+  white-space: nowrap;
+}
+.cx-label {
+  font-family: var(--cx-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cx-engrave);
+  white-space: nowrap;
+}
+
+/* the little hex screws in panel corners */
+.cx-screw {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--cx-knob-hi), var(--cx-knob-lo));
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 50%), 0 1px 0 oklch(1 0 0 / 8%);
+}
+.cx-screw::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 1.5px;
+  background: oklch(0 0 0 / 65%);
+  transform: translate(-50%, -50%) rotate(var(--rot, 20deg));
+}
+
+/* an inset well for controls / readouts */
+.cx-well {
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--cx-panel-lo), var(--cx-panel));
+  box-shadow:
+    inset 0 2px 4px oklch(0 0 0 / 45%),
+    inset 0 -1px 0 oklch(1 0 0 / 5%);
+  border: 1px solid oklch(0 0 0 / 35%);
+}
+:root:not(.dark) .cx-well {
+  box-shadow: inset 0 2px 4px oklch(0 0 0 / 18%), inset 0 -1px 0 oklch(1 0 0 / 60%);
+  border-color: oklch(0 0 0 / 14%);
+}
+
+/* ------------------------------------------------------------ lamps */
+
+.cx-led {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cx-lamp-off);
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 45%), inset 0 1px 1px oklch(0 0 0 / 40%);
+  transition: background-color 120ms, box-shadow 120ms;
+}
+.cx-led[data-on="true"] {
+  background: var(--cx-lamp);
+  box-shadow:
+    inset 0 0 0 1px oklch(0 0 0 / 30%),
+    0 0 6px 1px var(--cx-lamp-glow),
+    0 0 12px 3px var(--cx-lamp-glow);
+}
+.cx-led[data-color="green"][data-on="true"] {
+  background: var(--cx-green);
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 30%), 0 0 6px 1px oklch(0.72 0.17 145 / 55%),
+    0 0 12px 3px oklch(0.72 0.17 145 / 35%);
+}
+.cx-led[data-color="red"][data-on="true"] {
+  background: var(--cx-red);
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 30%), 0 0 6px 1px oklch(0.6 0.2 25 / 55%),
+    0 0 12px 3px oklch(0.6 0.2 25 / 35%);
+}
+.cx-led[data-blink="true"][data-on="true"] {
+  animation: cx-blink 900ms steps(2, end) infinite;
+}
+@keyframes cx-blink {
+  50% {
+    filter: brightness(0.45);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-led[data-blink="true"][data-on="true"] {
+    animation: none;
+  }
+}
+
+/* seven-segment style readout — a real display, not a font trick */
+.cx-seg {
+  font-family: var(--cx-mono);
+  font-variant-numeric: tabular-nums;
+  background: var(--cx-seg-bg);
+  color: var(--cx-lamp);
+  text-shadow: 0 0 6px var(--cx-lamp-glow);
+  border-radius: 4px;
+  padding: 3px 8px;
+  box-shadow:
+    inset 0 2px 5px oklch(0 0 0 / 70%),
+    inset 0 0 0 1px oklch(0 0 0 / 60%),
+    0 1px 0 oklch(1 0 0 / 6%);
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.cx-seg[data-dim="true"] {
+  color: var(--cx-seg-ghost);
+  text-shadow: none;
+}
+/* ghost segments behind the digits, so it reads as a display */
+.cx-seg > .ghost {
+  position: absolute;
+  inset: 3px 8px;
+  color: var(--cx-seg-ghost);
+  text-shadow: none;
+  pointer-events: none;
+  user-select: none;
+}
+.cx-seg > .lit {
+  position: relative;
+}
+.cx-seg input {
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-shadow: inherit;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+.cx-seg input:focus-visible {
+  outline: 0;
+}
+.cx-seg input::placeholder {
+  color: oklch(from var(--cx-lamp) l c h / 55%);
+  text-shadow: none;
+}
+.cx-seg:has(input:focus-visible) {
+  box-shadow:
+    inset 0 2px 5px oklch(0 0 0 / 70%),
+    0 0 0 2px var(--ring);
+}
+
+/* ------------------------------------------------------------ knob */
+
+.cx-knob {
+  position: relative;
+  border-radius: 50%;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  outline: none;
+  background:
+    radial-gradient(circle at 50% 30%, var(--cx-knob-hi), var(--cx-knob) 55%, var(--cx-knob-lo) 100%);
+  box-shadow:
+    inset 0 1px 1px oklch(1 0 0 / 18%),
+    inset 0 -2px 3px oklch(0 0 0 / 55%),
+    0 3px 6px oklch(0 0 0 / 50%),
+    0 0 0 1px oklch(0 0 0 / 60%);
+}
+/* knurled edge */
+.cx-knob::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    oklch(1 0 0 / 7%) 0deg 3deg,
+    oklch(0 0 0 / 12%) 3deg 6deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 66%, #000 68%);
+  mask: radial-gradient(circle, transparent 66%, #000 68%);
+  pointer-events: none;
+}
+.cx-knob:focus-visible {
+  box-shadow:
+    inset 0 1px 1px oklch(1 0 0 / 18%),
+    inset 0 -2px 3px oklch(0 0 0 / 55%),
+    0 3px 6px oklch(0 0 0 / 50%),
+    0 0 0 2px var(--ring);
+}
+.cx-knob[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.cx-knob .pointer {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  width: 3px;
+  height: 30%;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--cx-lamp);
+  box-shadow: 0 0 4px var(--cx-lamp-glow);
+  transform-origin: 50% calc(50% / 0.3 * 1);
+}
+/* the whole face rotates; the pointer is a child so it goes along */
+.cx-knob .face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transition: transform 40ms linear;
+}
+.cx-knob[data-dragging="true"] .face {
+  transition: none;
+}
+
+/* ------------------------------------------------------------ fader */
+
+.cx-fader {
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  cursor: ns-resize;
+  outline: none;
+}
+.cx-fader .slot {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  margin-left: -3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, oklch(0 0 0 / 80%), oklch(0 0 0 / 55%), oklch(0 0 0 / 80%));
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 70%), 0 1px 0 oklch(1 0 0 / 7%);
+}
+.cx-fader .fill {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--cx-lamp);
+  box-shadow: 0 0 5px var(--cx-lamp-glow);
+  opacity: 0.85;
+}
+.cx-fader .cap {
+  position: absolute;
+  left: 50%;
+  width: 26px;
+  height: 40px;
+  margin-left: -13px;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, var(--cx-cap) 0%, var(--cx-cap-lo) 48%, oklch(0 0 0 / 55%) 49%, oklch(0 0 0 / 55%) 51%, var(--cx-cap-lo) 52%, var(--cx-cap) 100%);
+  box-shadow:
+    0 3px 6px oklch(0 0 0 / 55%),
+    inset 0 0 0 1px oklch(0 0 0 / 40%),
+    inset 0 1px 0 oklch(1 0 0 / 60%);
+  transform: translateY(-50%);
+  transition: top 40ms linear;
+}
+.cx-fader[data-dragging="true"] .cap {
+  transition: none;
+}
+.cx-fader:focus-visible .cap {
+  box-shadow: 0 3px 6px oklch(0 0 0 / 55%), 0 0 0 2px var(--ring);
+}
+.cx-fader .tick {
+  position: absolute;
+  height: 1px;
+  background: var(--cx-line);
+}
+.cx-fader .tick.major {
+  background: var(--cx-engrave-dim);
+}
+.cx-fader[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ------------------------------------------------------------ switches & buttons */
+
+.cx-rocker {
+  position: relative;
+  width: 44px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--cx-bezel);
+  box-shadow: inset 0 2px 4px oklch(0 0 0 / 70%), 0 1px 0 oklch(1 0 0 / 6%);
+  cursor: pointer;
+  outline: none;
+  border: 0;
+  padding: 0;
+}
+.cx-rocker::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  width: 18px;
+  left: 3px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--cx-cap), var(--cx-cap-lo));
+  box-shadow: 0 1px 2px oklch(0 0 0 / 60%), inset 0 0 0 1px oklch(0 0 0 / 30%);
+  transition: left 120ms ease;
+}
+.cx-rocker[aria-checked="true"]::after {
+  left: 23px;
+  background: linear-gradient(180deg, var(--cx-lamp), oklch(from var(--cx-lamp) calc(l - 0.15) c h));
+  box-shadow: 0 0 8px var(--cx-lamp-glow), 0 1px 2px oklch(0 0 0 / 60%);
+}
+.cx-rocker:focus-visible {
+  box-shadow: inset 0 2px 4px oklch(0 0 0 / 70%), 0 0 0 2px var(--ring);
+}
+.cx-rocker:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* a square push button with a lamp, like a source-select bank */
+.cx-push {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px 6px 9px;
+  border-radius: 5px;
+  border: 1px solid oklch(0 0 0 / 55%);
+  background: linear-gradient(180deg, var(--cx-panel-hi), var(--cx-panel-lo));
+  box-shadow: 0 2px 0 oklch(0 0 0 / 55%), inset 0 1px 0 oklch(1 0 0 / 10%);
+  color: var(--cx-engrave);
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition: transform 60ms, box-shadow 60ms;
+}
+:root:not(.dark) .cx-push {
+  border-color: oklch(0 0 0 / 22%);
+  box-shadow: 0 2px 0 oklch(0 0 0 / 22%), inset 0 1px 0 oklch(1 0 0 / 70%);
+}
+.cx-push:active,
+.cx-push[aria-pressed="true"] {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 oklch(0 0 0 / 55%), inset 0 2px 4px oklch(0 0 0 / 45%);
+  background: linear-gradient(180deg, var(--cx-panel-lo), var(--cx-panel));
+}
+.cx-push:focus-visible {
+  box-shadow: 0 2px 0 oklch(0 0 0 / 55%), 0 0 0 2px var(--ring);
+}
+.cx-push:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* the big transport button */
+.cx-transport {
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid oklch(0 0 0 / 60%);
+  color: var(--primary-foreground);
+  background: linear-gradient(180deg, oklch(from var(--cx-lamp) calc(l + 0.06) c h), var(--cx-lamp) 60%, oklch(from var(--cx-lamp) calc(l - 0.1) c h));
+  box-shadow:
+    0 4px 0 oklch(from var(--cx-lamp) calc(l - 0.3) c h),
+    0 6px 14px oklch(0 0 0 / 45%),
+    inset 0 1px 0 oklch(1 0 0 / 35%);
+  cursor: pointer;
+  outline: none;
+  transition: transform 60ms, box-shadow 60ms, filter 120ms;
+}
+.cx-transport:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+.cx-transport:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 oklch(from var(--cx-lamp) calc(l - 0.3) c h), 0 2px 6px oklch(0 0 0 / 45%),
+    inset 0 1px 0 oklch(1 0 0 / 35%);
+}
+.cx-transport:focus-visible {
+  box-shadow: 0 4px 0 oklch(from var(--cx-lamp) calc(l - 0.3) c h), 0 0 0 2px var(--ring);
+}
+.cx-transport:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.2) brightness(0.7);
+}
+.cx-transport[data-stop="true"] {
+  --cx-lamp: var(--cx-red);
+  color: oklch(0.99 0 0);
+}
+
+/* ------------------------------------------------------------ meter */
+
+.cx-meter {
+  position: relative;
+  border-radius: 6px;
+  background: radial-gradient(ellipse at 50% 120%, oklch(0.93 0.04 85), oklch(0.86 0.05 80) 60%, oklch(0.8 0.05 78));
+  box-shadow: inset 0 0 0 1px oklch(0 0 0 / 40%), inset 0 -8px 16px oklch(0 0 0 / 15%), inset 0 2px 6px oklch(0 0 0 / 35%);
+  overflow: hidden;
+}
+.cx-meter .needle {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 2px;
+  height: 78%;
+  margin-left: -1px;
+  background: oklch(0.2 0.02 30);
+  transform-origin: 50% 100%;
+  transition: transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  border-radius: 1px;
+}
+.cx-meter .pivot {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, var(--cx-knob-hi), var(--cx-knob-lo));
+  box-shadow: 0 0 0 1px oklch(0 0 0 / 60%);
+  transform: translateY(50%);
+}
+.cx-meter .glass {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, oklch(1 0 0 / 28%) 0%, oklch(1 0 0 / 0%) 45%);
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------ tape strip (prompt) */
+
+.cx-tape {
+  font-family: var(--cx-mono);
+  border-radius: 6px;
+  background: var(--cx-seg-bg);
+  color: var(--cx-lamp);
+  text-shadow: 0 0 5px var(--cx-lamp-glow);
+  box-shadow: inset 0 2px 5px oklch(0 0 0 / 70%), inset 0 0 0 1px oklch(0 0 0 / 60%), 0 1px 0 oklch(1 0 0 / 6%);
+  padding: 8px 10px;
+  position: relative;
+}
+.cx-tape textarea {
+  background: transparent;
+  border: 0;
+  outline: 0;
+  resize: none;
+  color: inherit;
+  font: inherit;
+  text-shadow: inherit;
+  width: 100%;
+  line-height: 1.45;
+  font-size: 13.5px;
+  display: block;
+}
+.cx-tape textarea::placeholder {
+  color: var(--cx-seg-ghost);
+  text-shadow: none;
+}
+.cx-tape:has(textarea:focus-visible) {
+  box-shadow: inset 0 2px 5px oklch(0 0 0 / 70%), 0 0 0 2px var(--ring);
+}
+.cx-tape .cursor-bar {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--cx-seg-ghost);
+  text-shadow: none;
+}

@@ -1,0 +1,100 @@
+/**
+ * Site-target override of `@/components/seo-head`.
+ *
+ * The app build's `SeoHead` writes tags via a `useEffect`, which is fine for
+ * the in-app SPA but produces nothing during SSR — an effect never runs on
+ * the server, so a static build using that component would ship `<head>`
+ * with no title, no description, no JSON-LD, defeating the entire point of
+ * this target. `site/vite.config.ts` aliases `@/components/seo-head` to this
+ * file instead, so pages here get real tags in the pre-rendered HTML via
+ * vite-react-ssg's `<Head>` (a react-helmet wrapper that *does* run on the
+ * server). `faqJsonLd`/`breadcrumbJsonLd` are pure functions with no
+ * head-writing in them, so they're re-exported from the app's file unchanged.
+ */
+
+import { Head } from "vite-react-ssg";
+
+export { faqJsonLd, breadcrumbJsonLd } from "@sfx-app/components/seo-head";
+
+const SITE_ORIGIN: string = import.meta.env.VITE_SITE_ORIGIN ?? "";
+
+export interface SeoHeadProps {
+  title: string;
+  description: string;
+  /** Absolute path, e.g. "/sfx/8bit". Combined with VITE_SITE_ORIGIN. */
+  path: string;
+  jsonLd?: object[];
+  /**
+   * Root-relative, e.g. "/blog/why-audio-cpp.jpg". 1200x630.
+   *
+   * Emitted only when VITE_SITE_ORIGIN is set. Every scraper ignores a
+   * relative og:image, so a half-configured build should ship no tag at all
+   * rather than one that resolves to nothing — the same reason the canonical
+   * link below is conditional.
+   */
+  image?: string;
+  /** "website" unless this page is one article, which is to say a post. */
+  type?: "website" | "article";
+  /** Set on a blog post. Dates are YYYY-MM-DD. */
+  article?: {
+    publishedTime: string;
+    modifiedTime?: string;
+    author?: string;
+    tags?: string[];
+  };
+}
+
+export function SeoHead({
+  title,
+  description,
+  path,
+  jsonLd,
+  image,
+  type = "website",
+  article,
+}: SeoHeadProps) {
+  const url = SITE_ORIGIN ? `${SITE_ORIGIN}${path}` : "";
+  return (
+    <Head>
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:type" content={type} />
+      <meta name="twitter:card" content="summary_large_image" />
+      {url && <meta property="og:url" content={url} />}
+      {url && <link rel="canonical" href={url} />}
+      {url && image && <meta property="og:image" content={`${SITE_ORIGIN}${image}`} />}
+      {url && image && <meta name="twitter:image" content={`${SITE_ORIGIN}${image}`} />}
+      {article && <meta property="article:published_time" content={article.publishedTime} />}
+      {article?.modifiedTime && (
+        <meta property="article:modified_time" content={article.modifiedTime} />
+      )}
+      {article?.author && <meta property="article:author" content={article.author} />}
+      {(article?.tags ?? []).map((tag) => (
+        <meta key={tag} property="article:tag" content={tag} />
+      ))}
+      {/*
+        * JSON-LD as script *children*, not `dangerouslySetInnerHTML`.
+        *
+        * `Head` here is react-helmet-async, which builds its tags from a
+        * declared props/children shape rather than by rendering the
+        * elements you hand it. It has no support for
+        * `dangerouslySetInnerHTML` on a script, so the previous form
+        * emitted an empty tag — in practice no tag at all, because the
+        * script had no content. Every jsonLd on the site was being
+        * dropped silently: the `faqJsonLd`/`breadcrumbJsonLd` helpers ran,
+        * the objects were built, and nothing reached the HTML.
+        *
+        * `<` is escaped because these strings are prose (FAQ answers), and
+        * a literal `</script>` inside one would otherwise close the tag
+        * early. JSON.stringify does not escape it for us.
+        */}
+      {(jsonLd ?? []).map((obj, i) => (
+        <script key={i} type="application/ld+json">
+          {JSON.stringify(obj).replace(/</g, "\\u003c")}
+        </script>
+      ))}
+    </Head>
+  );
+}

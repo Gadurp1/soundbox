@@ -1,0 +1,40 @@
+# Node
+node_modules/
+dist/
+app/dist/
+server/web/
+*.local
+.vite/
+# Build caches: Turborepo, and the SSG's staging copy of public/
+.turbo/
+site/.vite-react-ssg-temp/
+
+# Python venvs for standalone scripts outside server/ (e.g. scripts/gen_sd35.py)
+.venv/
+.venv-*/
+
+# Soundbox runtime data (never commit generated audio or the HF token)
+.soundbox/
+server/.run-data/
+server/.scratch-data/
+
+# Local secrets. These rules do nothing for a file git already tracks — check
+# `git status` ignores a new env file before relying on them.
+.env
+.env.*
+# ...except the checked-in template, which documents the keys without values.
+!.env.example
+
+# Tauri desktop shell (build output and generated schemas)
+src-tauri/target/
+src-tauri/gen/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local Claude Code state: worktrees, personal agents and launch configs.
+.claude/

@@ -1,0 +1,22 @@
+/**
+ * The site's stylesheet: the app's, plus the one thing only this build needs.
+ *
+ * Tailwind v4 finds the classes to generate by scanning from the *project*
+ * root — which for this build is `site/`, not `app/`. Every utility used only
+ * inside a component under `app/src` was therefore missing from the site's CSS:
+ * the pages rendered with their colours and their type scale (those come from
+ * `@theme`, which is in the stylesheet itself) and almost none of their layout,
+ * which is why the same components looked like a different, worse product here
+ * than in the app.
+ *
+ * `@source` says where else to look. It has to live in a file that is part of
+ * Tailwind's own graph, which is why this imports the app's stylesheet rather
+ * than sitting beside it.
+ */
+
+@import "@/index.css";
+
+/* The components this site renders are the app's. */
+@source "../../app/src";
+/* And the site's own: the docs shell, the search box, the islands. */
+@source "../src";

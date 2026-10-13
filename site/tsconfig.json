@@ -1,0 +1,50 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["vite/client"],
+    "allowArbitraryExtensions": true,
+    "skipLibCheck": true,
+    "paths": {
+      // Mirrors the alias in vite.config.ts, which points this one specifier
+      // at the site's SSR-safe SeoHead. Without it Vite and tsc disagree:
+      // the build renders src/seo-head.tsx while tsc type-checks every call
+      // site against the app's copy. The two interfaces were identical, so
+      // the split was invisible until the site's version grew a prop the
+      // app's does not have. Keep the two lists paired.
+      "@/components/seo-head": ["./src/seo-head.tsx"],
+      "@/*": ["../app/src/*"],
+      "@sfx-app/*": ["../app/src/*"],
+
+      // The tsc half of `resolve.dedupe` in vite.config.ts.
+      //
+      // This directory has its own node_modules, so `@types/react` exists
+      // twice — once here, once at the repo root — at the same version but
+      // as two separate copies. tsc identifies a type by where it was
+      // declared, so a component under ../app/src resolved the root copy
+      // while this build resolved the local one, and every `ref` in
+      // app/src/components/ui failed with "Two different types with this
+      // name exist, but they are unrelated". Pinning both packages to one
+      // copy is the same fix dedupe applies to the bundle.
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "react-dom": ["./node_modules/@types/react-dom"],
+      "react-dom/*": ["./node_modules/@types/react-dom/*"]
+    },
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src", "plugins", "vite.config.ts"]
+}

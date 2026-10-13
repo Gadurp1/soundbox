@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Soundbox</title>
+    <style>
+      /* Standalone on purpose: this page is shown before the real frontend is
+         reachable, so it cannot depend on anything the backend serves. The
+         palette mirrors app/src/index.css (ember accent on near-black) so the
+         launch does not flash a differently-styled window. */
+      :root {
+        --bg: oklch(0.145 0 0);
+        --fg: oklch(0.985 0 0);
+        --muted: oklch(0.708 0 0);
+        --accent: oklch(0.71 0.16 44);
+        --ring: oklch(0.71 0.16 44 / 0.25);
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: oklch(1 0 0);
+          --fg: oklch(0.145 0 0);
+          --muted: oklch(0.556 0 0);
+          --accent: oklch(0.565 0.17 42);
+          --ring: oklch(0.565 0.17 42 / 0.2);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-user-select: none;
+        user-select: none;
+        cursor: default;
+      }
+      .wrap { text-align: center; max-width: 30rem; padding: 2rem; }
+      .mark {
+        width: 3rem; height: 3rem; margin: 0 auto 1.25rem;
+        border-radius: 0.875rem;
+        background: var(--accent);
+        display: grid; place-items: center;
+        box-shadow: 0 0 0 0 var(--ring);
+        animation: pulse 2s ease-out infinite;
+      }
+      /* Pauses once we know the outcome — a still window reads as "finished",
+         a pulsing one as "still working". */
+      body[data-stage="error"] .mark { animation: none; }
+      @keyframes pulse {
+        0%   { box-shadow: 0 0 0 0 var(--ring); }
+        70%  { box-shadow: 0 0 0 1.25rem transparent; }
+        100% { box-shadow: 0 0 0 0 transparent; }
+      }
+      .mark svg { width: 1.5rem; height: 1.5rem; stroke: var(--bg); }
+      h1 { font-size: 1rem; font-weight: 600; margin: 0 0 0.375rem; letter-spacing: -0.01em; }
+      p {
+        font-size: 0.875rem; color: var(--muted); margin: 0;
+        line-height: 1.5; white-space: pre-wrap;
+      }
+      body[data-stage="error"] p { color: var(--fg); }
+      .hint { margin-top: 1rem; font-size: 0.75rem; color: var(--muted); }
+    </style>
+  </head>
+  <body data-stage="starting">
+    <div class="wrap">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
+          <path d="M2 12h2M6 8v8M10 4v16M14 7v10M18 10v4M22 12h-2" />
+        </svg>
+      </div>
+      <h1 id="title">Soundbox</h1>
+      <p id="status">Starting…</p>
+      <p class="hint" id="hint">First launch takes a little longer while models warm up.</p>
+    </div>
+
+    <script type="module">
+      const { listen } = window.__TAURI__.event;
+      const statusEl = document.getElementById("status");
+      const titleEl = document.getElementById("title");
+      const hintEl = document.getElementById("hint");
+
+      // Rotating tips shown while the backend starts up. Keep each one short
+      // enough to fit the 30rem wrap without wrapping awkwardly.
+      const tips = [
+        "First launch takes a little longer while models warm up.",
+        "Tip: describe material, action, and space — \"heavy wooden door slamming in a stone corridor\" beats \"scary sound\".",
+        "Tip: models differ in licensing — check before using output commercially.",
+        "Tip: generation runs locally, so results stay on this machine.",
+        "Tip: you can browse past generations from the library once Soundbox opens.",
+      ];
+      let tipIndex = 0;
+      let tipTimer = setInterval(() => {
+        if (document.body.dataset.stage === "error") return;
+        tipIndex = (tipIndex + 1) % tips.length;
+        hintEl.textContent = tips[tipIndex];
+      }, 4000);
+
+      listen("backend-status", (event) => {
+        const { stage, message } = event.payload ?? {};
+        document.body.dataset.stage = stage ?? "starting";
+        if (message) statusEl.textContent = message;
+        if (stage === "error") {
+          titleEl.textContent = "Soundbox could not start";
+          hintEl.textContent = "";
+          clearInterval(tipTimer);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,82 @@
+[
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional synthwave band. Chrome horizon line at sunset, hot pink and orange gradient sky over a reflective grid plain, lens flare, 1980s airbrush poster style. No text, no lettering, no logos, no people.",
+    "output": "chrome-sunset-division.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional chiptune pop band. Confetti of oversized candy-colored pixel blocks raining over a cream ground, one large pixel heart shape in coral, flat cheerful graphic style. No text, no lettering, no logos, no people.",
+    "output": "pixelheart-parade.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional ambient act. Vast dark cave interior with a single shaft of pale blue light hitting still water, mirror reflection, deep teal shadow, painterly and quiet. No text, no lettering, no logos, no people.",
+    "output": "the-slow-cavern.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional industrial band. Rusted steel plate texture with a glowing orange weld seam crossing diagonally, rivets, soot and grime, harsh directional light, brutalist. No text, no lettering, no logos, no people.",
+    "output": "foundry-choir.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional orchestral hybrid ensemble. Massed dark banners and spear silhouettes against a storm-lit bronze sky, dramatic chiaroscuro, epic painterly style. No text, no lettering, no logos, no people, silhouettes abstract not human.",
+    "output": "battalion-of-strings.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional lo-fi act. Warm afternoon light through a dusty window onto a wooden desk with a potted plant and drifting dust motes, film grain, muted amber and sage palette, cozy still life. No text, no lettering, no logos, no people.",
+    "output": "dust-and-circuit.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional fantasy folk band. Forest clearing at dusk strung with tiny glowing amber lanterns between mossy trees, fireflies, storybook watercolor style. No text, no lettering, no logos, no people.",
+    "output": "lanternwood.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional blues trio. Single low amber lamp glowing in a dark room corner, worn leather chair in shadow, cigarette-smoke haze, deep indigo and gold, moody film noir. No text, no lettering, no logos, no people.",
+    "output": "low-lamp-trio.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional space ambient ensemble. Black hole accretion disk in soft pastel violet and gold, light bending around the dark center, serene cosmic scale, smooth gradients. No text, no lettering, no logos, no people.",
+    "output": "gravity-well-ensemble.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional racing rock band. Blurred red taillight streaks tearing through a dark tunnel, speed lines, hot red on near-black, aggressive motion energy. No text, no lettering, no logos, no people, no readable vehicles.",
+    "output": "redline-prophets.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional dream pop band. Overexposed pastel sky through frosted glass, soft pink and baby blue blur, faint prismatic light leak, hazy and weightless. No text, no lettering, no logos, no people.",
+    "output": "the-glass-arcade.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional ragtime jazz club act. Warm sepia interior with a polished copper kettle catching gaslight, checkered tile floor, vintage 1920s poster illustration style. No text, no lettering, no logos, no people.",
+    "output": "copper-kettle-club.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional shoegaze band. Macro photograph of a white flower dissolving into heavy static and film grain, washed-out overdriven exposure, pale grey and blown-out white. No text, no lettering, no logos, no people.",
+    "output": "static-bloom.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional chamber ensemble. Large pale moth wings spread against deep charcoal, candlelight glow from below, fine wing dust detail, dark academia still life. No text, no lettering, no logos, no people.",
+    "output": "moth-orchestra.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional breakcore chiptune act. Glitched shattered pixel fragments exploding outward in clashing neon green, magenta and yellow on black, corrupted-screen chaos, harsh digital energy. No text, no lettering, no logos, no people.",
+    "output": "bitrate-bandits.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional synth funk band. Deep purple velvet texture with a single glossy chrome wave curve crossing it, disco light specks, tactile and luxurious, 1970s-meets-digital. No text, no lettering, no logos, no people.",
+    "output": "velvet-modem.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional doom folk act. Bare black tree on a grey moor under a heavy iron sky, single warm ember glow at the horizon, bleak but tender, textured woodcut style. No text, no lettering, no logos, no people.",
+    "output": "iron-lullaby.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional indie pop duo. Two paper airplanes crossing paths against a bright cyan sky with cotton clouds, torn notebook paper texture, playful flat collage style. No text, no lettering, no logos, no people.",
+    "output": "paper-satellites.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional synth choral group. Translucent glowing columns of light in a dark cathedral space, teal and white hologram shimmer, volumetric haze, sacred and synthetic. No text, no lettering, no logos, no people.",
+    "output": "the-hologram-choir.png"
+  },
+  {
+    "prompt": "Square 1:1 abstract album cover for a fictional post-rock band. Golden field of tall grass at dusk with scattered rising embers and sparks against a darkening blue sky, cinematic depth, quiet before a crescendo. No text, no lettering, no logos, no people.",
+    "output": "ember-fields.png"
+  }
+]

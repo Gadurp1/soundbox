@@ -1,0 +1,56 @@
+{
+  "name": "soundbox-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source AI sound effects, music and text-to-speech that run on your own machine, with an MCP server for coding agents",
+  "license": "MIT",
+  "homepage": "https://github.com/Gadurp1/soundbox#readme",
+  "bugs": {
+    "url": "https://github.com/Gadurp1/soundbox/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gadurp1/soundbox.git"
+  },
+  "keywords": [
+    "text-to-audio",
+    "sound-effects",
+    "text-to-speech",
+    "voice-cloning",
+    "music-generation",
+    "stable-audio",
+    "ace-step",
+    "audio.cpp",
+    "mcp",
+    "mcp-server",
+    "local-ai",
+    "open-weights"
+  ],
+  "type": "module",
+  "packageManager": "npm@11.6.2",
+  "workspaces": [
+    "app",
+    "site",
+    "server"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/dev.mjs",
+    "dev:ui": "npm --prefix app run dev",
+    "dev:mock": "npm --prefix app run dev:mock",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "desktop": "npm run build && cargo run --manifest-path src-tauri/Cargo.toml",
+    "desktop:build": "tauri build",
+    "site:dev": "npm run dev --workspace site",
+    "site:build": "turbo run build --filter=site"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "turbo": "^2.10.11"
+  }
+}
