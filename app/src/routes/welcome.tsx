@@ -814,10 +814,10 @@ function Developers() {
         </p>
         <div className="flex shrink-0 gap-2 self-start sm:self-auto">
           <Button variant="outline" asChild>
-            <Link to="/developers">Open API &amp; MCP docs</Link>
+            <Link to="/docs/reference">Open API &amp; MCP docs</Link>
           </Button>
           <Button variant="ghost" asChild>
-            <Link to="/agents">See the Agents page</Link>
+            <Link to="/mcp">See the MCP page</Link>
           </Button>
         </div>
       </div>
@@ -969,7 +969,7 @@ function Footer() {
             </li>
             <li>
               <Link
-                to="/developers"
+                to="/docs/reference"
                 className="hover:text-foreground focus-visible:ring-ring rounded focus-visible:ring-2 focus-visible:outline-none"
               >
                 API &amp; MCP

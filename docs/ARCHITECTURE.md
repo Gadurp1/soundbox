@@ -4,8 +4,8 @@ Soundbox is a local audio workstation: a web app, an HTTP API and an MCP server,
 all served by one process on one port, generating audio with open-weight models
 that run on your own machine. Nothing leaves the box unless you export it.
 
-This page is the map. It explains what the pieces are, where the boundaries sit
-and why, so that a change lands in the right file.
+This page describes the pieces, where the boundaries sit and why, so you can
+find the right file to change.
 
 ## One process, one port
 
@@ -13,14 +13,14 @@ The server is a [Fastify](https://fastify.dev) app that serves four things:
 
 | Path      | What it is                                                            |
 | --------- | --------------------------------------------------------------------- |
-| `/`       | The built web app — the whole UI, as static files                      |
+| `/`       | The built web app: the whole UI, as static files                       |
 | `/api/*`  | The HTTP API                                                          |
 | `/mcp`    | The MCP endpoint an agent connects to                                 |
 | `/files/*`| The audio itself, straight off disk                                   |
 
-Everything on one origin means the app has no CORS story, the desktop shell has
-one thing to launch, and an agent's MCP session and your browser session are
-looking at the same database at the same moment.
+With everything on one origin, the app needs no CORS configuration, the
+desktop shell launches one process, and an agent's MCP session and your browser
+session read the same database.
 
 The default port is **17494**.
 
@@ -40,14 +40,14 @@ soundbox/
 
 `app/` and `site/` are two build targets over **one source tree**. The site
 imports the app's components through the `@/*` alias and prerenders them to
-static HTML, so a page like `/sfx` is written once and shipped twice: as part of
-the app, and as a crawlable page with no backend behind it. See
+static HTML, so a page like `/sfx` is written once and shipped twice: inside
+the app, and as a crawlable page with no backend. See
 [the site build](#the-public-site) below.
 
 ## Where your data lives
 
-Everything is under one directory — `~/.soundbox` by default, or wherever
-`SOUNDBOX_DATA_DIR` points:
+Everything is under one directory: `~/.soundbox` by default, or wherever
+`SOUNDBOX_DATA_DIR` points.
 
 ```
 ~/.soundbox/
@@ -58,10 +58,9 @@ Everything is under one directory — `~/.soundbox` by default, or wherever
 └── settings.json    your settings
 ```
 
-Two things follow from this. **A sound is a file plus a row** — the row carries
-the prompt, the model, the seed and the peaks; the file is plain WAV you can open
-in anything. And **backing up is copying a directory**. There is no hidden state
-anywhere else.
+A sound is a file plus a row. The row carries the prompt, the model, the seed
+and the peaks; the file is a plain WAV any audio tool can open. To back up,
+copy the directory. Soundbox keeps no state anywhere else.
 
 ### The database
 
@@ -82,7 +81,7 @@ databases, never removed. A database made by an older build keeps working.
 
 ## How a generation flows
 
-Everything slow is a **job**, and jobs are the same shape whatever they do:
+Every slow operation is a **job**, and all jobs have the same shape:
 
 ```
 POST /api/generate   →  { job_id }
@@ -105,9 +104,9 @@ it produced. The same machinery covers every long operation:
 | `export`   | Mixing a story's timeline down to one file            |
 | `convert`  | Voice conversion                                      |
 
-Because a job is a row and a stream rather than an open request, closing the tab
-does not cancel the work, and an agent's job and yours are equally visible on the
-Activity page.
+A job is a row and an event stream, independent of any open request. Closing
+the tab does not cancel the work, and jobs started by agents and by you both
+appear on the Activity page.
 
 ## Models
 
@@ -120,41 +119,41 @@ A model is described by a `ModelSpec` and carries a `task`:
 | `vc`  | Voice conversion                   | —                           |
 | `sep` | Source separation into stems       | HTDemucs                    |
 
-Most run through **audio.cpp** — one native binary with CUDA, HIP, Metal, Vulkan
-and CPU backends, no Python in the inference path. That is the whole reason
-adding a model is usually a catalogue entry rather than a new dependency
-negotiation; [audio.cpp](./AUDIOCPP.md) covers it properly.
+Most run through **audio.cpp**: one native binary with CUDA, HIP, Metal, Vulkan
+and CPU backends, and no Python in the inference path. Adding a model is
+therefore usually a catalogue entry with no new dependencies;
+[audio.cpp](./AUDIOCPP.md) has the details.
 
-Every model's licence is on screen before you download it, because "open weights"
-and "you may sell what it makes" are different claims.
+Every model's licence is shown before you download it. Open weights do not
+always permit commercial use of the output.
 
 ## The web app
 
 React 19 with a `HashRouter`, TanStack Query for server state, and Zustand for
-the handful of things that are genuinely global — chiefly *what is playing*, so
-that two players can never talk over each other.
+the few pieces of global state. The main one is what is playing, so that only
+one player sounds at a time.
 
 Three surfaces you will meet in the code:
 
-- **Generate** (`/app`, `/console`) — the composer: a prompt, a model, some
+- **Generate** (`/app`, `/console`): the composer. A prompt, a model, some
   parameters, N takes. The console is the same session with a hardware-style
   front panel.
-- **The studio** (`/voice/:storyId`) — the timeline: lanes, clips, a mixer, a
-  device rack, and an export. See [the studio](./STUDIO.md).
-- **The library** (`/library/*`, `/sounds/:id`) — everything you have made,
-  searchable, taggable, and editable without destroying the original.
+- **The studio** (`/voice/:storyId`): the timeline, with lanes, clips, a mixer,
+  a device rack, and an export. See [the studio](./STUDIO.md).
+- **The library** (`/library/*`, `/sounds/:id`): everything you have made,
+  searchable, taggable, and editable without changing the original.
 
 ### The public site
 
 `site/` is a second Vite entry that prerenders app components to static HTML
 with [vite-react-ssg](https://github.com/Daydreamer-riri/vite-react-ssg). It has
 no backend: the pages it renders (`/sfx`, `/music`, `/models`, `/docs`) read
-from content files and manifests rather than the API, which is why they can be
-served from any static host.
+from content files and manifests instead of the API, so they can be served
+from any static host.
 
-It borrows the app's components deliberately — one design system, one waveform
-player, one set of tokens. A component that reaches for a live backend cannot be
-used there, and the two files that do are aliased out.
+It reuses the app's components, so both share one design system, one waveform
+player and one set of tokens. Components that call a live backend cannot be
+used there; the two files that do are aliased out.
 
 ## The desktop app
 
@@ -164,21 +163,21 @@ no separate API. [Desktop app](./DESKTOP.md) has the details.
 
 ## Agents
 
-The MCP server exposes the same operations the UI drives — generating, listing,
-speaking, and the whole studio: create a story, add lines, mix a track, export.
-An agent working on a story is announced to any browser watching it, which is
-why the studio can say "an agent is writing" and pause editing rather than
-letting two writers race. See [MCP tools](./MCP.md).
+The MCP server exposes the same operations the UI drives: generating, listing,
+speaking, and the studio (create a story, add lines, mix a track, export).
+When an agent works on a story, any browser watching it is notified, and the
+studio shows "an agent is writing" and pauses editing so the two do not
+conflict. See [MCP tools](./MCP.md).
 
 ## Conventions worth knowing before you change something
 
 - **Non-destructive edits.** Every tool that changes audio writes a *new* sound
   with `parent_id` set. Nothing overwrites a file you made.
-- **The timeline and the export must agree.** What you hear while arranging and
-  what the mixdown writes are two implementations of one rule; where they could
-  drift, the code says so and points at its twin.
-- **Honest state.** If a value is estimated rather than measured, the UI says
-  so on screen. Lyrics highlighting is divided evenly, not aligned, and the page
-  admits it.
-- **Comments explain decisions, not mechanics.** The code says what it does; a
-  comment is for why it does it that way and what the alternative cost.
+- **The timeline and the export must agree.** Playback while arranging and
+  the mixdown are two implementations of one rule. Where they could drift, the
+  code comments say so and point at the other implementation.
+- **Estimates are labelled.** If a value is estimated, the UI says so on
+  screen. Lyrics highlighting is divided evenly across the clip (not aligned
+  to the audio), and the page states this.
+- **Comments explain decisions.** A comment says why the code works this way
+  and what the alternative would have cost.

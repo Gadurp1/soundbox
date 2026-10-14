@@ -18,6 +18,7 @@ import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { MusicTrack } from "@/content/music/types";
+import { assetUrl } from "@/lib/asset-url";
 
 export function MusicCover({
   track,
@@ -55,7 +56,7 @@ export function MusicCover({
 
   return (
     <img
-      src={track.cover}
+      src={assetUrl(track.cover)}
       alt=""
       loading="lazy"
       onError={() => setFailed(true)}

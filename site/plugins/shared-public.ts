@@ -26,17 +26,21 @@ const CONTENT_TYPES: Record<string, string> = {
 
 export function sharedPublicFiles(dir: string, files: string[]): Plugin {
   let isSsrBuild = false;
+  let base = "/";
 
   return {
     name: "soundbox:shared-public",
 
     configResolved(config) {
       isSsrBuild = Boolean(config.build.ssr);
+      base = config.base || "/";
     },
 
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const name = (req.url ?? "").split("?")[0].replace(/^\//, "");
+        // Custom middlewares see the URL before Vite strips the base.
+        const url = (req.url ?? "").split("?")[0];
+        const name = url.startsWith(base) ? url.slice(base.length) : url.replace(/^\//, "");
         if (!files.includes(name)) return next();
         const type = CONTENT_TYPES[path.extname(name)];
         if (type) res.setHeader("Content-Type", type);

@@ -70,15 +70,20 @@ async function collect(): Promise<FeedItem[]> {
     .sort((a, b) => (a.date === b.date ? a.slug.localeCompare(b.slug) : a.date < b.date ? 1 : -1));
 }
 
-function renderFeed(items: FeedItem[], origin: string): string {
-  const self = `${origin}${FEED_PATH}`;
+/**
+ * `root` is origin + the build's base without its trailing slash, e.g.
+ * "https://gadurp1.github.io/soundbox" — or just the base path when no origin
+ * is configured.
+ */
+function renderFeed(items: FeedItem[], root: string): string {
+  const self = `${root}${FEED_PATH}`;
   // The newest post, not the build clock: stamping `Date.now()` here makes
   // every rebuild look to a reader like something changed.
   const built = items[0] ? rfc822(items[0].updated ?? items[0].date) : rfc822("1970-01-01");
 
   const entries = items
     .map((item) => {
-      const url = `${origin}/blog/${item.slug}`;
+      const url = `${root}/blog/${item.slug}`;
       return [
         "    <item>",
         `      <title>${escapeXml(item.title)}</title>`,
@@ -100,7 +105,7 @@ function renderFeed(items: FeedItem[], origin: string): string {
     '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
     "  <channel>",
     "    <title>Soundbox</title>",
-    `    <link>${escapeXml(origin || "/")}</link>`,
+    `    <link>${escapeXml(`${root}/`)}</link>`,
     "    <description>How Soundbox is built, how the models behave, and how to get better sound out of them.</description>",
     "    <language>en</language>",
     `    <lastBuildDate>${built}</lastBuildDate>`,
@@ -118,6 +123,9 @@ export function blogFeed(): Plugin {
   let isSsrBuild = false;
   let outDir = "";
   let origin = "";
+  // The deploy's base path ("/" or e.g. "/soundbox/"), from Vite's `base`.
+  let base = "/";
+  const root = () => `${origin}${base.replace(/\/$/, "")}`;
 
   return {
     name: "soundbox:blog-feed",
@@ -125,15 +133,17 @@ export function blogFeed(): Plugin {
     configResolved(config) {
       isSsrBuild = Boolean(config.build.ssr);
       outDir = path.resolve(config.root, config.build.outDir || "dist");
-      origin = (config.env.VITE_SITE_ORIGIN as string) || "";
+      origin = ((config.env.VITE_SITE_ORIGIN as string) || "").replace(/\/+$/, "");
+      base = config.base || "/";
     },
 
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if ((req.url ?? "").split("?")[0] !== FEED_PATH) return next();
+        // Custom middlewares run before Vite strips the base, so match it whole.
+        if ((req.url ?? "").split("?")[0] !== `${base.replace(/\/$/, "")}${FEED_PATH}`) return next();
         void collect().then((items) => {
           res.setHeader("Content-Type", "application/rss+xml; charset=utf-8");
-          res.end(renderFeed(items, origin));
+          res.end(renderFeed(items, root()));
         }, next);
       });
     },
@@ -151,7 +161,7 @@ export function blogFeed(): Plugin {
       }
       const items = await collect();
       await mkdir(path.join(outDir, "blog"), { recursive: true });
-      await writeFile(path.join(outDir, "blog", "rss.xml"), renderFeed(items, origin), "utf8");
+      await writeFile(path.join(outDir, "blog", "rss.xml"), renderFeed(items, root()), "utf8");
     },
   };
 }

@@ -42,9 +42,11 @@ import {
   lineAt,
   parseScript,
   sungCount,
+  trackAudioUrl,
   trackToSound,
   useMusicManifest,
 } from "@/lib/music-track";
+import { siteUrl } from "@/lib/asset-url";
 import { GENERATOR_HREF } from "@/lib/marketing-links";
 import { cn } from "@/lib/utils";
 
@@ -105,7 +107,9 @@ function TrackBody({ track }: { track: MusicTrack }) {
             audio: {
               "@type": "AudioObject",
               encodingFormat: "audio/mpeg",
-              contentUrl: `/music/${track.slug}.mp3`,
+              // Absolute when the site's origin is configured, else the
+              // served path — either way including the deploy's base path.
+              contentUrl: siteUrl(`/music/${track.slug}.mp3`) || trackAudioUrl(track.slug),
             },
           },
         ]}
@@ -161,7 +165,7 @@ function TrackBody({ track }: { track: MusicTrack }) {
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" asChild>
-                <a href={`/music/${track.slug}.mp3`} download>
+                <a href={trackAudioUrl(track.slug)} download>
                   <DownloadIcon />
                   Download MP3
                 </a>
@@ -300,7 +304,7 @@ function TrackBody({ track }: { track: MusicTrack }) {
         }
         trailing={
           <Button variant="ghost" size="icon-sm" asChild>
-            <a href={`/music/${track.slug}.mp3`} download aria-label={`Download ${track.title}`}>
+            <a href={trackAudioUrl(track.slug)} download aria-label={`Download ${track.title}`}>
               <DownloadIcon />
             </a>
           </Button>

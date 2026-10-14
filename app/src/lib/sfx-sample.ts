@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 
 import type { Sound } from "@/lib/api";
+import { assetUrl } from "@/lib/asset-url";
 import type { SfxSample } from "@/content/sfx/types";
 
 export interface SampleMeta {
@@ -20,6 +21,11 @@ export interface SampleMeta {
 }
 
 export type SampleManifest = Record<string, SampleMeta>;
+
+/** The served URL of a catalogue sample's MP3, base path included. */
+export function sampleAudioUrl(categorySlug: string, sampleSlug: string): string {
+  return assetUrl(`/sfx/${categorySlug}/${sampleSlug}.mp3`);
+}
 
 /**
  * Present a catalogue sample as the library `Sound` the player expects.
@@ -42,7 +48,7 @@ export function sampleToSound(
     duration_s: meta.durationS,
     sample_rate: meta.sampleRate,
     channels: 1,
-    file: `/sfx/${categorySlug}/${sample.slug}.mp3`,
+    file: sampleAudioUrl(categorySlug, sample.slug),
     peaks: meta.peaks,
     favorite: false,
     tags: [],
@@ -64,7 +70,7 @@ export function useSampleManifest(categorySlug: string): {
     let live = true;
     setManifest(null);
     setFailed(false);
-    fetch(`/sfx/${categorySlug}/manifest.json`)
+    fetch(assetUrl(`/sfx/${categorySlug}/manifest.json`))
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((m: SampleManifest) => live && setManifest(m))
       .catch(() => live && setFailed(true));

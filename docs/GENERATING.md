@@ -1,74 +1,72 @@
 # Generating sound
 
-Every sound in Soundbox is made the same way: a prompt, a model, a few
-parameters, and a job you can watch. This page follows one all the way through,
-then covers the parameters that actually change the result.
+Every sound in Soundbox is made from a prompt, a model, a few parameters, and
+a job you can watch. This page follows one generation through, then covers the
+parameters that change the result.
 
-## The short version
+## Overview
 
 1. Pick a model. Its licence and what it is good at are on the card.
-2. Describe the sound — material, action, space.
-3. Press generate. You get a job id; the app follows it.
+2. Describe the sound: material, action, space.
+3. Press generate. You get a job id, and the app follows it.
 4. The takes land in your library, each with the prompt and seed that made it.
 
 Nothing is uploaded. The model runs on your machine, and the WAV is written to
-`~/.soundbox/sounds` before you ever hear it.
+`~/.soundbox/sounds` before you hear it.
 
 ## Writing a prompt
 
-These models answer to **material, action and space**, not to adjectives about
-mood:
+Describe **material, action and space**. Adjectives about mood do not help:
 
 > "scary sound" → nothing useful
 >
 > "heavy wooden door slamming shut in a cold stone corridor" → what you wanted
 
-The pattern that works for sound effects is *what it is made of, what is
-happening to it, and where you are standing*. For music, name instruments,
-tempo and production rather than a vibe: "90 BPM boom bap, dusty Rhodes chords,
-upright bass, vinyl crackle".
+For sound effects, say what the thing is made of, what is happening to it,
+and where the listener is. For music, name instruments, tempo and production:
+"90 BPM boom bap, dusty Rhodes chords, upright bass, vinyl crackle".
 
 Three practical rules:
 
-- **Write a sentence, not a keyword list.** Connecting words ("in", "against",
-  "over", "while") are part of what the model reads. Keywords belong in the
-  tags field, which is a different box for a different job.
-- **One sound per prompt.** "A door slam and then footsteps" gives you a muddle;
-  generate two clips and put them on a timeline.
+- **Write a sentence, not a keyword list.** The model reads connecting words
+  ("in", "against", "over", "while"). Keywords go in the tags field.
+- **One sound per prompt.** "A door slam and then footsteps" gives you a muddle.
+  Generate two clips and put them on a timeline.
 - **Do not write BPM or key into a music caption** for models that take them as
-  separate parameters — you are competing with the parameter.
+  separate parameters. The caption then conflicts with the parameter.
 
-If you would rather not write the descriptive version yourself, the **enhance**
-button (`POST /api/enhance`) rewrites a rough prompt using guidance specific to
-the model family you are about to run. It is a local LLM if you have one
-configured; it is optional, and it tells you when it is unavailable rather than
-silently doing nothing.
+The **enhance** button (`POST /api/enhance`) rewrites a rough prompt using
+guidance specific to the model family you are about to run. It needs a local
+LLM, is optional, and tells you when it is unavailable.
 
-You have three ways to supply it, none of which involve trusting us with a
-prompt: let Soundbox install `llama-server` and a small GGUF for you (Models
-page, or `soundbox model install llm`); point it at a `llama-server` you
-already built with `SOUNDBOX_LLAMA_SERVER_BIN`; or set the mode to *external*
-and give it any OpenAI-compatible base URL — Ollama, LM Studio, vLLM, a hosted
-endpoint. `soundbox model status llm` says which one is live.
+There are three ways to supply the LLM, all of which keep your prompts on
+your own setup:
+
+- Let Soundbox install `llama-server` and a small GGUF (Models page, or
+  `soundbox model install llm`).
+- Point it at a `llama-server` you built, with `SOUNDBOX_LLAMA_SERVER_BIN`.
+- Set the mode to *external* and give it any OpenAI-compatible base URL
+  (Ollama, LM Studio, vLLM, a hosted endpoint).
+
+`soundbox model status llm` shows which one is live.
 
 Music tracks can also carry generated cover art, and saved voices generated
-avatars — see [ARTWORK.md](ARTWORK.md). Both are off by default and neither is
-needed for the instrument icons on separated stems, which the app draws itself.
+avatars; see [ARTWORK.md](ARTWORK.md). Both are off by default. The instrument
+icons on separated stems are drawn by the app and need neither.
 
 ## Parameters
 
 | Parameter        | What it does                                                                 |
 | ---------------- | ---------------------------------------------------------------------------- |
-| **Duration**     | Target length. Diffusion models treat this as a target, not a contract — the rendered length is shown next to the requested one, because they differ. |
+| **Duration**     | Target length. Diffusion models may not hit it exactly, so the rendered length is shown next to the requested one. |
 | **Seed**         | The random start. Same seed + same prompt + same model = same audio. Lock it to iterate on wording, free it to explore. |
 | **Steps**        | How many denoising steps. More is slower and usually cleaner, with diminishing returns; some models are tuned for very few and say so. |
-| **CFG**          | How hard the model is pushed toward your prompt. Too high is brittle and artefact-ridden, too low wanders. |
+| **CFG**          | How strongly the model follows your prompt. Too high gives artefacts; too low wanders. |
 | **Negative prompt** | What to steer away from, where the model supports it. |
 | **Takes**        | How many variations to render in one go. Each is its own sound with its own seed. |
 
-Takes are the important one for actual work: generate four, keep one, and the
-other three stay in your library with the prompt that made them, so "the second
-one was better" is recoverable.
+Generate several takes and keep the best. The others stay in your library
+with the prompt that made them, so you can go back to an earlier one.
 
 ## Lyrics and vocal music
 
@@ -84,11 +82,11 @@ The screen goes dark again
 Insert coin, insert coin
 ```
 
-Section tags in brackets are structure, not words to sing. Leave the lyrics
+Section tags in brackets mark structure and are not sung. Leave the lyrics
 empty and the same model renders an instrumental.
 
-Whether a model supports this is a field on the model, not a guess — the UI
-only shows the lyrics box for models that declare it.
+Lyrics support is declared on the model, and the UI shows the lyrics box only
+for models that declare it.
 
 ## What happens after "generate"
 
@@ -105,43 +103,41 @@ GET /api/jobs/:id/events
   → done          { sounds: [id, …] }
 ```
 
-The model stays loaded after a run so the next generation skips `loading`; it
-unloads on its own after an idle period you can set.
+The model stays loaded after a run so the next generation skips `loading`. It
+unloads after an idle period you can set.
 
-Post-processing happens in `encoding`, and it is deliberately small:
+Post-processing happens in `encoding` and is limited to:
 
-- **Peaks** are measured once and stored, so every waveform in the app draws
+- **Peaks**, measured once and stored, so every waveform in the app draws
   from the same 256 numbers instead of decoding the file again.
-- **Loudness** is normalised to your target LUFS if you set one.
-- **Silence trimming** removes the padding models leave at the edges, if you
-  have it on. Recordings and imports are never trimmed — that silence is
-  someone breathing, not padding.
+- **Loudness**, normalised to your target LUFS if you set one.
+- **Silence trimming**, which removes the padding models leave at the edges,
+  if you have it on. Recordings and imports are never trimmed.
 
 ## Stems instead of a mix
 
-**Split into tracks**, under the prompt, sends the render straight through the
-separator and hands back the stems you picked rather than the mix. The job does
-not report done until they exist, so a prompt in the studio lands as a lane per
-stem rather than as one clip you then have to split.
+**Split into tracks**, under the prompt, sends the render through the
+separator and returns the stems you picked instead of the mix. The job reports
+done only once the stems exist, so a prompt in the studio lands as one lane
+per stem.
 
-The mix itself stays in the library as the stems' parent — nothing is thrown
-away that you did not ask to throw away. Over the API it is one field:
+The mix stays in the library as the stems' parent. Over the API it is one
+field:
 
 ```
 POST /api/generate  { …, "separate": { "keep": ["drums", "bass"], "rest": "merge" } }
   → done  { sounds: [stem ids…], sources: [the mix] }
 ```
 
-`keep: []` means every stem; `rest` is `"discard"` or `"merge"` — see
+`keep: []` means every stem; `rest` is `"discard"` or `"merge"`. See
 [the library's Stems section](./LIBRARY.md).
 
 ## Sessions
 
 Every run in the composer belongs to a **session**, created on first generate
-and titled from your prompt. It is a log of one sitting, not a folder you have
-to file things into — which is what [projects](./LIBRARY.md) are for. The
-distinction matters when you come back: a session answers "what did I make on
-Tuesday", a project answers "what is this track made of".
+and titled from your prompt. A session is a log of one sitting. To group
+sounds by what they belong to, use [projects](./LIBRARY.md). A session tells
+you what you made on Tuesday; a project tells you what a track is made of.
 
 ## Doing it over the API
 
@@ -161,23 +157,22 @@ curl -X POST http://127.0.0.1:17494/api/generate \
 curl -N http://127.0.0.1:17494/api/jobs/<job_id>/events
 ```
 
-The full surface — every endpoint, every field — is in the
-[API reference](./API.md). If you are driving Soundbox from an agent
-rather than a script, use [MCP](./MCP.md) instead: it is the same operations
-with schemas the model can read.
+Every endpoint and field is in the [API reference](./API.md). To drive
+Soundbox from an agent, use [MCP](./MCP.md): the same operations, with schemas
+the model can read.
 
 ## When it goes wrong
 
-**The output is silence, or almost.** Usually a prompt the model has nothing for
-(an abstract noun), or too few steps. Try the enhance button and a known-good
-example from one of the collection pages.
+**The output is silence, or almost.** Usually the prompt is something the
+model has no data for (an abstract noun), or there are too few steps. Try the
+enhance button, or a known-good example from one of the collection pages.
 
-**It is much slower than you expect.** Check which backend audio.cpp picked —
-falling back to CPU is the usual reason. [audio.cpp](./AUDIOCPP.md) covers
-backend selection and how to force one.
+**It is much slower than you expect.** Check which backend audio.cpp picked;
+a CPU fallback is the usual cause. [audio.cpp](./AUDIOCPP.md) covers backend
+selection and how to force one.
 
-**The length is wrong.** Expected. The rendered duration is shown next to the
-requested one; trim on the timeline, or generate longer and cut.
+**The length is wrong.** The rendered duration is shown next to the requested
+one. Trim on the timeline, or generate longer and cut.
 
 **It fails on the first run only.** That is the weights download. The job phase
-says `downloading`, and it is cached afterwards.
+says `downloading`, and the weights are cached afterwards.

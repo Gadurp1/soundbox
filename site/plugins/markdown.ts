@@ -77,9 +77,28 @@ const LANG_ALIASES: Record<string, string> = {
   "": "md",
 };
 
+/**
+ * Prefix a root-relative URL with the build's `base`, so `/blog/x.png` still
+ * resolves when the site is served from `/soundbox/`. Full URLs, fragments,
+ * relative paths and protocol-relative URLs are left alone. The rendered HTML
+ * is a string the browser reads as-is, so this cannot be left to the router.
+ */
+function withBase(base: string, url: string): string {
+  if (base === "/" || !url.startsWith("/") || url.startsWith("//") || url.startsWith(base)) return url;
+  return base + url.slice(1);
+}
+
+function escapeAttr(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
 export function markdownDocs(): Plugin {
+  let base = "/";
   return {
     name: "soundbox:markdown-docs",
+    configResolved(config) {
+      base = config.base || "/";
+    },
     async load(id) {
       if (!id.endsWith(SUFFIX)) return null;
       const file = id.slice(0, -SUFFIX.length);
@@ -143,10 +162,18 @@ export function markdownDocs(): Plugin {
       renderer.link = ({ href, title: linkTitle, text: label }) => {
         const text = marked.parseInline(label) as string;
         const local = /^\.?\/?([A-Z0-9_-]+)\.md(#.*)?$/i.exec(href ?? "");
-        const to = local ? `/docs/${local[1].toLowerCase()}${local[2] ?? ""}` : href;
+        const to = withBase(base, local ? `/docs/${local[1].toLowerCase()}${local[2] ?? ""}` : href);
         const external = /^https?:/i.test(to ?? "");
         const attrs = external ? ' target="_blank" rel="noreferrer"' : "";
         return `<a href="${to}"${linkTitle ? ` title="${linkTitle}"` : ""}${attrs}>${text}</a>`;
+      };
+
+      // Images are written root-relative (`/blog/models-page.png`, served from
+      // site/public) and need the base for the same reason links do.
+      renderer.image = ({ href, title: imageTitle, text: alt }) => {
+        const src = withBase(base, href ?? "");
+        const titleAttr = imageTitle ? ` title="${escapeAttr(imageTitle)}"` : "";
+        return `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${titleAttr}>`;
       };
 
       const html = marked.parse(body, { renderer, async: false }) as string;

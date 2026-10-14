@@ -9,7 +9,7 @@ labels: bug
 What you did, what you expected, what you got instead.
 
 **Environment**
-Paste the output of `GET /api/health` — it has the version, device and VRAM:
+Paste the output of `GET /api/health`, which includes the version, device and VRAM:
 
 ```bash
 curl http://127.0.0.1:17494/api/health
@@ -26,5 +26,5 @@ The server's console output around the failure (the terminal running
 `npm run dev` or `npx soundbox`), or the same lines from its log file:
 `~/.soundbox/soundbox-<port>.log`, e.g. `soundbox-17494.log` (the server prints
 the exact path at startup). Redact your HF token if
-it appears anywhere — it shouldn't, and if it does, that's the bug worth
-reporting.
+it appears anywhere. It should not appear in the log; if it does, report that
+as a bug too.

@@ -1,14 +1,14 @@
 # Bundled media: provenance and licensing
 
 Soundbox's **source code** is MIT-licensed (see [LICENSE](LICENSE)). **The MIT
-licence covers the code, not the generated media bundled with it.** The audio
+licence does not cover the generated media bundled with it.** The audio
 and images under `site/public/` (the marketing site's media; the app itself
 ships only `app/public/favicon.svg`) were made with third-party AI models, and each
 model's own terms govern what that output may be used for. Those terms are
-summarised below as best we know them; where the provenance or the terms are
-not recorded, this file says so rather than guessing.
+summarised below as far as they are known. Where the provenance or the terms
+are not recorded, this file says so.
 
-This is a factual record, not legal advice. If you reuse any of these files
+This file is a record of provenance and is not legal advice. If you reuse any of these files
 outside Soundbox, read the model licences yourself.
 
 ## Audio
@@ -36,12 +36,12 @@ people, and the band and track names are invented.
 
 ## Model terms referred to above
 
-- **Stability AI Community License** — <https://stability.ai/license>. Free for
+- **Stability AI Community License**: <https://stability.ai/license>. Free for
   commercial use below USD 1M annual revenue; above that an Enterprise licence
   is required.
 - **Google Gemini API Additional Terms of Service** and the **Generative AI
-  Prohibited Use Policy** — <https://ai.google.dev/gemini-api/terms>.
-- **ACE-Step** — <https://github.com/ace-step/ACE-Step/blob/main/LICENSE>
+  Prohibited Use Policy**: <https://ai.google.dev/gemini-api/terms>.
+- **ACE-Step**: <https://github.com/ace-step/ACE-Step/blob/main/LICENSE>
   (Apache-2.0 upstream; the GGUF conversion's licence carry-through is
   unverified).
 

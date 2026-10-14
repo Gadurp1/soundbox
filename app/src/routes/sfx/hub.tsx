@@ -32,6 +32,7 @@ import {
   type SfxGroup,
 } from "@/content/sfx/categories";
 import { isPublished, type SfxCategory } from "@/content/sfx/types";
+import { assetUrl } from "@/lib/asset-url";
 
 /**
  * What a row is matched against when someone types.
@@ -71,7 +72,7 @@ function CategoryRow({ category }: { category: SfxCategory }) {
       >
         {category.coverImage ? (
           <img
-            src={category.coverImage}
+            src={assetUrl(category.coverImage)}
             alt=""
             className="size-12 shrink-0 rounded-lg object-cover"
             loading="lazy"

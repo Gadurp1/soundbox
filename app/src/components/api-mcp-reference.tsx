@@ -38,6 +38,7 @@ import {
 import { C, CopyBlock, DocSection, Note, SCROLL_MT } from "@/components/docs-primitives";
 import type { HealthStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { assetUrl } from "@/lib/asset-url";
 
 /**
  * The origin a copy-pasted command should hit.
@@ -305,7 +306,7 @@ curl "${origin}/api/sounds/$SOUND_ID"`}
             intro="The quickstart above is the core loop. The rest of the HTTP surface — sounds, voices, stories, sessions, models, settings and the MCP log — is indexed route by route in the API reference."
           >
             <p className="text-sm leading-relaxed">
-              <a className="underline underline-offset-2" href="/docs/api">
+              <a className="underline underline-offset-2" href={assetUrl("/docs/api")}>
                 Read the full API reference
               </a>{" "}
               — every route with its method, purpose and key fields, kept in the repository as{" "}

@@ -14,9 +14,9 @@
 
 import { Head } from "vite-react-ssg";
 
-export { faqJsonLd, breadcrumbJsonLd } from "@sfx-app/components/seo-head";
+import { siteUrl } from "@/lib/asset-url";
 
-const SITE_ORIGIN: string = import.meta.env.VITE_SITE_ORIGIN ?? "";
+export { faqJsonLd, breadcrumbJsonLd } from "@sfx-app/components/seo-head";
 
 export interface SeoHeadProps {
   title: string;
@@ -53,7 +53,8 @@ export function SeoHead({
   type = "website",
   article,
 }: SeoHeadProps) {
-  const url = SITE_ORIGIN ? `${SITE_ORIGIN}${path}` : "";
+  // Origin + deploy base + path; empty without VITE_SITE_ORIGIN.
+  const url = siteUrl(path);
   return (
     <Head>
       <title>{title}</title>
@@ -64,8 +65,8 @@ export function SeoHead({
       <meta name="twitter:card" content="summary_large_image" />
       {url && <meta property="og:url" content={url} />}
       {url && <link rel="canonical" href={url} />}
-      {url && image && <meta property="og:image" content={`${SITE_ORIGIN}${image}`} />}
-      {url && image && <meta name="twitter:image" content={`${SITE_ORIGIN}${image}`} />}
+      {url && image && <meta property="og:image" content={siteUrl(image)} />}
+      {url && image && <meta name="twitter:image" content={siteUrl(image)} />}
       {article && <meta property="article:published_time" content={article.publishedTime} />}
       {article?.modifiedTime && (
         <meta property="article:modified_time" content={article.modifiedTime} />

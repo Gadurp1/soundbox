@@ -12,6 +12,7 @@ import * as architecture from "../../../docs/ARCHITECTURE.md?doc";
 import * as generating from "../../../docs/GENERATING.md?doc";
 import * as studio from "../../../docs/STUDIO.md?doc";
 import * as library from "../../../docs/LIBRARY.md?doc";
+import * as artwork from "../../../docs/ARTWORK.md?doc";
 import * as audiocpp from "../../../docs/AUDIOCPP.md?doc";
 import * as desktop from "../../../docs/DESKTOP.md?doc";
 import * as api from "../../../docs/API.md?doc";
@@ -61,6 +62,15 @@ export const DOC_PAGES: DocPage[] = [
     blurb:
       "Where everything you make goes, how to find it again, and how editing works without destroying the original.",
     ...library,
+  },
+  {
+    // GENERATING.md and API.md both link here; without a page those links
+    // were dead on the site.
+    slug: "artwork",
+    label: "Artwork",
+    section: "Using Soundbox",
+    blurb: "Cover art for generated music, avatars for saved voices, and the image models behind them.",
+    ...artwork,
   },
   {
     slug: "architecture",

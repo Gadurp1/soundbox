@@ -13,6 +13,7 @@ import { SeoHead } from "@/components/seo-head";
 import { BLOG_POSTS, postBySlug } from "../blog/posts";
 import { BlogShell } from "../blog/shell";
 import { REPO_URL } from "@/lib/marketing-links";
+import { assetUrl } from "@/lib/asset-url";
 
 /**
  * Live components a post can have, by slug.
@@ -103,9 +104,9 @@ export function BlogPostPage() {
                   is a real editing surface with a backend behind it; a reader
                   who wants to listen to a post wants a play button that works
                   before any JavaScript has run. */}
-              <audio controls preload="none" src={post.audio} className="w-full">
+              <audio controls preload="none" src={assetUrl(post.audio)} className="w-full">
                 Your browser cannot play audio inline —{" "}
-                <a href={post.audio}>download the recording</a> instead.
+                <a href={assetUrl(post.audio)}>download the recording</a> instead.
               </audio>
               <figcaption className="text-muted-foreground mt-2.5 text-xs leading-relaxed">
                 Read aloud by Soundbox, on the machine that wrote it. A synthetic
@@ -120,7 +121,7 @@ export function BlogPostPage() {
             // Decorative: the plate says nothing the headline has not, so alt is
             // empty rather than a description a screen reader has to sit through.
             <img
-              src={post.image}
+              src={assetUrl(post.image)}
               alt=""
               className="border-border/70 mb-10 w-full rounded-2xl border object-cover"
               loading="eager"

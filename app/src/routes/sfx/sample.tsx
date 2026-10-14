@@ -23,7 +23,7 @@ import { SeoHead, breadcrumbJsonLd } from "@/components/seo-head";
 import { getCategory } from "@/content/sfx/categories";
 import { isPublished } from "@/content/sfx/types";
 import type { PublishedCategory, SfxSample } from "@/content/sfx/types";
-import { sampleToSound, useSampleManifest } from "@/lib/sfx-sample";
+import { sampleAudioUrl, sampleToSound, useSampleManifest } from "@/lib/sfx-sample";
 import { GENERATOR_HREF } from "@/lib/marketing-links";
 
 function SampleBody({
@@ -103,7 +103,7 @@ function SampleBody({
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" asChild>
-          <a href={`/sfx/${category.slug}/${sample.slug}.mp3`} download>
+          <a href={sampleAudioUrl(category.slug, sample.slug)} download>
             <DownloadIcon />
             Download MP3
           </a>

@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 
 import type { Sound } from "@/lib/api";
+import { assetUrl } from "@/lib/asset-url";
 import type { MusicTrack } from "@/content/music/types";
 
 export interface MusicTrackMeta {
@@ -22,6 +23,16 @@ export interface MusicTrackMeta {
 }
 
 export type MusicManifest = Record<string, MusicTrackMeta>;
+
+/** The served URL of a catalogue track's MP3, base path included. */
+export function trackAudioUrl(slug: string): string {
+  return assetUrl(`/music/${slug}.mp3`);
+}
+
+/** The served URL of a roster act's signature-track MP3, base path included. */
+export function artistAudioUrl(slug: string): string {
+  return assetUrl(`/music/artists/${slug}.mp3`);
+}
 
 /** Present a catalogue track as the `Sound` the player expects. Fields the
  *  player does not read get the honest inert value — these are files in
@@ -36,7 +47,7 @@ export function trackToSound(track: MusicTrack, meta: MusicTrackMeta): Sound {
     duration_s: meta.durationS,
     sample_rate: meta.sampleRate,
     channels: 2,
-    file: `/music/${track.slug}.mp3`,
+    file: trackAudioUrl(track.slug),
     peaks: meta.peaks,
     favorite: false,
     tags: [],
@@ -53,7 +64,7 @@ export function useMusicManifest(): { manifest: MusicManifest | null; failed: bo
 
   useEffect(() => {
     let live = true;
-    fetch("/music/manifest.json")
+    fetch(assetUrl("/music/manifest.json"))
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((m: MusicManifest) => live && setManifest(m))
       .catch(() => live && setFailed(true));
@@ -84,7 +95,7 @@ export function artistToSound(
     duration_s: meta.durationS,
     sample_rate: meta.sampleRate,
     channels: 2,
-    file: `/music/artists/${artist.slug}.mp3`,
+    file: artistAudioUrl(artist.slug),
     peaks: meta.peaks,
     favorite: false,
     tags: [],
@@ -101,7 +112,7 @@ export function useArtistManifest(): { manifest: MusicManifest | null; failed: b
 
   useEffect(() => {
     let live = true;
-    fetch("/music/artists/manifest.json")
+    fetch(assetUrl("/music/artists/manifest.json"))
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((m: MusicManifest) => live && setManifest(m))
       .catch(() => live && setFailed(true));

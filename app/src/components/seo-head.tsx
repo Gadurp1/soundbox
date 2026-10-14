@@ -17,18 +17,17 @@
 
 import { useEffect } from "react";
 
+import { siteUrl } from "@/lib/asset-url";
+
 const MARK = "data-seo-head";
 
-/**
- * Absolute origin for canonical and og:url, e.g. "https://soundbox.audio".
- *
- * Deliberately not hardcoded: the project has no public deployment yet (the app
- * is served from 127.0.0.1 by the local backend), so inventing a domain here
+/*
+ * Absolute URLs for canonical and og:url come from `siteUrl` (origin from
+ * VITE_SITE_ORIGIN, plus the deploy's base path). Deliberately not hardcoded:
+ * the app is served from 127.0.0.1 by the local backend, so inventing a domain
  * would put a wrong canonical into the markup. With the variable unset the
- * canonical and og:url tags are simply omitted, which is the correct behaviour
- * for a preview build.
+ * canonical and og:url tags are simply omitted.
  */
-const SITE_ORIGIN: string = import.meta.env.VITE_SITE_ORIGIN ?? "";
 
 export interface SeoHeadProps {
   title: string;
@@ -61,7 +60,7 @@ export function SeoHead({ title, description, path, jsonLd }: SeoHeadProps) {
     upsertMeta("property", "og:type", "website");
     upsertMeta("name", "twitter:card", "summary_large_image");
 
-    const url = SITE_ORIGIN ? `${SITE_ORIGIN}${path}` : "";
+    const url = siteUrl(path);
     let canonical: HTMLLinkElement | null = null;
     if (url) {
       upsertMeta("property", "og:url", url);
@@ -118,7 +117,7 @@ export function breadcrumbJsonLd(
       "@type": "ListItem",
       position: i + 1,
       name: t.name,
-      ...(SITE_ORIGIN ? { item: `${SITE_ORIGIN}${t.path}` } : {}),
+      ...(siteUrl(t.path) ? { item: siteUrl(t.path) } : {}),
     })),
   };
 }

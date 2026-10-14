@@ -34,6 +34,7 @@ import { isPublished } from "@/content/sfx/types";
 import type { PublishedCategory } from "@/content/sfx/types";
 import { GENERATOR_HREF, REPO_URL, WELCOME_HREF } from "@/lib/marketing-links";
 import { cn } from "@/lib/utils";
+import { assetUrl } from "@/lib/asset-url";
 
 
 const MCP_SNIPPET = `claude mcp add --transport http soundbox http://127.0.0.1:17494/mcp`;
@@ -119,7 +120,7 @@ function CategoryBody({ category }: { category: PublishedCategory }) {
       <header className="py-8">
         {category.coverImage && (
           <img
-            src={category.coverImage}
+            src={assetUrl(category.coverImage)}
             alt=""
             className="ring-border/70 mb-6 aspect-video w-full rounded-2xl object-cover ring-1"
           />

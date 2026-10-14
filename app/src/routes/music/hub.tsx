@@ -56,6 +56,7 @@ import type { MusicManifest, MusicTrackMeta } from "@/lib/music-track";
 import { formatDuration } from "@/lib/format";
 import { GENERATOR_HREF, MODELS_HUB_HREF, REPO_URL } from "@/lib/marketing-links";
 import { cn } from "@/lib/utils";
+import { assetUrl } from "@/lib/asset-url";
 
 
 const FAQS = [
@@ -202,7 +203,7 @@ function ArtistCard({
           </div>
         ) : (
           <img
-            src={artist.cover}
+            src={assetUrl(artist.cover)}
             alt=""
             loading="lazy"
             onError={() => setCoverFailed(true)}
@@ -373,7 +374,7 @@ export function MusicHubPage() {
       <main className="mx-auto w-full max-w-7xl px-4 pt-8 pb-20">
         <section className="relative isolate overflow-hidden rounded-3xl">
           <img
-            src="/music/covers/hero-banner.webp"
+            src={assetUrl("/music/covers/hero-banner.webp")}
             alt=""
             className="absolute inset-0 size-full object-cover"
           />

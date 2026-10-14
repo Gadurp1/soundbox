@@ -27,13 +27,12 @@ anything is disclosed publicly.
 ## Threat model
 
 Soundbox is a single-user, local application. Its security rests on the
-following assumptions — a report showing one of them can be broken is exactly
-what we want to hear about.
+following assumptions. Please report any way to break one of them.
 
 - **The server binds to loopback** (`127.0.0.1`) by default. It is meant to be
   reached only from the same machine.
 - **There is no authentication.** Anything that can send HTTP to the server can
-  use its whole API — generate audio, read and delete the library, change
+  use its whole API: generate audio, read and delete the library, change
   settings. Binding it to a non-loopback interface with `--host` exposes all
   of that to the network and the server warns when you do; if you do it, put
   your own authenticating proxy in front of it.

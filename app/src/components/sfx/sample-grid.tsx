@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WaveformPlayer } from "@/components/waveform-player";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { sampleToSound, useSampleManifest } from "@/lib/sfx-sample";
+import { sampleAudioUrl, sampleToSound, useSampleManifest } from "@/lib/sfx-sample";
 import type { SfxSample } from "@/content/sfx/types";
 
 export function SampleGrid({
@@ -148,7 +148,7 @@ export function SampleGrid({
               </div>
               <Button variant="ghost" size="icon-sm" asChild>
                 <a
-                  href={`/sfx/${categorySlug}/${sample.slug}.mp3`}
+                  href={sampleAudioUrl(categorySlug, sample.slug)}
                   download
                   aria-label={`Download ${sample.title}`}
                 >

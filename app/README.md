@@ -1,4 +1,4 @@
-# Soundbox — web app
+# Soundbox web app
 
 The React front end for [Soundbox](../README.md). It is one npm workspace of
 the monorepo; run it from the repository root, not from here.
@@ -12,5 +12,5 @@ The same route components are reused by the public site in `../site`, which is
 why `src/routes/` contains pages the app itself never mounts. The map of what
 lives where is in [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
 
-Typechecking is `npx tsc -p tsconfig.app.json` from this directory — `tsc -p .`
-checks nothing.
+To typecheck, run `npx tsc -p tsconfig.app.json` from this directory.
+`tsc -p .` checks nothing.

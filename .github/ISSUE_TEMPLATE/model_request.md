@@ -9,7 +9,7 @@ labels: model
 Name, and a link to the Hugging Face repo or official GitHub.
 
 **Licence**
-The licence on the **weights** (not just the code — these often differ). Does it
+The licence on the **weights**, which often differs from the code licence. Does it
 permit commercial use? Is the repo gated on Hugging Face?
 
 A model whose licence can't be determined is still welcome, but it goes in as

@@ -38,6 +38,7 @@
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { assetUrl } from "@/lib/asset-url";
 
 interface Shot {
   id: string;
@@ -113,7 +114,7 @@ export function ProductShots() {
             here rather than left to the image: without it the panel resizes as
             each one decodes and the tab row jumps under the pointer. */}
         <img
-          src={active.src}
+          src={assetUrl(active.src)}
           alt={active.alt}
           width={1600}
           height={1000}
