@@ -28,12 +28,12 @@ export function DocsIndexPage() {
             Documentation
           </p>
           <h1 className="font-heading mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            Everything Soundbox does, and how
+            Soundbox documentation
           </h1>
           <p className="text-muted-foreground mt-4 max-w-2xl leading-relaxed text-pretty sm:text-lg">
             Soundbox generates audio with open-weight models on your own machine,
-            arranges it on a timeline, and exposes the whole thing over an HTTP API and
-            to agents over MCP. These pages cover all of it.
+            arranges it on a timeline, and serves it over an HTTP API and to agents
+            over MCP.
           </p>
         </header>
 
@@ -80,7 +80,7 @@ export function DocsIndexPage() {
                 </span>
                 <span className="text-muted-foreground mt-1.5 block text-sm leading-relaxed">
                   Every endpoint and every agent tool, generated from the server's own
-                  schema — so it cannot drift from what the server actually accepts.
+                  schema.
                 </span>
               </span>
             </Link>

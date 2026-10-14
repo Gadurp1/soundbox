@@ -63,50 +63,50 @@ const FAQS = [
   {
     question: "Can I use this music in a commercial game or video?",
     answer:
-      "It depends on which model rendered the track, and both are named on every row. The instrumentals come from Stable Audio 3.0 Small Music, under the Stability AI Community License: free for commercial use below USD $1M annual revenue, Enterprise licence required above it. The sung tracks come from ACE-Step, catalogued as Apache 2.0 but flagged unverified in the model catalogue, so read its model card before shipping it. Soundbox itself is MIT and imposes no terms on what you generate.",
+      "It depends on which model rendered the track; every row names it. The instrumentals come from Stable Audio 3.0 Small Music, under the Stability AI Community License: free for commercial use below USD $1M annual revenue, Enterprise licence required above it. The sung tracks come from ACE-Step, listed as Apache 2.0 but flagged unverified in the model catalogue, so read its model card before shipping. Soundbox itself is MIT and imposes no terms on what you generate.",
   },
   {
     question: "How long can a generated track be?",
     answer:
-      "Stable Audio 3.0 Small Music will render up to 120 seconds in one pass and ACE-Step up to 60. Everything on this page is about 20 seconds, which is the length that makes a loop or a cue rather than a song. For anything longer than the ceiling the practical approach is to generate sections and arrange them, not to ask for a four-minute track.",
+      "Stable Audio 3.0 Small Music renders up to 120 seconds in one pass and ACE-Step up to 60. Everything on this page is about 20 seconds, loop or cue length. For anything longer than the limit, generate sections and arrange them.",
   },
   {
     question: "Which model should I use for music with vocals?",
     answer:
-      "ACE-Step, and only ACE-Step. Stable Audio has no vocal path at all — however musical the arrangement it produces, it cannot sing words, so asking it for a chorus gets you an instrumental with a lead line where the voice should be. ACE-Step takes a separate lyrics field and sings it verbatim, with the prompt setting genre and instrumentation instead of describing a sound.",
+      "ACE-Step. Stable Audio has no vocal path and cannot sing words; ask it for a chorus and you get an instrumental with a lead line where the voice would be. ACE-Step takes a separate lyrics field and sings it verbatim, and the prompt sets genre and instrumentation.",
   },
   {
     question: "Does this run in the cloud?",
     answer:
-      "No. Both models run on your own machine through audio.cpp, a native binary, from quantised GGUF weights — no Python stack, no account, no API key and no per-track billing. Once the weights are downloaded it works with the network off. The tracks on this page were rendered exactly that way, on one desktop GPU.",
+      "No. Both models run on your own machine through audio.cpp, a native binary, from quantised GGUF weights. There is no Python stack, account, API key or per-track billing. Once the weights are downloaded it works with the network off. The tracks on this page were rendered this way on one desktop GPU.",
   },
   {
     question: "Why do the durations not match what was requested?",
     answer:
-      "Every track here asked for 20 seconds and came back between 10.7 and 20.0. Diffusion audio models render to a latent length that only approximately maps to seconds, so the requested duration is a target rather than a contract. If you need an exact length, generate longer than you need and trim — which is also why the tracks are downloadable rather than stream-only.",
+      "Every track here asked for 20 seconds and came back between 10.7 and 20.0. Diffusion audio models render to a latent length that maps only approximately to seconds, so the requested duration is a target. If you need an exact length, generate longer than you need and trim.",
   },
   {
     question: "Can an agent generate these instead of me?",
     answer:
-      "Yes — that is the primary interface, not an afterthought. Soundbox exposes an MCP server, so a coding agent can call soundbox.generate with a prompt and a lyrics block and get back an absolute path to a WAV it can drop straight into a project. Every track on this page was produced through the same HTTP API that server sits on.",
+      "Yes. Soundbox exposes an MCP server, so a coding agent can call soundbox.generate with a prompt and a lyrics block and get back an absolute path to a WAV it can drop into a project. Every track on this page was produced through the HTTP API that server is built on.",
   },
 ];
 
 const CRAFT = [
   {
     icon: MusicIcon,
-    heading: "Name instruments and articulations, not moods",
-    body: "“Epic battle music” gives a model nothing to voice. “Staccato low string ostinato, brass ensemble stabs, taiko drum hits on the downbeat” gives it four parts and tells it how each is played, and the render comes back as an arrangement rather than a wash. Naming the parts is the single biggest difference between a first take you keep and one you re-roll.",
+    heading: "Name the instruments and how they are played",
+    body: "“Epic battle music” gives a model nothing to voice. “Staccato low string ostinato, brass ensemble stabs, taiko drum hits on the downbeat” names each part and how it is played, and the render comes back as an arrangement. Naming the parts makes the biggest difference between a first take you keep and one you re-roll.",
   },
   {
     icon: SparklesIcon,
-    heading: "Tempo is worth more than any adjective",
-    body: "A BPM number moves the output further than “fast”, “driving” and “intense” put together, because it is the one instruction with no interpretation in it. Set it explicitly whenever rhythm matters — 165 for a racing cue, 68 for a slow blues — and spend the adjectives on timbre instead, where they actually do work.",
+    heading: "Set the tempo in BPM",
+    body: "A BPM number moves the output further than “fast”, “driving” and “intense” together, because the model has nothing to interpret. Set it whenever rhythm matters (165 for a racing cue, 68 for a slow blues) and use adjectives for timbre.",
   },
   {
     icon: MicVocalIcon,
     heading: "Keep lyrics short enough to fit the render",
-    body: "ACE-Step sings the lyrics block verbatim, and a 20-second render only has room for a handful of lines. Hand it a full verse and it either rushes the syllables or silently drops the tail. Two or four short repeated lines, tagged [verse] or [chorus], is what a cue-length render can carry — and the voice description belongs in the prompt, not in the lyrics, because the lyrics field is read as words to sing and nothing else.",
+    body: "ACE-Step sings the lyrics block verbatim, and a 20-second render has room for a handful of lines. Give it a full verse and it rushes the syllables or silently drops the tail. Use two or four short repeated lines, tagged [verse] or [chorus]. Put the voice description in the prompt: the lyrics field is read only as words to sing.",
   },
 ];
 
@@ -349,8 +349,8 @@ export function MusicHubPage() {
   return (
     <div className="bg-background text-foreground min-h-svh">
       <SeoHead
-        title="AI Music Generator You Run Locally | Soundbox"
-        description="Thirty-six real tracks generated on one desktop GPU, each with the exact prompt that made it — amapiano, drill, hyperpop, corridos, garage and more. Instrumental and sung, open-weight models, no account and no per-track billing."
+        title="AI music generated locally | Soundbox"
+        description="Thirty-six tracks generated on one desktop GPU, each with the exact prompt that made it: amapiano, drill, hyperpop, corridos, garage and more. Instrumental and sung, from open-weight models, with no account and no per-track billing."
         path="/music"
         jsonLd={[
           faqJsonLd(FAQS),
@@ -393,9 +393,9 @@ export function MusicHubPage() {
               Music you generate on your own machine
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">
-              Real tracks, rendered on a single desktop GPU by open-weight models — with the
-              exact prompt behind every one, free to copy, tweak and re-render. No account, no
-              API key, no per-track billing, and nothing ever leaves your machine.
+              Tracks rendered on a single desktop GPU by open-weight models, each with the
+              exact prompt behind it to copy, edit and re-render. No account, no API key, no
+              per-track billing, and nothing leaves your machine.
             </p>
             <div className="mt-8 flex flex-wrap gap-2">
               {featured && (
@@ -420,7 +420,7 @@ export function MusicHubPage() {
         <Section
           id="featured"
           title="Featured"
-          lede="A cross-section of the catalogue — synthwave to orchestral hybrid to sung power pop, every second of it rendered on one desktop GPU."
+          lede="A cross-section of the catalogue, from synthwave to orchestral hybrid to sung power pop, all rendered on one desktop GPU."
         >
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {recommended.map((track) => (
@@ -438,7 +438,7 @@ export function MusicHubPage() {
         <Section
           id="trending"
           title="Popular now"
-          lede={`${trending.length} contemporary scenes, from amapiano and melodic drill to corridos tumbados, hyperpop and UK garage. Same two models, same twenty seconds, same one GPU as everything above.`}
+          lede={`${trending.length} contemporary scenes, from amapiano and melodic drill to corridos tumbados, hyperpop and UK garage. Same two models, twenty-second renders and one GPU as the rest of the page.`}
         >
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             {trending.map((track) => (
@@ -446,10 +446,9 @@ export function MusicHubPage() {
             ))}
           </div>
           <p className="text-muted-foreground mt-6 max-w-2xl text-sm leading-relaxed">
-            Genre choice here is a snapshot rather than a chart, and none of these
-            prompts names an artist or a record. They name instruments, rhythms and
-            production techniques — which is both the honest way to ask a model for a
-            style and, as it turns out, the way that actually works.
+            The genre list is a snapshot of current scenes. None of these prompts names an
+            artist or a record. They name instruments, rhythms and production techniques,
+            and that is what the models respond to.
           </p>
         </Section>
 
@@ -457,7 +456,7 @@ export function MusicHubPage() {
           <TrackList
             id="instrumental"
             title="Instrumental"
-            lede={`${instrumental.length} tracks from Stable Audio 3.0 Small Music — loops and cues built to sit under gameplay, dialogue and film.`}
+            lede={`${instrumental.length} tracks from Stable Audio 3.0 Small Music: loops and cues built to sit under gameplay, dialogue and film.`}
             tracks={instrumental}
             manifest={manifest}
           />
@@ -498,11 +497,11 @@ export function MusicHubPage() {
             </div>
 
             <p className="text-muted-foreground mt-5 max-w-2xl text-sm leading-relaxed">
-              Twenty signed acts, twenty house styles. An artist identity, to a generative
-              model, is a vocabulary held constant — so every act on this roster is a persona
-              string, and its signature track was rendered from exactly that string. Press
-              play to hear the act; copy the persona and append your own brief to record in
-              their style.
+              Twenty fictional acts, each with a house style. To a generative model an artist
+              identity is a vocabulary held constant, so every act on this roster is a persona
+              string, and its signature track was rendered from that string. Press play to
+              hear the act. Copy the persona and append your own brief to render in its
+              style.
             </p>
 
             <ul className="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
@@ -522,7 +521,7 @@ export function MusicHubPage() {
         <Section
           id="craft"
           title="How to prompt for music"
-          lede="Three rules that move the output further than anything else you can type."
+          lede="Three rules with the largest effect on the output."
         >
           <div className="grid gap-4 sm:grid-cols-3">
             {CRAFT.map(({ icon: Icon, heading, body }) => (
@@ -538,19 +537,19 @@ export function MusicHubPage() {
         <Section
           id="why"
           title="Why generate music locally"
-          lede="No account, no API key, no upload, no per-track billing — the practical case for rendering on your own GPU."
+          lede="Rendering on your own GPU needs no account, API key, upload or per-track billing."
         >
           <div className="grid gap-4 sm:grid-cols-3">
             {[
               {
                 icon: WifiOffIcon,
-                title: "Offline once the weights land",
+                title: "Offline once the weights are downloaded",
                 body: "Both models run through audio.cpp, a native binary, from quantised GGUF files on your disk. One SQLite file and one folder of WAVs under ~/.soundbox. Nothing is uploaded.",
               },
               {
                 icon: BotIcon,
                 title: "An agent can drive it",
-                body: "Soundbox speaks MCP as a first-class surface. An agent calls soundbox.generate with a prompt and a lyrics block and gets back an absolute path to a WAV — the same HTTP API that produced this page.",
+                body: "Soundbox runs an MCP server. An agent calls soundbox.generate with a prompt and a lyrics block and gets back an absolute path to a WAV. This page was produced through the same HTTP API.",
               },
               {
                 icon: ScaleIcon,
@@ -570,7 +569,7 @@ export function MusicHubPage() {
         <Section
           id="licensing"
           title="Licensing, in full"
-          lede="Every track names the model that made it. These are both models’ terms, in full, before any download button."
+          lede="Every track names the model that made it. These are both models’ terms, in full."
         >
           <ul className="space-y-3">
             {(Object.keys(MUSIC_MODEL_LICENSES) as (keyof typeof MUSIC_MODEL_LICENSES)[]).map(
@@ -583,7 +582,7 @@ export function MusicHubPage() {
                     <span className="text-muted-foreground font-mono text-xs">{id}</span>
                   </div>
                   <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-                    <span className="text-foreground">{MUSIC_MODEL_LICENSES[id].name}</span> —{" "}
+                    <span className="text-foreground">{MUSIC_MODEL_LICENSES[id].name}</span>:{" "}
                     {MUSIC_MODEL_LICENSES[id].note}
                   </p>
                 </li>
@@ -608,7 +607,7 @@ export function MusicHubPage() {
         <Section
           id="related"
           title="Related collections"
-          lede="Go deeper on game soundtracks, or browse the rest of the catalogue."
+          lede="More game soundtracks, and the rest of the catalogue."
         >
           <div className="grid gap-3 sm:grid-cols-2">
             {[
@@ -635,8 +634,8 @@ export function MusicHubPage() {
           <p>
             Soundbox Records is a fictional label: every act on the roster is a prompt
             persona, every cover on this page is generated illustration, and no real artist,
-            release or record is depicted. The audio is real — rendered locally by
-            the models named above and encoded to MP3 for the web, downloadable in full.{" "}
+            release or record is depicted. The audio was rendered locally by the models
+            named above and encoded to MP3 for the web; each file downloads in full.{" "}
             <a
               href={REPO_URL}
               className="hover:text-foreground underline underline-offset-4"

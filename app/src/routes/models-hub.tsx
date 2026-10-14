@@ -39,8 +39,8 @@ export function ModelsHubPage() {
   return (
     <div className="bg-background text-foreground min-h-svh">
       <SeoHead
-        title="Every model Soundbox runs locally — specs and licences | Soundbox"
-        description={`${MODEL_STATS.total} open-weight audio models — sound effects, music, speech and stem separation — run locally through audio.cpp with no Python. Licence findings for each, with sources.`}
+        title="Models: specs and licences | Soundbox"
+        description={`${MODEL_STATS.total} open-weight audio models for sound effects, music, speech and stem separation, run locally through audio.cpp with no Python. Licence findings for each, with sources.`}
         path="/models"
       />
 
@@ -50,16 +50,16 @@ export function ModelsHubPage() {
             Every model Soundbox can run
           </h1>
           <p className="text-muted-foreground mt-4 max-w-2xl leading-relaxed">
-            Soundbox trains nothing. It sources {MODEL_STATS.total} open-weight models made by
-            other people — sound effects, music, speech and stem separation — and runs them on
-            your own machine through audio.cpp. This page records what a reading of each
-            one's licence found, with a link to every source consulted.
+            Soundbox does not train models. It runs {MODEL_STATS.total} open-weight models made
+            by other people (sound effects, music, speech and stem separation) on your own
+            machine through audio.cpp. This page records what a reading of each one's licence
+            found, with a link to every source consulted.
           </p>
 
           <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat value={MODEL_STATS.total} label="models in the catalog" />
             <Stat value={MODEL_STATS.listed} label="on by default; the rest are opt-in" />
-            <Stat value={MODEL_STATS.nonCommercial} label="non-commercial — you may not sell what they make" />
+            <Stat value={MODEL_STATS.nonCommercial} label="non-commercial: you may not sell what they make" />
             <Stat value={MODEL_STATS.unconfirmedLicence} label="with unconfirmed licences" />
           </dl>
 
@@ -94,8 +94,8 @@ export function ModelsHubPage() {
         <footer className="border-border/60 text-muted-foreground border-t py-8 text-sm leading-relaxed">
           <p>
             Categories: {MODEL_CATEGORY_ORDER.map((c) => CATEGORY_LABEL[c]).join(" · ")}. Every
-            entry links to the model's own repository and licence, because the point of this page
-            is to get you to the primary source rather than to stand in for it.
+            entry links to the model's own repository and licence. Check those primary sources
+            before you rely on a summary here.
           </p>
         </footer>
       </div>

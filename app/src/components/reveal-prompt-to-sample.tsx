@@ -44,12 +44,12 @@ const PHASES: StageStep[] = [
   {
     title: "Write it",
     detail:
-      "Name a material, an action and a space. These models were trained on captions of recordings, so that is the shape they answer to — “scary sound” gives you noise.",
+      "Name a material, an action and a space. These models were trained on captions of recordings and respond to that shape. A prompt like “scary sound” gives you noise.",
   },
   {
     title: "loading",
     detail:
-      "The GGUF weights are memory-mapped off your disk. Downloaded once, reused every run after — which is why the same seed reproduces the same take.",
+      "The GGUF weights are memory-mapped off your disk. They download once and are reused on every run after, which is why the same seed reproduces the same take.",
   },
   {
     title: "generating",
@@ -120,7 +120,7 @@ export function RevealPromptToSample() {
       id="make"
       eyebrow="Prompt to sample"
       title="A sentence, and then a file on your disk"
-      intro="Nothing is uploaded and nothing is billed per second. Scroll to follow one generation through the phases the server actually reports."
+      intro="Nothing is uploaded and nothing is billed per second. Scroll to follow one generation through the phases the server reports."
       steps={PHASES}
       layout="text-left"
       lane={0}
@@ -138,7 +138,7 @@ export function RevealPromptToSample() {
 
         return (
           <figure className="border-border/60 bg-card/80 overflow-hidden rounded-xl border shadow-sm">
-            <WindowChrome label="Generate — one prompt, one file" />
+            <WindowChrome label="Generate: one prompt, one file" />
 
             <div className="p-4 sm:p-5">
               {/* The prompt. Present from the first step, because it is the
@@ -198,7 +198,7 @@ export function RevealPromptToSample() {
 
                 {step < GENERATING && (
                   <p className="text-muted-foreground/50 absolute inset-0 flex items-center justify-center text-xs">
-                    {step === 0 ? "nothing generated yet" : "weights loaded — ready"}
+                    {step === 0 ? "nothing generated yet" : "weights loaded, ready"}
                   </p>
                 )}
 

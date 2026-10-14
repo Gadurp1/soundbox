@@ -38,27 +38,27 @@ const BEATS: StageStep[] = [
   {
     title: "Start with the room",
     detail:
-      "One long ambience bed. It is the least interesting sound in the scene and the one that makes everything else sound like it is somewhere.",
+      "One long ambience bed. It places every other sound in a space.",
   },
   {
     title: "Put someone in it",
     detail:
-      "Footsteps on their own lane, spaced by hand. Three generations of the same prompt rather than one looped clip — a loop is audible, and these are not.",
+      "Footsteps on their own lane, spaced by hand. They are three generations of the same prompt, so no loop can be heard.",
   },
   {
     title: "Give it a moment",
     detail:
-      "The impacts the scene is actually about. Their own lane, so moving the door slam a beat later does not disturb anything under it.",
+      "The impacts the scene is built around. They have their own lane, so moving the door slam a beat later does not disturb anything under it.",
   },
   {
     title: "Design underneath",
     detail:
-      "A riser and a hull groan doing the work no recording does. This is where a generator earns its place: these are not sounds you go and record.",
+      "A riser and a hull groan: designed sounds that nobody could go out and record.",
   },
   {
     title: "Play it back",
     detail:
-      "Keep scrolling to scrub the playhead. Every clip is a file on your disk with the prompt and seed that made it — regenerate any one of them without touching the rest.",
+      "Keep scrolling to scrub the playhead. Every clip is a file on your disk with the prompt and seed that made it. Regenerate any one of them without touching the rest.",
   },
 ];
 
@@ -112,7 +112,7 @@ export function RevealStudio() {
     <ScrollStage
       id="studio"
       eyebrow="The studio"
-      title="Sounds are only useful once they are somewhere"
+      title="Arrange what you generate on a timeline"
       intro="Every generation lands on a timeline you can arrange. Scroll to build one up a lane at a time, then scrub the playhead across it."
       steps={BEATS}
       layout="text-right"
@@ -128,7 +128,7 @@ export function RevealStudio() {
 
         return (
           <figure className="border-border/60 bg-card/80 overflow-hidden rounded-xl border shadow-sm">
-            <WindowChrome label="Studio — every sound you generate, arranged" />
+            <WindowChrome label="Studio: every sound you generate, arranged" />
 
             <div className="relative flex">
               {/* The lane names are the control here. A reader who wants to

@@ -57,13 +57,13 @@ export const MCP_TOOL_GROUPS: { id: McpToolGroup; title: string; intro: string }
     id: "voices",
     title: "Voices",
     intro:
-      "Spoken words are a separate path — soundbox.generate will not say them. This is the one-off read; anything you want to keep and rework belongs in a story.",
+      "Spoken words take a separate path: soundbox.generate will not say them. speak is the one-off read. Put anything you want to keep and rework in a story.",
   },
   {
     id: "stories",
     title: "Stories",
     intro:
-      "A story is a script that persists. Lines carry a place in time, can be re-read line by line, and survive the conversation that made them.",
+      "A story is a script that persists. Each line has a position in time, can be re-read on its own, and persists after the conversation that made it.",
   },
   {
     id: "arrangement",
@@ -87,7 +87,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
         name: "prompt",
         type: "string",
         required: true,
-        note: "Material, action and space — “glass bottle shattering on tile, small reverberant room”. For a lyrics-conditioned model this sets genre and instrumentation instead.",
+        note: "Material, action and space, e.g. “glass bottle shattering on tile, small reverberant room”. For a lyrics-conditioned model this sets genre and instrumentation instead.",
       },
       { name: "duration_s", type: "number", note: "0.5–300, default 5. Clamped to the model's own maximum." },
       { name: "model", type: "string", note: "Defaults to whichever model is already loaded." },
@@ -98,7 +98,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
       {
         name: "lyrics",
         type: "string",
-        note: "Words for a lyrics-conditioned music model to sing. Ignored elsewhere — check supports.lyrics first.",
+        note: "Words for a lyrics-conditioned music model to sing. Ignored elsewhere; check supports.lyrics first.",
       },
       {
         name: "source_sound_id",
@@ -116,7 +116,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.enhance_prompt",
     title: "Rewrite a prompt for a sound model",
     blurb:
-      "Turns a vague prompt (“scary sound”) into a concrete one, optionally several. Only works when the local prompt assistant is enabled — it says so if it isn't.",
+      "Turns a vague prompt (“scary sound”) into a concrete one, optionally several. Requires the local prompt assistant to be enabled; if it is off, the tool says so.",
     group: "sounds",
     args: [
       { name: "prompt", type: "string", required: true, note: "The prompt to rewrite." },
@@ -138,14 +138,14 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.list_models",
     title: "List sound models",
     blurb:
-      "Available models with status and licence. Also the authority on a speech model's delivery knobs — a misspelled one is ignored silently rather than rejected.",
+      "Available models with status and licence. Also lists each speech model's delivery options. A misspelled option is ignored silently, with no error.",
     group: "sounds",
     args: [],
   },
   {
     name: "soundbox.list_sounds",
     title: "Search the sound library",
-    blurb: "Search what has already been made. Worth calling before generating — the sound may exist.",
+    blurb: "Search what has already been made. Call it before generating; the sound may already exist.",
     group: "sounds",
     args: [
       { name: "q", type: "string", note: "Text to match in prompt or name." },
@@ -164,7 +164,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.separate",
     title: "Split a sound into stems",
     blurb:
-      "Splits a sound into vocals, drums, bass and other, each saved as its own sound with its own path. Keep only some, and merge the rest back into one — the original minus what you took out.",
+      "Splits a sound into vocals, drums, bass and other, each saved as its own sound with its own path. You can keep some and merge the rest back into one sound: the original minus the stems you kept.",
     group: "sounds",
     slow: true,
     args: [
@@ -200,7 +200,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.speak",
     title: "Speak a line or a dialogue",
     blurb:
-      "Reads text aloud in a saved voice and saves it to the library — one line, or several with different voices. Blocks until the audio is on disk.",
+      "Reads text aloud in a saved voice and saves it to the library. Pass one line, or several with different voices. Blocks until the audio is on disk.",
     group: "voices",
     slow: true,
     args: [
@@ -216,7 +216,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
       {
         name: "delivery",
         type: "Record<string, string>",
-        note: "How to read it, by this model's own option names. Never write stage directions into the text — they get read aloud.",
+        note: "How to read it, by this model's own option names. Never write stage directions into the text; they get read aloud.",
       },
     ],
   },
@@ -232,7 +232,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
       {
         name: "delivery",
         type: "Record<string, string>",
-        note: "How every line is read unless it overrides it. Usually the right level to set it at.",
+        note: "How every line is read unless it overrides it. Set delivery here in most cases.",
       },
     ],
   },
@@ -247,7 +247,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.get_story",
     title: "Read a story",
     blurb:
-      "The whole script line by line — text, voice, timing, and whether each line has been voiced yet. How an agent inspects what it built.",
+      "Returns the whole script line by line: text, voice, timing, and whether each line has been voiced yet. Use it to inspect what the agent built.",
     group: "stories",
     args: [{ name: "story_id", type: "string", required: true }],
   },
@@ -255,7 +255,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.add_lines",
     title: "Add lines to a story",
     blurb:
-      "Appends spoken lines, pauses, or existing library sounds to the script — many at once, each with its own delivery if one should be read differently.",
+      "Appends spoken lines, pauses, or existing library sounds to the script. Add many at once; give a line its own delivery if it should be read differently.",
     group: "stories",
     args: [
       { name: "story_id", type: "string", required: true },
@@ -285,7 +285,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
       {
         name: "duration_s",
         type: "number",
-        note: "How much of the clip plays — shortens it without destroying its audio.",
+        note: "How much of the clip plays. Shortens the clip without deleting its audio.",
       },
       { name: "trim_start_s", type: "number", note: "How far into the source sound the clip begins." },
       {
@@ -299,7 +299,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.speak_story",
     title: "Voice a story",
     blurb:
-      "Reads every line that has no audio yet, in its assigned voice, one at a time. This is the slow one.",
+      "Reads every line that has no audio yet, in its assigned voice, one at a time. This is the slowest tool.",
     group: "stories",
     slow: true,
     args: [
@@ -308,7 +308,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
       {
         name: "regenerate",
         type: "boolean",
-        note: "Re-read lines that already have audio, not only the silent ones. Default false.",
+        note: "Also re-read lines that already have audio. Default false.",
       },
     ],
   },
@@ -324,7 +324,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.split_line",
     title: "Split a line in two",
     blurb:
-      "Cuts a voiced line at a point in its own audio, giving two clips. The words stay with the first half — there is no honest way to know which fell either side of the cut.",
+      "Cuts a voiced line at a point in its own audio, giving two clips. The words stay with the first half, because Soundbox cannot tell which words fell on either side of the cut.",
     group: "stories",
     args: [
       { name: "line_id", type: "string", required: true },
@@ -346,7 +346,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.open_in_studio",
     title: "Open a sound in the studio",
     blurb:
-      "Lays a library sound out on a timeline, split into stems on separate tracks where that is possible. Reuses stems the sound already has rather than making more.",
+      "Lays a library sound out on a timeline, split into stems on separate tracks where that is possible. If the sound already has stems, it reuses them.",
     group: "arrangement",
     args: [
       { name: "sound_id", type: "string", required: true },
@@ -366,7 +366,7 @@ export const MCP_TOOLS: McpToolDoc[] = [
   {
     name: "soundbox.mix_track",
     title: "Mute, solo or set a track's level",
-    blurb: "Controls one lane of a story. These settings belong to the lane, not to the clips on it.",
+    blurb: "Controls one lane of a story. These settings belong to the lane; the clips on it keep their own.",
     group: "arrangement",
     args: [
       { name: "story_id", type: "string", required: true },

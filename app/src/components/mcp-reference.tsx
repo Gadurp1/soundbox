@@ -81,7 +81,7 @@ export function McpConnect({ origin }: { origin: string }) {
       title="Connect an MCP client"
       intro={
         <>
-          The MCP server runs inside the main Soundbox process at <C>{origin}/mcp</C> — there is no
+          The MCP server runs inside the main Soundbox process at <C>{origin}/mcp</C>. There is no
           second daemon to start, but this app must be running for any of it to work.
         </>
       }
@@ -89,8 +89,7 @@ export function McpConnect({ origin }: { origin: string }) {
       <Note>
         Before connecting a client, install at least one model on the{" "}
         <strong className="text-foreground">Models</strong> page. An agent calling{" "}
-        <C>soundbox.generate</C> with nothing installed gets an error telling the user to go there
-        — which is correct behaviour, but a poor first impression.
+        <C>soundbox.generate</C> with nothing installed gets an error telling the user to go there.
       </Note>
 
       <Tabs defaultValue="claude-code">
@@ -120,7 +119,7 @@ export function McpConnect({ origin }: { origin: string }) {
                 code={`claude mcp add --transport http soundbox ${origin}/mcp`}
                 label="Copy the claude mcp add command"
               />
-              Add <C>--scope user</C> to make it available in every project rather than just this
+              Add <C>--scope user</C> to make it available in every project instead of only this
               one.
             </li>
             <li>
@@ -128,7 +127,7 @@ export function McpConnect({ origin }: { origin: string }) {
               <C>connected</C>, with its {MCP_TOOLS.length} tools.
             </li>
             <li>
-              Ask for a sound in plain language — “make me a heavy wooden door slam for my game”.
+              Ask for a sound in plain language, e.g. “make me a heavy wooden door slam for my game”.
               Claude Code will ask to run <C>soundbox.generate</C>; approve it, and the reply comes
               back with a file path.
             </li>
@@ -144,13 +143,13 @@ export function McpConnect({ origin }: { origin: string }) {
             <li>Leave Soundbox running.</li>
             <li>
               In Claude Desktop, open <strong>Settings → Developer → Edit Config</strong>. That
-              opens <C>claude_desktop_config.json</C> — on Windows in{" "}
+              opens <C>claude_desktop_config.json</C>: on Windows in{" "}
               <C>%APPDATA%\Claude\</C>, on macOS in{" "}
               <C>~/Library/Application Support/Claude/</C>.
             </li>
             <li>
               Merge this into the file. If <C>mcpServers</C> already exists, add the{" "}
-              <C>soundbox</C> key to it rather than replacing the object.
+              <C>soundbox</C> key to it; do not replace the object.
               <CopyBlock
                 className="mt-2"
                 code={httpConfig}
@@ -159,8 +158,8 @@ export function McpConnect({ origin }: { origin: string }) {
               />
             </li>
             <li>
-              Quit Claude Desktop completely and reopen it — config is read at startup, and closing
-              the window is not quitting on either platform.
+              Quit Claude Desktop completely and reopen it. Config is read at startup, and closing
+              the window does not quit the app on either platform.
             </li>
             <li>
               Open a new chat and check the tools indicator in the composer: all{" "}
@@ -168,16 +167,16 @@ export function McpConnect({ origin }: { origin: string }) {
             </li>
           </ol>
           <Note>
-            If Soundbox does not appear, the config file is the first thing to check — a trailing
-            comma or a duplicated <C>mcpServers</C> key makes the whole file unparseable and every
-            server disappears at once, not just this one.
+            If Soundbox does not appear, check the config file first. A trailing comma or a
+            duplicated <C>mcpServers</C> key makes the whole file unparseable, and every server
+            in it disappears.
           </Note>
         </TabsContent>
 
         <TabsContent value="http" className="mt-3 min-w-0 space-y-3">
           <p className="text-muted-foreground text-sm">
-            Cursor, Windsurf, Zed and most other clients accept a streamable-HTTP server directly —
-            no extra process to run. The key name and file location differ per client; the value is
+            Cursor, Windsurf, Zed and most other clients accept a streamable-HTTP server directly,
+            with no extra process to run. The key name and file location differ per client; the value is
             the same.
           </p>
           <CopyBlock code={httpConfig} language="json" label="Copy the HTTP MCP config" />
@@ -191,15 +190,14 @@ export function McpConnect({ origin }: { origin: string }) {
         <TabsContent value="stdio" className="mt-3 min-w-0 space-y-3">
           <p className="text-muted-foreground text-sm">
             For clients that only speak stdio. The bridge is a thin proxy onto the running server:
-            it loads no models, so you never end up with two copies of a diffusion model fighting
-            over one GPU.
+            it loads no models, so two copies of a diffusion model never compete for one GPU.
           </p>
           <CopyBlock code={stdioConfig} language="json" label="Copy the stdio bridge config" />
           <Note>
             <C>SOUNDBOX_URL</C> tells the bridge where the server is; it defaults to{" "}
             <C>http://127.0.0.1:17494</C> and only needs setting if you moved the port. The path in{" "}
             <C>args</C> must be absolute, and must be the built{" "}
-            <C>server/dist/mcp/stdio.js</C> — the Agents page prints it with the path already
+            <C>server/dist/mcp/stdio.js</C>. The Agents page prints it with the path already
             resolved for this install.
           </Note>
         </TabsContent>
@@ -231,7 +229,7 @@ export function McpTools() {
     <DocSection
       id="mcp-tools"
       title="The tools"
-      intro="What an agent sees once connected — sounds first, then speech, then the script and timeline that hold it all together."
+      intro="What an agent sees once connected: sounds first, then speech, then the script and timeline."
     >
       {MCP_TOOL_GROUPS.map((group) => (
         <DocSubsection key={group.id} id={`mcp-tools-${group.id}`} title={group.title}>
@@ -284,15 +282,14 @@ export function McpTools() {
       <Note>
         Every sound-shaped result carries <C>path</C>: an{" "}
         <strong className="text-foreground">absolute filesystem path</strong> to the WAV on this
-        machine. That is the whole point of these tools returning structured results — the agent can
-        hand one straight to ffmpeg, copy it into a game project's assets folder, or attach it,
-        without knowing anything about the Soundbox server or its HTTP port.
+        machine. The agent can hand it straight to ffmpeg, copy it into a game project's assets
+        folder, or attach it, without knowing anything about the Soundbox server or its HTTP port.
       </Note>
 
       <Note>
-        Generation is serialised — one GPU, one job at a time — so five parallel{" "}
-        <C>soundbox.generate</C> calls queue rather than run together. Prefer <C>variations</C> for
-        several takes of one idea. And if no model is installed, <C>generate</C> returns an
+        Generation is serialised (one GPU, one job at a time), so five parallel{" "}
+        <C>soundbox.generate</C> calls queue and run one after another. Use <C>variations</C> for
+        several takes of one idea. If no model is installed, <C>generate</C> returns an
         actionable error naming the Models screen: surface it, do not retry.
       </Note>
     </DocSection>
@@ -328,7 +325,7 @@ export function McpWorkedExample() {
       <div className="bg-card min-w-0 space-y-4 rounded-lg border p-4">
         <Turn role="You">
           <p className="text-foreground">
-            “Make me a door slam for my game — heavy wooden door, stone corridor. Put it in{" "}
+            “Make me a door slam for my game: heavy wooden door, stone corridor. Put it in{" "}
             <C>assets/audio/</C> as a 48k mono wav.”
           </p>
         </Turn>
@@ -336,7 +333,7 @@ export function McpWorkedExample() {
         <Turn role="Agent">
           <p className="text-muted-foreground">
             Checks the library first, finds nothing close, and calls the generate tool. It writes a
-            physical description rather than repeating your words back — material, action, space.
+            physical description of material, action and space instead of repeating your words back.
           </p>
         </Turn>
 
@@ -379,7 +376,7 @@ export function McpWorkedExample() {
 
         <Turn role="Agent">
           <p className="text-muted-foreground">
-            The <C>path</C> is absolute, so the next step is ordinary file work — no HTTP, no
+            The <C>path</C> is absolute, so the next step is ordinary file work, with no HTTP and no
             knowledge of the Soundbox port. It converts to the format the project wants and drops it
             in:
           </p>
@@ -398,10 +395,9 @@ export function McpWorkedExample() {
       </div>
 
       <Note>
-        Nothing above is Soundbox-specific plumbing on the agent's side: it called a tool, got JSON
-        with a path, and used its normal file tools. That is the reason <C>path</C> is in the
-        result at all — a URL relative to a server the agent is not speaking to would have made this
-        turn three steps longer.
+        The agent needed no Soundbox-specific code: it called a tool, got JSON with a path, and
+        used its normal file tools. A URL relative to the Soundbox server would have made this turn
+        three steps longer.
       </Note>
     </DocSection>
   );
@@ -414,11 +410,11 @@ export function McpDebugging({ origin }: { origin: string }) {
     <DocSection
       id="mcp-debug"
       title="Debugging your MCP connection"
-      intro="In rough order of how often each one turns out to be the problem."
+      intro="Roughly in order of how often each one is the problem."
     >
       <ol className="ml-4 min-w-0 list-decimal space-y-4 text-sm marker:text-muted-foreground">
         <li>
-          <strong className="text-foreground">Is the server up?</strong> The MCP endpoint lives
+          <strong className="text-foreground">Check the server is up.</strong> The MCP endpoint lives
           inside this app's process, so if Soundbox is closed there is nothing to connect to.
           <CopyBlock
             className="mt-2"
@@ -427,8 +423,8 @@ export function McpDebugging({ origin }: { origin: string }) {
           />
         </li>
         <li>
-          <strong className="text-foreground">Is /mcp reachable?</strong> A bare GET is not a valid
-          MCP request, but the status code still tells you what you need: <C>405</C> or <C>400</C>{" "}
+          <strong className="text-foreground">Check /mcp is reachable.</strong> A bare GET is not a
+          valid MCP request, but the status code tells you what you need: <C>405</C> or <C>400</C>{" "}
           means the endpoint is there and speaking MCP, <C>404</C> means it is not mounted, and
           connection-refused means the port is wrong.
           <CopyBlock
@@ -440,7 +436,7 @@ export function McpDebugging({ origin }: { origin: string }) {
         <li>
           <strong className="text-foreground">Inspect it directly.</strong> MCP Inspector connects
           to a server without any client in the way, lists its tools and lets you invoke one with
-          arguments you choose — which separates “the server is broken” from “my client's config is
+          arguments you choose. That tells “the server is broken” apart from “my client's config is
           wrong” in about a minute.
           <CopyBlock
             className="mt-2"
@@ -454,12 +450,11 @@ export function McpDebugging({ origin }: { origin: string }) {
           </p>
         </li>
         <li>
-          <strong className="text-foreground">Getting 421 Misdirected Request?</strong> The MCP SDK
+          <strong className="text-foreground">421 Misdirected Request.</strong> The MCP SDK
           arms DNS-rebinding protection with a localhost-only host allowlist. That is right for a
-          local app, but it rejects requests arriving under any other hostname — which is what
+          local app, but it rejects requests arriving under any other hostname. That
           happens if you bound the server to <C>0.0.0.0</C> and connect by LAN address or container
-          name. Set <C>SOUNDBOX_ALLOWED_HOSTS</C> to a comma-separated list of the hosts you
-          actually use.
+          name. Set <C>SOUNDBOX_ALLOWED_HOSTS</C> to a comma-separated list of the hosts you use.
         </li>
         <li>
           <strong className="text-foreground">Check the URL has no trailing slash</strong> and that
@@ -467,13 +462,13 @@ export function McpDebugging({ origin }: { origin: string }) {
           POST fail in a confusing way otherwise.
         </li>
         <li>
-          <strong className="text-foreground">Using the stdio bridge?</strong> It proxies to a
-          running server rather than replacing it, so both must be up. If the server is not on the
-          default port, set <C>SOUNDBOX_URL</C> in the client's <C>env</C> block —{" "}
-          <C>{origin}</C> for this instance.
+          <strong className="text-foreground">stdio bridge.</strong> The bridge proxies to a
+          running server, so both must be up. If the server is not on the
+          default port, set <C>SOUNDBOX_URL</C> in the client's <C>env</C> block{" "}
+          (<C>{origin}</C> for this instance).
         </li>
         <li>
-          <strong className="text-foreground">Still stuck?</strong> The server log records every
+          <strong className="text-foreground">Read the server log.</strong> It records every
           connection and job. The Activity page in this app shows the tail of it, and{" "}
           <C>GET /api/logs?lines=200</C> returns the same thing as JSON.
         </li>

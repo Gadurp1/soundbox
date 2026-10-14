@@ -117,7 +117,7 @@ export function DocSearch() {
 
       {missing && term.trim().length >= 2 && (
         <p className="text-muted-foreground mt-1.5 text-xs leading-snug">
-          Search is built with the site — run <code>npm run site:build</code> to try it
+          Search is built with the site. Run <code>npm run site:build</code> to try it
           locally.
         </p>
       )}
@@ -125,7 +125,7 @@ export function DocSearch() {
       {hits !== null && (
         <div className="border-border bg-popover absolute top-full right-0 left-0 z-30 mt-1 max-h-96 overflow-y-auto rounded-xl border p-1 shadow-lg">
           {hits.length === 0 ? (
-            <p className="text-muted-foreground px-2 py-3 text-sm">Nothing matches that.</p>
+            <p className="text-muted-foreground px-2 py-3 text-sm">No matches.</p>
           ) : (
             hits.map((hit) => (
               <a

@@ -219,10 +219,10 @@ function ModelBody({ model }: { model: ModelContent }) {
             }
           />
           <SpecRow
-            label="Gated upstream"
+            label="Account needed to download"
             value={
               model.license.gated === "yes"
-                ? "Yes — accept the terms with your own account"
+                ? "Yes: accept the terms with your own Hugging Face account"
                 : model.license.gated === "no"
                   ? "No"
                   : "Could not be confirmed"
@@ -285,9 +285,8 @@ function ModelBody({ model }: { model: ModelContent }) {
           )}
           {model.license.gated === "yes" && (
             <li>
-              The upstream weights are gated. Accept the terms on your own Hugging Face account
-              and add an access token in Settings first — Soundbox will not and cannot do that on
-              your behalf.
+              The download is gated. Accept the terms on your own Hugging Face account and add an
+              access token in Settings first. Soundbox cannot accept terms on your behalf.
             </li>
           )}
         </ul>

@@ -144,22 +144,22 @@ const STEPS: StageStep[] = [
   {
     title: "Lyrics are a separate input",
     detail:
-      "On a lyrics-conditioned model the prompt sets genre and production, and the lyrics are what gets sung. Some models refuse to run without them at all — MiniMax Music 3 among them — so Soundbox sends an explicit [instrumental] marker when you give none, rather than surfacing an error you can do nothing about.",
+      "On a lyrics-conditioned model the prompt sets genre and production, and the lyrics are what gets sung. Some models, MiniMax Music 3 among them, refuse to run without lyrics. When you give none, Soundbox sends an explicit [instrumental] marker so the job runs instead of failing.",
   },
   {
     title: "The render",
     detail:
-      "One file, credited to the model that made it. Every track on this page carries the exact prompt that produced it, so the render is reproducible rather than a screenshot.",
+      "One file, credited to the model that made it. Every track on this page carries the exact prompt that produced it, so you can reproduce the render.",
   },
   {
     title: "Split it back into stems",
     detail:
-      "Separation is its own task mode, not a kind of generation. htdemucs emits four stems — vocals, drums, bass and other — and it requires exactly 44.1 kHz, so the source is resampled before it runs.",
+      "Separation is a task mode of its own, separate from generation. htdemucs emits four stems (vocals, drums, bass and other) and requires exactly 44.1 kHz, so the source is resampled before it runs.",
   },
   {
     title: "Or take the stems into the studio",
     detail:
-      "Four stems are four clips on four lanes. From there they move, trim and layer against anything else in the timeline — a mix becomes parts, and the parts become an arrangement.",
+      "The four stems become four clips on four lanes. From there you can move, trim and layer them against anything else in the timeline.",
   },
 ];
 
@@ -242,7 +242,7 @@ export function RevealMusicFlow() {
         <>
           Two models, split by one capability: Stable Audio 3.0 Small Music has no vocal path,
           so it makes the instrumentals; ACE-Step takes lyrics, so it makes the sung tracks.
-          Pick a path in the panel and the rest of it follows — both models are listed on{" "}
+          Pick a path in the panel and the rest of it follows. Both models are listed on{" "}
           <Link to="/models" className="text-foreground underline underline-offset-4">
             the model page
           </Link>
@@ -256,7 +256,7 @@ export function RevealMusicFlow() {
     >
       {(_progress, step) => (
         <figure className="border-border/60 bg-card/80 overflow-hidden rounded-xl border shadow-sm">
-          <WindowChrome label="Sound — music, from a prompt to an arrangement" />
+          <WindowChrome label="Sound: music, from a prompt to an arrangement" />
 
           <div className="p-4 sm:p-5">
             {/* The toggle stays on screen for every step, because what it
@@ -288,8 +288,8 @@ export function RevealMusicFlow() {
 
             <p className="text-muted-foreground mt-2 text-[11px] leading-relaxed">
               {mode === "instrumental"
-                ? "Stable Audio 3.0 Small Music — no lyrics field, because the model has no vocal path."
-                : "ACE-Step 1.5 Turbo — lyrics-conditioned, so the words are their own input."}
+                ? "Stable Audio 3.0 Small Music: no lyrics field, because the model has no vocal path."
+                : "ACE-Step 1.5 Turbo: lyrics-conditioned, so the words are their own input."}
             </p>
 
             {/* One fixed-height stage for every step. Four stem rows are taller

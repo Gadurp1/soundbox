@@ -66,12 +66,12 @@ const FAQS: { question: string; answer: string }[] = [
   {
     question: "Which clients work with it?",
     answer:
-      "Anything that speaks MCP. Claude Code takes the HTTP URL as a single command; Claude Desktop, Cursor and the rest take a JSON config block with the same URL. Clients that only speak stdio can use the bundled stdio bridge, which proxies onto the running server rather than loading models itself.",
+      "Anything that speaks MCP. Claude Code takes the HTTP URL as a single command; Claude Desktop, Cursor and the rest take a JSON config block with the same URL. Clients that only speak stdio can use the bundled stdio bridge, which proxies onto the running server and loads no models itself.",
   },
   {
     question: "Do I need an API key?",
     answer:
-      "No. There is no key to mint and no account to create, because there is no auth and no cloud — the server listens on 127.0.0.1 and the agent is on the same machine. Over HTTP there is nothing to install on the agent's side at all.",
+      "No. There is no key and no account, because there is no auth and no cloud: the server listens on 127.0.0.1 and the agent runs on the same machine. Over HTTP there is nothing to install on the agent's side.",
   },
   {
     question: "What does it cost per generation?",
@@ -81,27 +81,27 @@ const FAQS: { question: string; answer: string }[] = [
   {
     question: "How long does a generation take?",
     answer:
-      "Seconds to a minute, depending on the model and the length of the clip. The tool call blocks until the audio is written to disk, so the agent gets a finished file rather than a job id to poll.",
+      "Seconds to a minute, depending on the model and the length of the clip. The tool call blocks until the audio is written to disk, so the agent receives a finished file and has no job id to poll.",
   },
   {
     question: "Can I use the output commercially?",
     answer:
-      "That depends on the model, and Soundbox tells you which. Every model's licence is stated on its page, and the list_models tool reports commercial_use as yes, no or conditional — so an agent working on something commercial can check before it generates rather than after you ship.",
+      "It depends on the model. Each model's licence is stated on its page, and the list_models tool reports commercial_use as yes, no or conditional, so an agent working on something commercial can check before it generates.",
   },
   {
     question: "Does anything leave my machine?",
     answer:
-      "Not for local models. The weights are on your disk, the inference runs on your GPU, and the WAV is written to your filesystem. There is an opt-in cloud catalogue for hosted models, and it is guarded twice over: no cloud model is enabled until you enable that exact model, and even once enabled an agent can never fall back to one — it has to name it. A generation that costs money cannot happen by accident.",
+      "No. The weights are on your disk, the inference runs on your machine, and the WAV is written to your filesystem.",
   },
   {
     question: "Can I use it with my own agent?",
     answer:
-      "Yes. Any MCP client can connect over HTTP with the same URL — there is nothing Claude-specific about the server. If you would rather not speak MCP at all, the same local server exposes an HTTP API you can call directly.",
+      "Yes. Any MCP client can connect over HTTP with the same URL; nothing in the server is Claude-specific. To skip MCP, call the HTTP API that the same local server exposes.",
   },
   {
     question: "Do I need to keep the app open?",
     answer:
-      "Yes. The MCP server runs inside the main Soundbox process, so there is no separate daemon to start — if the app is running, the surface is up. If it is not, the tools return an actionable error instead of silently starting a second copy and fighting over the GPU.",
+      "Yes. The MCP server runs inside the main Soundbox process, so there is no separate daemon to start. If the app is running, the tools are available. If it is not, the tools return an actionable error; they do not start a second copy that would compete for the GPU.",
   },
 ];
 
@@ -192,16 +192,16 @@ function ExampleTranscript() {
             </div>
           </div>
           <p className="text-sm leading-relaxed">
-            Done — <C>assets/audio/vault-door.wav</C>, 3 seconds, referenced from the door's
+            Done: <C>assets/audio/vault-door.wav</C>, 3 seconds, referenced from the door's
             interact handler.
           </p>
         </div>
       </div>
 
       <figcaption className="text-muted-foreground border-border/70 border-t pt-3 text-xs leading-relaxed">
-        The second step is an ordinary shell copy, not another tool call, because the first step
-        returned a path on the same disk. The wording either side of the calls is written for the
-        illustration; the call and its result shape are real.
+        The second step is an ordinary shell copy, because the first step returned a path on the
+        same disk. The chat wording is written for this illustration; the call and its result
+        shape are real.
       </figcaption>
     </figure>
   );
@@ -213,8 +213,8 @@ export function McpPage() {
   return (
     <div className="bg-background text-foreground min-h-svh">
       <SeoHead
-        title="Soundbox MCP — a local sound studio for your agent"
-        description="Connect Claude Code, Claude Desktop, Cursor or any MCP client to Soundbox in one line. Sound effects, music and speech generated on your own GPU, returned as absolute file paths. No API key, no account, no per-generation billing."
+        title="MCP server for local sound generation | Soundbox"
+        description="Connect Claude Code, Claude Desktop, Cursor or any MCP client to Soundbox in one line. Sound effects, music and speech are generated on your own GPU and returned as absolute file paths. No API key, no account, no per-generation billing."
         path="/mcp"
         jsonLd={[faqJsonLd(FAQS)]}
       />
@@ -229,10 +229,11 @@ export function McpPage() {
             A local sound studio your agent can call
           </h1>
           <p className="text-muted-foreground mt-4 max-w-2xl leading-relaxed text-pretty sm:text-lg">
-            Soundbox runs an MCP server inside its own process, so the agent already writing your
-            code can generate the sound effects, music and speech that go with it — on your GPU,
-            from open-weight models, returning absolute paths to WAVs on your own disk. There is no
-            cloud in the loop, so there is no key, no account and no per-generation bill.
+            Soundbox runs an MCP server inside its own process, so the agent writing your code can
+            also generate the sound effects, music and speech that go with it. Generation runs on
+            your GPU from open-weight models, and the tools return absolute paths to WAVs on your
+            disk. No cloud service is involved, so there is no key, no account and no
+            per-generation bill.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-1.5">
@@ -258,7 +259,7 @@ export function McpPage() {
           </h2>
           <p className="text-muted-foreground mt-3 max-w-2xl leading-relaxed">
             The MCP server runs inside the main Soundbox process. There is no separate daemon to
-            start: if the app is running, the surface is up.
+            start: if the app is running, the server is up.
           </p>
 
           <ol className="mt-8 space-y-8">
@@ -267,8 +268,8 @@ export function McpPage() {
               title="Start Soundbox"
             >
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Install it and run it — the full walkthrough, including downloading model weights,
-                is in <Link to="/docs/install" className="text-primary underline underline-offset-4">the install guide</Link>.
+                Install and run it. The full walkthrough, including downloading model weights, is
+                in <Link to="/docs/install" className="text-primary underline underline-offset-4">the install guide</Link>.
                 The server listens on <C>127.0.0.1:17494</C>.
               </p>
             </Step>
@@ -282,8 +283,8 @@ export function McpPage() {
                 label="Copy the claude mcp add command"
               />
               <p className="text-muted-foreground text-sm leading-relaxed">
-                In anything that takes a JSON config file — Claude Desktop, Cursor and the rest —
-                it is the same URL:
+                Clients that take a JSON config file, such as Claude Desktop and Cursor, use the
+                same URL:
               </p>
               <CopyBlock
                 code={CLIENT_JSON}
@@ -291,15 +292,14 @@ export function McpPage() {
                 label="Copy the MCP client config"
               />
               <Note>
-                Note the missing trailing slash: Soundbox rewrites <C>/mcp</C> onto the mounted path
-                internally rather than answering a POST with a redirect, so the URL you paste is the
-                URL that works.
+                The URL has no trailing slash. Soundbox rewrites <C>/mcp</C> onto the mounted path
+                internally and does not answer a POST with a redirect, so the URL works as pasted.
               </Note>
             </Step>
 
             <Step n={3} title="Ask for a sound">
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Nothing else to configure. Say what you want in the conversation you are already in:
+                There is nothing else to configure. Ask in your current conversation:
               </p>
               <CopyBlock
                 code="Generate a heavy wooden door slamming in a stone corridor, about 3 seconds, and put it in assets/audio/."
@@ -311,9 +311,8 @@ export function McpPage() {
 
           <div className="mt-8">
             <Note>
-              There is no key to mint and no account to create, because there is no auth and no
-              cloud. The agent and the server are on the same machine, talking over a loopback
-              socket.
+              There is no key and no account, because there is no auth and no cloud. The agent and
+              the server run on the same machine and talk over a loopback socket.
             </Note>
           </div>
         </section>
@@ -325,10 +324,8 @@ export function McpPage() {
           </h2>
           <p className="text-muted-foreground mt-3 leading-relaxed">
             Every result from <C>soundbox.generate</C> carries an absolute filesystem path to a WAV
-            on your own disk. Not a base64 blob the agent has to decode, not a signed URL that
-            expires, not an id it has to exchange for bytes in a second call. That difference sounds
-            cosmetic until you watch an agent use it: with a path, the next move is ordinary shell
-            work it is already good at.
+            on your disk. The agent has no base64 to decode, no signed URL that expires, and no id
+            to exchange for bytes in a second call. Its next step is ordinary shell work:
           </p>
           <div className="mt-4">
             <CopyBlock
@@ -337,8 +334,8 @@ export function McpPage() {
             />
           </div>
           <p className="text-muted-foreground mt-4 leading-relaxed">
-            A local tool talking to a local agent over a local socket has a filesystem in common.
-            Soundbox uses it.
+            This works because the agent and Soundbox run on the same machine and share a
+            filesystem.
           </p>
         </section>
 
@@ -346,8 +343,7 @@ export function McpPage() {
         <section className="mt-16 border-t pt-12">
           <h2 className="font-heading text-2xl font-semibold tracking-tight">A worked example</h2>
           <p className="text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-            One turn, one tool call, one file. This is what the exchange looks like from the seat
-            you are already sitting in.
+            One turn with one tool call, producing one file, as it appears in your agent's chat.
           </p>
           <div className="mt-6">
             <ExampleTranscript />
@@ -419,9 +415,9 @@ export function McpPage() {
             The models it reaches
           </h2>
           <p className="text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-            Soundbox doesn't train models — it runs real, open-weight ones locally. The licence is
-            stated per model, before you download it, because the output is yours and what you may
-            do with it is the model's terms, not ours. <C>list_models</C> reports the same thing as{" "}
+            Soundbox runs open-weight models locally and does not train its own. Each model's
+            licence is shown before you download it. The output is yours, and the model's terms
+            govern what you may do with it. <C>list_models</C> reports the same thing as{" "}
             <C>commercial_use</C>, so an agent can check before it generates.
           </p>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2">

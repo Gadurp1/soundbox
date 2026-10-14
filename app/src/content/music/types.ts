@@ -81,6 +81,6 @@ export const MUSIC_MODEL_LICENSES: Record<MusicModelId, { name: string; note: st
   },
   "audiocpp-ace-step": {
     name: "Apache 2.0",
-    note: "Listed as Apache 2.0 in the catalogue, flagged unverified there — read the model card before shipping output commercially.",
+    note: "Listed as Apache 2.0 in the catalogue and flagged unverified there. Read the model card before shipping output commercially.",
   },
 };

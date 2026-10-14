@@ -46,11 +46,10 @@ export function BlogIndexPage() {
         <header className="mb-10">
           <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">Blog</p>
           <h1 className="font-heading mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            What we are building, and why
+            Soundbox blog
           </h1>
           <p className="text-muted-foreground mt-4 max-w-2xl leading-relaxed text-pretty sm:text-lg">
-            Notes on the engine, the models and the craft of prompting them. Written by the people
-            who had to make it work.
+            Notes on the engine, the models and how to prompt them.
           </p>
         </header>
 

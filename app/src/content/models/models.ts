@@ -61,7 +61,7 @@ const gh = (path: string, label?: string): ModelLink => ({
  *  the *converted GGUF we actually download* claims, which is a different
  *  claim from the upstream rights-holder's. */
 const GGUF_TABLE: ModelLink = {
-  label: "audio.cpp GGUF table — licence per converted package",
+  label: "audio.cpp GGUF table: licence per converted package",
   href: "https://huggingface.co/audio-cpp/audio.cpp-gguf",
 };
 
@@ -87,11 +87,11 @@ function apache2(sources: ModelLink[], output?: string): LicenseFinding {
     name: "Apache License 2.0",
     commercial: "yes",
     summary:
-      "Apache-2.0. Commercial use is permitted outright, with no revenue cap and no research-only carve-out. You must keep the copyright and licence notices when you redistribute the weights themselves.",
+      "Apache-2.0. Commercial use is permitted, with no revenue cap and no research-only carve-out. Keep the copyright and licence notices when you redistribute the weights.",
     conditions: [],
     output:
       output ??
-      "Apache-2.0 says nothing about generated output and asserts no rights over it. The audio you make is yours as far as this licence is concerned — which is not the same as saying it is free of every other claim.",
+      "Apache-2.0 says nothing about generated output and asserts no rights over it. As far as this licence goes, the audio you make is yours. That does not clear it of claims from other sources.",
     gated: "no",
     sources: [...sources, APACHE_TEXT, GGUF_TABLE],
     readByUs: true,
@@ -121,15 +121,15 @@ const STABILITY_COMMUNITY: LicenseFinding = {
   name: "Stability AI Community License Agreement",
   commercial: "conditional",
   summary:
-    "Free to use commercially — including selling what you make — while you or your organisation are under USD $1,000,000 in annual revenue. Above that you need an Enterprise licence from Stability AI. Note the threshold is measured against your total annual revenue, not just revenue from the model.",
+    "Commercial use, including selling what you make, is free while you or your organisation have under USD $1,000,000 in annual revenue. Above that you need an Enterprise licence from Stability AI. The threshold applies to your total annual revenue from all sources.",
   conditions: [
     'Section III: "If at any time You or Your Affiliate(s), either individually or in aggregate, generate more than USD $1,000,000 in annual revenue" you must obtain an Enterprise License.',
-    "The weights are gated on Hugging Face: you accept the terms with your own account and supply your own access token. Soundbox cannot and will not do that for you.",
-    "The models embed a pre-trained T5Gemma text encoder redistributed under the Gemma Terms of Use, which you accept as part of the same gate. The Gemma terms were not reviewed for this page, so what they add is not documented here.",
+    "Stability's original weights are gated on Hugging Face. Soundbox downloads audio.cpp's GGUF conversion from an ungated repo, so you need no Hugging Face account or token. The licence still applies to the GGUF weights.",
+    "The models embed a pre-trained T5Gemma text encoder redistributed under the Gemma Terms of Use, which also apply however you obtain the weights. The Gemma terms were not reviewed for this page, so what they add is not documented here.",
   ],
   output:
-    'Separate clause, and a favourable one. Section IV(c)(iii): "As between You and Stability AI, You own any outputs generated from the Models or Derivative Works to the extent permitted by applicable law." Stability\'s own FAQ says you may therefore use those outputs at your discretion. Output ownership is not written as depending on the $1M threshold — the threshold governs your right to run the model. That last sentence is a reading of the two clauses together, not something the licence states in those words.',
-  gated: "yes",
+    'Output is covered by a separate clause, in your favour. Section IV(c)(iii): "As between You and Stability AI, You own any outputs generated from the Models or Derivative Works to the extent permitted by applicable law." Stability\'s FAQ says you may therefore use those outputs at your discretion. The ownership clause does not mention the $1M threshold; the threshold governs your right to run the model. That reading combines the two clauses; the licence does not state it in those words.',
+  gated: "no",
   sources: [
     { label: "Stability AI licence FAQ (the $1M figure)", href: "https://stability.ai/license" },
     {
@@ -147,10 +147,10 @@ const ACE_STEP_MIT: LicenseFinding = {
   name: "MIT License",
   commercial: "yes",
   summary:
-    "MIT, and unusually clean for a music model. Commercial use permitted with no threshold. The project also states its training data was licensed, royalty-free, public-domain or synthetic, which is the question that actually bites with music generators — though that is a claim on the model card, not a term of the licence.",
+    "MIT. Commercial use permitted with no threshold. The project also states its training data was licensed, royalty-free, public-domain or synthetic. Training data is the usual licensing problem with music generators, and this statement is a claim on the model card, not a term of the licence.",
   conditions: [],
   output:
-    "MIT contains no output clause. The model card asserts generated music may be used commercially; treat that as the publisher's stated intent rather than a contractual grant, because there is no separate output-terms document to rely on.",
+    "MIT contains no output clause. The model card says generated music may be used commercially. Treat that as the publisher's stated intent. It is not a contractual grant, and there is no separate output-terms document.",
   gated: "no",
   sources: [
     {
@@ -162,14 +162,14 @@ const ACE_STEP_MIT: LicenseFinding = {
   ],
   readByUs: true,
   correction:
-    'The shipped catalog entry says "Apache-2.0 (unverified)". That is wrong on both counts: the LICENSE file in ace-step/ACE-Step-1.5 is MIT, and it is now verified. Both are permissive and permit commercial use, so nobody was misled about what they could do — but the name was incorrect, and the 1.5 models live in the ACE-Step-1.5 repo, not the older ace-step/ACE-Step one the shipped catalog links to.',
+    'The shipped catalog entry says "Apache-2.0 (unverified)". That is wrong on both counts: the LICENSE file in ace-step/ACE-Step-1.5 is MIT, and it is now verified. Both licences permit commercial use, so the practical answer was right, but the name was wrong. The shipped catalog also links to the older ace-step/ACE-Step repo; the 1.5 models live in ace-step/ACE-Step-1.5.',
 };
 
 /** Qwen3 TTS, all four variants: same licence, verified per-repo. */
 function qwen3Tts(repo: string): LicenseFinding {
   return apache2(
     [hf(repo), gh("QwenLM/Qwen3", "Qwen3 upstream project")],
-    "Apache-2.0 claims nothing over output. The Qwen3 TTS cards carry no acceptable-use policy and no voice-cloning consent clause at all, which means obtaining consent for any reference voice you supply is entirely your own responsibility rather than a licence condition.",
+    "Apache-2.0 claims nothing over output. The Qwen3 TTS cards carry no acceptable-use policy and no voice-cloning consent clause. Getting consent for any reference voice you supply is your responsibility; no licence term covers it.",
   );
 }
 
@@ -180,23 +180,23 @@ function pocketTts(language: string): LicenseFinding {
     name: "CC-BY-4.0 (weights) + MIT (code)",
     commercial: "conditional",
     summary:
-      "The weights are CC-BY-4.0 and the code is MIT, so commercial use is permitted with attribution. Two things complicate it: the upstream repo is gated (auto-approved, but you accept prohibited-use terms to get the files), and the bundled speaker voices carry their own separate licences.",
+      "The weights are CC-BY-4.0 and the code is MIT, so commercial use is permitted with attribution. Two things complicate it: Kyutai's original repo is gated behind prohibited-use terms (Soundbox downloads an ungated GGUF conversion, so you do not see that prompt), and the bundled speaker voices carry their own separate licences.",
     conditions: [
       "Attribution, per CC-BY-4.0.",
-      'The gate prompt prohibits "voice impersonation or cloning without explicit and lawful consent", and misinformation or deception including presenting generated audio as a genuine recording. Kyutai disclaims all liability for non-compliant use.',
-      "The voices are licensed separately from the model. Kyutai's kyutai/tts-voices repo is per-collection: voice-zero and voice-donations are CC0, vctk and cml-tts are CC-BY-4.0, but expresso and ears are CC-BY-NC-4.0 — non-commercial. Which collection a given speaker id comes from decides whether your use is commercial-safe.",
+      'The upstream Kyutai gate prompt prohibits "voice impersonation or cloning without explicit and lawful consent", and misinformation or deception including presenting generated audio as a genuine recording. Kyutai disclaims all liability for non-compliant use.',
+      "The voices are licensed separately from the model. Kyutai's kyutai/tts-voices repo is per-collection: voice-zero and voice-donations are CC0, vctk and cml-tts are CC-BY-4.0, but expresso and ears are CC-BY-NC-4.0 (non-commercial). Which collection a given speaker id comes from decides whether your use is commercial-safe.",
     ],
     output:
       "No output-ownership clause and no watermarking statement found on the model card. No output terms could be confirmed either way.",
-    gated: "yes",
+    gated: "no",
     sources: [
       hf("kyutai/pocket-tts"),
       gh("kyutai-labs/pocket-tts"),
-      { label: "kyutai/tts-voices — per-collection voice licences", href: "https://huggingface.co/kyutai/tts-voices" },
+      { label: "kyutai/tts-voices: per-collection voice licences", href: "https://huggingface.co/kyutai/tts-voices" },
       GGUF_TABLE,
     ],
     readByUs: true,
-    correction: `The ${language} package's speaker ids (alba, cosette, eponine, fantine, javert, marius, peter_yearsley and the rest) look like public-domain LibriVox readers and Les Misérables characters, which would put them in the CC0 voice-zero collection. The per-name mapping could not be confirmed: the voice-zero collection is not a fetchable Hugging Face repo, and there is a separate CC-BY-4.0 "alba-mackenna" collection that muddies at least one of those names. Treat the individual voice licences as unconfirmed.`,
+    correction: `The ${language} package's speaker ids (alba, cosette, eponine, fantine, javert, marius, peter_yearsley and the rest) look like public-domain LibriVox readers and Les Misérables characters, which would put them in the CC0 voice-zero collection. The per-name mapping could not be confirmed: the voice-zero collection is not a fetchable Hugging Face repo, and there is a separate CC-BY-4.0 "alba-mackenna" collection that may cover at least one of those names. Treat the individual voice licences as unconfirmed.`,
   };
 }
 
@@ -205,10 +205,10 @@ function irodoriTts(repo: string): LicenseFinding {
   return {
     ...mit([hf(repo), gh("Aratako/Irodori-TTS")]),
     output:
-      "MIT claims nothing over output, but two card-level facts matter in practice: the VoiceDesign and v4 models embed SilentCipher invisible watermarks in what they generate, and the card notes a text-described voice can resemble a real person as a probabilistic artifact rather than by design. Neither is a licence term.",
+      "MIT claims nothing over output, but two card-level facts matter in practice: the VoiceDesign and v4 models embed SilentCipher invisible watermarks in what they generate, and the card notes a text-described voice can resemble a real person unintentionally, as a probabilistic artifact. Neither is a licence term.",
     conditions: [],
     summary:
-      "MIT, verified on the upstream repo and the model cards. Commercial use permitted with no threshold. The cards add an ethics section — no cloning a real person's voice without explicit consent, no deepfakes — which is stated intent, not a term of MIT.",
+      "MIT, verified on the upstream repo and the model cards. Commercial use permitted with no threshold. The cards add an ethics section (no cloning a real person's voice without explicit consent, no deepfakes). That is stated intent, not a term of MIT.",
   };
 }
 
@@ -217,7 +217,7 @@ function irodoriTts(repo: string): LicenseFinding {
 function dotsTts(repo: string): LicenseFinding {
   return apache2(
     [hf(repo), gh("studio-dots-ai/dots.tts")],
-    'Apache-2.0 asserts nothing over output. The card asks users not to impersonate, mislead or violate consent, and to disclose synthetic audio — advisory, not a licence condition.',
+    'Apache-2.0 asserts nothing over output. The card asks users not to impersonate, mislead or violate consent, and to disclose synthetic audio. These requests are advisory, not licence conditions.',
   );
 }
 
@@ -238,12 +238,12 @@ export const MODELS: ModelContent[] = [
     tier: "listed",
     verified: true,
     capabilities: ["generation"],
-    metaTitle: "Stable Audio 3.0 SFX — run it locally | Soundbox",
+    metaTitle: "Stable Audio 3.0 SFX, run locally | Soundbox",
     metaDescription:
       "Stability AI's sound-effect model, run through audio.cpp from a quantised GGUF: 44.1kHz stereo, ~2.5 GB VRAM, Stability Community License with a $1M revenue cap.",
     tagline: "The default sound-effect model: 44.1kHz stereo, eight steps, about 2.5 GB of VRAM.",
     distinctiveness:
-      "This is the model Soundbox reaches for first, and the one the prompting advice in the README is written against. Running it through audio.cpp's C++/ggml runtime from a quantised GGUF rather than through torch buys a much smaller footprint and removes the Python stack entirely; the cost is that the model reloads on every generation, so a batch of short clips pays that overhead each time. It answers to physical description — material, action, space — not to mood words.",
+      "Soundbox's default sound-effect model; the prompting advice in the README is written for it. It runs from a quantised GGUF on audio.cpp's C++/ggml runtime instead of torch, which gives a much smaller footprint and no Python stack. The cost is that the model reloads on every generation, so a batch of short clips pays that overhead on every clip. It responds to physical description (material, action, space), not to mood words.",
     spec: {
       vendor: "Stability AI",
       family: "stable_audio",
@@ -257,8 +257,8 @@ export const MODELS: ModelContent[] = [
     license: STABILITY_COMMUNITY,
     downloadSize: "~2 GB",
     quirks: [
-      "The upstream weights are gated. Accept Stability's terms on your own Hugging Face account and put an access token in Settings before Soundbox can download anything.",
-      "Defaults are 8 steps at CFG 1.0, and the catalog caps CFG at 3.0. This is a few-step model; pushing guidance hard makes it worse, not more literal.",
+      "Soundbox downloads audio.cpp's GGUF conversion from an ungated repo, so no Hugging Face account or token is needed. Stability's original weights are gated, and the Community License still applies to the GGUF.",
+      "Defaults are 8 steps at CFG 1.0, and the catalog caps CFG at 3.0. This is a few-step model; high guidance makes the output worse without making it follow the prompt more closely.",
       "No negative prompt. No family on the audio.cpp path exposes one, so the composer does not show that field for this model.",
     ],
     sources: [
@@ -280,12 +280,12 @@ export const MODELS: ModelContent[] = [
     tier: "listed",
     verified: true,
     capabilities: ["generation"],
-    metaTitle: "Stable Audio 3.0 Small Music — run it locally | Soundbox",
+    metaTitle: "Stable Audio 3.0 Small Music, run locally | Soundbox",
     metaDescription:
-      "The music-tuned sibling of Stable Audio 3.0 SFX: same loader, same GGUF repo, different fine-tune. Stability Community License, $1M revenue cap, gated weights.",
+      "The music-tuned sibling of Stable Audio 3.0 SFX: same loader, same GGUF repo, different fine-tune. Stability Community License, $1M revenue cap.",
     tagline: "Same loader and footprint as the SFX model, fine-tuned for music instead.",
     distinctiveness:
-      "Mechanically identical to the SFX entry — same stable_audio loader, same conversion repo, same 2.5 GB and same eight-step defaults — and different only in the fine-tune. Instrumental: it takes no lyrics. If you want sung vocals, ACE-Step or MiniMax Music 3 are the entries to look at instead.",
+      "Identical to the SFX entry (same stable_audio loader, same conversion repo, same 2.5 GB, same eight-step defaults) except for the fine-tune. It is instrumental and takes no lyrics. For sung vocals, use ACE-Step or MiniMax Music 3.",
     spec: {
       vendor: "Stability AI",
       family: "stable_audio",
@@ -299,7 +299,7 @@ export const MODELS: ModelContent[] = [
     license: STABILITY_COMMUNITY,
     downloadSize: "~2 GB",
     quirks: [
-      "Gated upstream, exactly like the SFX model: your own Hugging Face account, your own token.",
+      "As with the SFX model, the GGUF download needs no Hugging Face account or token. Stability's original weights are gated, and the Community License still applies.",
       "No lyrics support. It is an instrumental model on this path.",
     ],
     sources: [
@@ -317,12 +317,12 @@ export const MODELS: ModelContent[] = [
     tier: "listed",
     verified: true,
     capabilities: ["generation", "lyrics", "extend", "cover", "repaint"],
-    metaTitle: "ACE-Step 1.5 Turbo — lyrics-conditioned music locally | Soundbox",
+    metaTitle: "ACE-Step 1.5 Turbo: local lyrics-conditioned music | Soundbox",
     metaDescription:
-      "Lyrics-conditioned vocal music at 48kHz stereo through audio.cpp, with extend, cover and repaint. MIT licensed — verified, correcting the shipped catalog's Apache-2.0 label.",
-    tagline: "Sings. Distilled for few-step sampling, and the only listed model that can extend, cover and repaint.",
+      "Lyrics-conditioned vocal music at 48kHz stereo through audio.cpp, with extend, cover and repaint. MIT licensed (verified; the shipped catalog's Apache-2.0 label is wrong).",
+    tagline: "Generates sung vocals. Distilled for few-step sampling, and the only listed model that can extend, cover and repaint.",
     distinctiveness:
-      "The most capable entry in the catalog by a distance: it is lyrics-conditioned, so the prompt sets genre and production while the lyrics are what gets sung, and it is the only listed model that also does the three audio-to-audio routes — extend a clip past its end with the original preserved sample-for-sample, re-render a clip in a new style at its original length, or regenerate a window inside it. The turbo variant is distilled for few-step sampling, which is what makes all of that usable at eight steps.",
+      "The most capable entry in the catalog. It is lyrics-conditioned: the prompt sets genre and production, and the lyrics are sung. It is also the only listed model with the three audio-to-audio routes: extend a clip past its end with the original preserved sample-for-sample, re-render a clip in a new style at its original length, or regenerate a window inside it. The turbo variant is distilled for few-step sampling, so all of this runs at eight steps.",
     spec: {
       vendor: "ACE Studio / StepFun",
       family: "ace_step",
@@ -336,9 +336,9 @@ export const MODELS: ModelContent[] = [
     license: ACE_STEP_MIT,
     downloadSize: "~3.5 GB",
     quirks: [
-      "48kHz, unlike everything else here. Splitting an ACE-Step render into stems means resampling to 44.1kHz first, because htdemucs accepts nothing else — Soundbox does that for you.",
-      "Extend is implemented as a repaint whose window starts past the end of the source. That is why the original survives bit-for-bit instead of being re-rendered.",
-      "Distilled: 8 steps at CFG 1.0 is the intended operating point, not a compromise.",
+      "48kHz, unlike everything else here. htdemucs accepts only 44.1kHz, so an ACE-Step render is resampled before stem splitting. Soundbox does this for you.",
+      "Extend is a repaint whose window starts past the end of the source, so the original is kept bit-for-bit and not re-rendered.",
+      "Distilled: 8 steps at CFG 1.0 is the intended operating point.",
     ],
     sources: [
       gh("ace-step/ACE-Step-1.5", "ACE-Step 1.5 upstream project"),
@@ -355,12 +355,12 @@ export const MODELS: ModelContent[] = [
     tier: "listed",
     verified: true,
     capabilities: ["generation", "lyrics"],
-    metaTitle: "MiniMax Music 3 — lyrics-conditioned music locally | Soundbox",
+    metaTitle: "MiniMax Music 3: local lyrics-conditioned music | Soundbox",
     metaDescription:
-      "A five-component package model rather than one GGUF, run locally through audio.cpp. MiniMax Music 3 Community License: commercial use under $20M revenue, with attribution.",
+      "A five-component package model, run locally through audio.cpp. MiniMax Music 3 Community License: commercial use under $20M revenue, with attribution.",
     tagline: "Lyrics-conditioned, ~10 GB of VRAM, and the only entry that loads a package of five components.",
     distinctiveness:
-      "The heaviest listed model and the one with the most unusual shape. Every other entry is one GGUF file; this one is a directory that audio.cpp resolves five components from — condition encoder, language model, flow transformer, RVQ depth decoder, vocoder — plus tokenizer and config JSON. Its licence is also the one most likely to catch a real business: commercial use is fine, but it is capped by revenue and it requires you to display the model's name in your product's interface.",
+      "The heaviest listed model. The other listed entries are one GGUF file each; this one is a directory from which audio.cpp loads five components (condition encoder, language model, flow transformer, RVQ depth decoder, vocoder) plus tokenizer and config JSON. Commercial use is permitted, but it is capped by revenue and you must display the model's name in your product's interface.",
     spec: {
       vendor: "MiniMax",
       family: "minimax_music3",
@@ -384,14 +384,14 @@ export const MODELS: ModelContent[] = [
       name: "MiniMax-Music3 Community License",
       commercial: "conditional",
       summary:
-        "Commercial use is permitted but conditioned three ways: a revenue cap, a mandatory attribution notice in your product's UI, and safeguards if you offer it as a hosted service. Read it before you ship — the attribution duty in particular is easy to miss and easy to comply with.",
+        "Commercial use is permitted with three conditions: a revenue cap, a mandatory attribution notice in your product's UI, and safeguards if you offer it as a hosted service. Read it before you ship; the attribution duty is easy to miss.",
       conditions: [
         'Prior written authorisation from MiniMax is required "if the aggregate yearly revenue generated from such products and services … exceeds 20 million US dollars".',
         'Attribution: "You shall prominently display ‘MiniMax-Music3’ on the user interface of commercial product or service that uses the Software."',
         'If you host it for others, you must implement "reasonable and proportionate technical and organizational safeguards" against violating uses and outputs.',
       ],
       output:
-        "The licence makes no explicit grant or assignment of output ownership. Its Acceptable Use Policy does restrict output: no IP-infringing content, no disinformation, and content published publicly must be clearly labelled as machine-generated. No explicit “MiniMax claims no rights over outputs” sentence appears in the Music 3 licence — that language appears in MiniMax's H3 licence, not this one, so do not assume it carries across.",
+        "The licence makes no explicit grant or assignment of output ownership. Its Acceptable Use Policy does restrict output: no IP-infringing content, no disinformation, and content published publicly must be clearly labelled as machine-generated. The Music 3 licence contains no explicit “MiniMax claims no rights over outputs” sentence. That language is in MiniMax's H3 licence; do not assume it applies here.",
       gated: "no",
       sources: [
         {
@@ -403,13 +403,13 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog entry admits the licence was "not read" and asks you to treat it as conditional. It is conditional, and now it has been read: the conditions are the $20M revenue cap, the UI attribution notice, and hosted-service safeguards.',
+        'The shipped catalog entry says the licence was "not read" and asks you to treat it as conditional. It has now been read, and it is conditional: the conditions are the $20M revenue cap, the UI attribution notice, and hosted-service safeguards.',
     },
     downloadSize: "~8.5 GB",
     quirks: [
-      "It refuses to run without lyrics at all. When you give none, Soundbox supplies an explicit [instrumental] marker rather than surfacing an error you could do nothing about.",
+      "It will not run without lyrics. When you give none, Soundbox supplies an explicit [instrumental] marker so the run does not fail.",
       "Component filenames are compiled into the audio.cpp binary and checked before any option is parsed, so no --session-option or --load-option can redirect them. The catalog entry mirrors audio.cpp 0.6.1's minimax_music3_q4_0 package exactly, mixed quantisation and all.",
-      "~10 GB of VRAM. This is the entry most likely to fall back to CPU on a modest card, which shows up as generation being far slower than expected.",
+      "~10 GB of VRAM. On a modest card this is the listed entry most likely to fall back to CPU, which makes generation far slower.",
     ],
     sources: [
       hf("MiniMaxAI/MiniMax-Music3"),
@@ -426,12 +426,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["generation", "lyrics", "extend", "cover", "repaint"],
-    metaTitle: "ACE-Step 1.5 Base — the non-distilled sibling | Soundbox",
+    metaTitle: "ACE-Step 1.5 Base, non-distilled | Soundbox",
     metaDescription:
-      "The base fine-tune the ACE-Step turbo was distilled from: slower, wants real guidance and roughly 3x the steps, same MIT licence. Opt-in and untested here.",
-    tagline: "What the turbo was distilled from — slower, needs real guidance, higher ceiling.",
+      "The base fine-tune the ACE-Step turbo was distilled from: slower, needs higher guidance and roughly 3x the steps, same MIT licence. Opt-in and untested here.",
+    tagline: "The model the turbo was distilled from. Slower, needs higher guidance, higher quality ceiling.",
     distinctiveness:
-      "Same ace_step loader, same conversion repo, the non-distilled fine-tune. It wants roughly three times the steps and real guidance — 27 steps at CFG 4.0 are its defaults, against the turbo's 8 at 1.0 — and in exchange you get the quality ceiling the turbo was distilled down from. Worth trying when a turbo render is nearly right but thin.",
+      "The non-distilled fine-tune, on the same ace_step loader and conversion repo. It needs roughly three times the steps and higher guidance: its defaults are 27 steps at CFG 4.0, against the turbo's 8 at 1.0. In return it has the higher quality ceiling the turbo was distilled from. Try it when a turbo render is nearly right but thin.",
     spec: {
       vendor: "ACE Studio / StepFun",
       family: "ace_step",
@@ -446,7 +446,7 @@ export const MODELS: ModelContent[] = [
     downloadSize: "~3.5 GB",
     quirks: [
       "The shared ace_step advanced-params row caps num_inference_steps at 20, but that ceiling belongs to the turbo. The main Steps field passes through unclamped, which is what you want here.",
-      "Never run end-to-end through this adapter. Unlike the turbo entry, not even generation has been tested.",
+      "Never run end-to-end through this adapter. Unlike the turbo entry, even plain generation is untested.",
     ],
     sources: [
       gh("ace-step/ACE-Step-1.5", "ACE-Step 1.5 upstream project"),
@@ -463,12 +463,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["generation"],
-    metaTitle: "Stable Audio 3.0 Medium — the 2B sibling | Soundbox",
+    metaTitle: "Stable Audio 3.0 Medium (2B) | Soundbox",
     metaDescription:
       "The larger Stable Audio 3.0, ~5 GB VRAM, same stable_audio loader and same Stability Community License. Opt-in and untested here.",
     tagline: "The 2B sibling of the Small models: twice the VRAM, same loader, same licence.",
     distinctiveness:
-      "Larger than the two Small entries at roughly 5 GB of VRAM, and otherwise identical in how it is driven. Note that the fourth member of the Stable Audio 3.0 family, Large, is not open-weight at all — it is API and enterprise only — so this is the biggest one you can run locally.",
+      "Larger than the two Small entries at roughly 5 GB of VRAM, and driven the same way. The fourth member of the Stable Audio 3.0 family, Large, is not open-weight (API and enterprise only), so Medium is the largest you can run locally.",
     spec: {
       vendor: "Stability AI",
       family: "stable_audio",
@@ -482,8 +482,8 @@ export const MODELS: ModelContent[] = [
     license: STABILITY_COMMUNITY,
     downloadSize: "~4 GB",
     quirks: [
-      "Gated upstream like the rest of the family.",
-      "Opt-in and untested here — the numbers below are read off the catalog, not measured.",
+      "Like the rest of the family, the GGUF download is ungated. Stability's original weights are gated, and the Community License still applies.",
+      "Opt-in and untested here. The numbers below come from the catalog and were not measured.",
     ],
     sources: [
       hf("stabilityai/stable-audio-3-medium"),
@@ -500,12 +500,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["generation"],
-    metaTitle: "HeartMuLa — music generation via audio.cpp | Soundbox",
+    metaTitle: "HeartMuLa music generation via audio.cpp | Soundbox",
     metaDescription:
-      "Music generation through the heartmula loader. Apache-2.0 per the upstream README and the HF tag — an upgrade on the shipped catalog's 'Unknown'. Opt-in and untested here.",
-    tagline: "Apache-2.0 music generation — permissively licensed, but nobody here has run it.",
+      "Music generation through the heartmula loader. Apache-2.0 per the upstream README and the HF tag; the shipped catalog says 'Unknown'. Opt-in and untested here.",
+    tagline: "Apache-2.0 music generation. Not yet run here.",
     distinctiveness:
-      "A 3B open-source music model with its own codec and transcriptor released alongside it. The shipped catalog calls this the least verified entry it has, and that remains true of the numbers — every default below was read off a sibling rather than measured. The licence, at least, is now checked, and it is the most permissive of any music model in this catalog.",
+      "A 3B open-source music model, released with its own codec and transcriptor. The shipped catalog calls this its least verified entry, and that still holds for the numbers: every default below was copied from a sibling and not measured. The licence has been checked, and it is the most permissive of any music model in this catalog.",
     spec: {
       vendor: "HeartMuLa",
       family: "heartmula",
@@ -520,7 +520,7 @@ export const MODELS: ModelContent[] = [
       name: "Apache License 2.0",
       commercial: "yes",
       summary:
-        "Apache-2.0, per the upstream README and the license tag on the model repo, and corroborated by audio.cpp's conversion table. Commercial use permitted with no threshold.",
+        "Apache-2.0, per the upstream README and the license tag on the model repo; audio.cpp's conversion table agrees. Commercial use permitted with no threshold.",
       conditions: [],
       output: "Apache-2.0 has no output clause. No separate output or acceptable-use document was found.",
       gated: "no",
@@ -532,7 +532,7 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: false,
       correction:
-        'The shipped catalog says the licence is "Unknown" and the vendor "Unverified". Both are now better than that, with a caveat: the Apache-2.0 claim comes from the repository README and the Hugging Face licence tag, but the LICENSE file itself would not load, so the licence text has not been reviewed on this one. No company behind the project could be identified — "HeartMuLa" is the only name it can be attributed to.',
+        'The shipped catalog says the licence is "Unknown" and the vendor "Unverified". Both have been improved on, with a caveat: the Apache-2.0 claim comes from the repository README and the Hugging Face licence tag, but the LICENSE file itself would not load, so the licence text has not been reviewed. No company behind the project could be identified; "HeartMuLa" is the only name it can be attributed to.',
     },
     downloadSize: null,
     quirks: [
@@ -554,12 +554,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["generation"],
-    metaTitle: "MiniMax H3 — the 36 GB outlier | Soundbox",
+    metaTitle: "MiniMax H3: ~36 GB VRAM, region-limited licence | Soundbox",
     metaDescription:
-      "The largest entry in the catalog by far, and the one whose licence excludes the US, EU, UK and South Korea outright. Opt-in, untested, and gated upstream.",
+      "The largest entry in the catalog. Its licence excludes the US, EU, UK and South Korea. Opt-in and untested.",
     tagline: "~36 GB of VRAM, and a licence that excludes the US, EU, UK and South Korea by name.",
     distinctiveness:
-      "The outlier of the catalog in every direction. It needs roughly 36 GB of VRAM — an order of magnitude more than the Stable Audio entries — and it is not really an audio model at all: upstream it is a very large omni-modal model that generates video with native audio, catalogued here for its audio side. Its licence is also the only one in this catalog with a geographic exclusion, and that exclusion covers most of the people likely to be reading this.",
+      "It needs roughly 36 GB of VRAM, an order of magnitude more than the Stable Audio entries. Upstream it is a very large omni-modal model that generates video with native audio; it is catalogued here for its audio side. Its licence is the only one in this catalog with a geographic exclusion, and the excluded regions are the US, EU, UK and South Korea.",
     spec: {
       vendor: "MiniMax",
       family: "minimax_h3",
@@ -581,16 +581,16 @@ export const MODELS: ModelContent[] = [
       name: "MiniMax H3 Community License Agreement",
       commercial: "conditional",
       summary:
-        "Commercial use is permitted under a revenue cap and an attribution duty, like MiniMax Music 3 — but with an additional restriction that dominates everything else: the licence's “Applicable Territory” is the world minus the EU, the UK, South Korea and the USA. If you are in one of those, you need a separate application to MiniMax before you use it at all.",
+        "Commercial use is permitted under a revenue cap and an attribution duty, like MiniMax Music 3. The larger restriction is territorial: the licence's “Applicable Territory” is the world minus the EU, the UK, South Korea and the USA. In those regions you must apply to MiniMax separately before any use.",
       conditions: [
         "Territory: the EU, UK, South Korea and USA are excluded from the standard grant; the model card carries a separate application form for those regions.",
         "Prior written authorisation required above US$20M yearly revenue.",
         'Attribution: you must "prominently display ‘MiniMax H3’ on the user interface".',
-        "The weights are gated: you accept the Community License Agreement on Hugging Face to download them.",
+        "MiniMax's original weights are gated behind the Community License Agreement on Hugging Face. Soundbox downloads an ungated GGUF conversion; the agreement still applies to it.",
       ],
       output:
-        "This licence does answer the output question, and favourably: MiniMax “claims no rights over the Outputs you generate”, while making you “entirely responsible for the Outputs and any subsequent use thereof”. Two restrictions ride along: outputs may not be used to improve competing AI models, and machine-generated content must be disclosed in public settings.",
-      gated: "yes",
+        "This licence covers output, in your favour: MiniMax “claims no rights over the Outputs you generate”, while making you “entirely responsible for the Outputs and any subsequent use thereof”. Two restrictions ride along: outputs may not be used to improve competing AI models, and machine-generated content must be disclosed in public settings.",
+      gated: "no",
       sources: [
         {
           label: "MiniMax H3 LICENSE (upstream)",
@@ -605,12 +605,12 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog lists this licence as "Unknown". It is not unknown — it is the MiniMax H3 Community License, and it is the most restrictive licence in this catalog for a reader in the US, UK, EU or South Korea.',
+        'The shipped catalog lists this licence as "Unknown". It is the MiniMax H3 Community License, the most restrictive licence in this catalog for anyone in the US, UK, EU or South Korea.',
     },
     downloadSize: "~8.45 GB of a 58 GB repo",
     quirks: [
       "A package model living under a prefix in the shared repo, so the catalog entry needs weights_root to point --model at the right subdirectory.",
-      "The repo it lives in is 58 GB; the entry pulls about 8.45 GB of it. That bounded download is the entire reason weights_glob accepts a list.",
+      "The repo it lives in is 58 GB; the entry pulls about 8.45 GB of it. That bounded download is why weights_glob accepts a list.",
       "~36 GB of VRAM. On anything smaller this falls back to CPU, where it is not practically usable.",
     ],
     sources: [
@@ -632,12 +632,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["separation"],
-    metaTitle: "HTDemucs stem separation — locally via audio.cpp | Soundbox",
+    metaTitle: "HTDemucs stem separation via audio.cpp | Soundbox",
     metaDescription:
-      "Splits a mix into vocals, drums, bass and other. The code is MIT; the pretrained weights are research-only per the maintainer — a distinction the shipped catalog got wrong.",
-    tagline: "Four stems — vocals, drums, bass, other. MIT code, but research-only weights.",
+      "Splits a mix into vocals, drums, bass and other. The code is MIT; the pretrained weights are research-only per the maintainer. The shipped catalog had this wrong.",
+    tagline: "Four stems: vocals, drums, bass, other. MIT code, research-only weights.",
     distinctiveness:
-      "Not a generator: it takes a sound you already have and pulls it apart, and you run it from a sound's “Split into stems” action rather than from a prompt. It is also the entry where the difference between a code licence and a weights licence bites hardest, and where the shipped catalog was wrong.",
+      "A separator: it takes a sound you already have and splits it into stems. Run it from a sound's “Split into stems” action; it takes no prompt. The code licence and the weights licence differ here, and the shipped catalog gave the code licence for both.",
     spec: {
       vendor: "Meta AI (Demucs)",
       family: "htdemucs",
@@ -652,13 +652,13 @@ export const MODELS: ModelContent[] = [
       name: "MIT (code) / research-only (weights)",
       commercial: "no",
       summary:
-        "The Demucs repository is MIT, and that is what everyone repeats — including audio.cpp's conversion table and, until now, this catalog. But the MIT licence covers the code. Demucs' maintainer has stated plainly that it does not cover the pretrained weights, which are provided for scientific purposes only. Since the weights are the thing you download and run, it is treated here as non-commercial.",
+        "The Demucs repository is MIT, and that is the licence most sources give, including audio.cpp's conversion table and the shipped catalog. The MIT licence covers the code. Demucs' maintainer has stated that it does not cover the pretrained weights, which are provided for scientific purposes only. You download and run the weights, so this page treats the model as non-commercial.",
       conditions: [
         'Maintainer statement, verbatim: "The model weights are not covered by the MIT license, and are provided only for scientific purposes."',
         "The upstream README is silent on the weights, which is why the MIT label spread so widely. Third-party mirrors relabel the weights MIT; that relabelling is not backed by any statement from the rights-holder that could be found.",
       ],
       output:
-        "Neither the licence nor the README says anything about separated output. Note that the rights in stems you extract are mostly governed by the rights in the audio you fed in, not by this model's licence at all — separating a track you do not have rights to does not create rights in the pieces.",
+        "Neither the licence nor the README says anything about separated output. Rights in the stems you extract mostly follow your rights in the input audio, not this model's licence. Separating a track you have no rights to gives you no rights in the stems.",
       gated: "no",
       sources: [
         {
@@ -670,13 +670,13 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "MIT (unverified)" with commercial use "yes". That is wrong, and this page is the correction: MIT is the licence on the code, and the maintainer has said in as many words that it does not extend to the weights. The widely repeated claim that the v4 weights are CC-BY-NC-4.0 also could not be confirmed — Demucs v1 was, but no current upstream page states it for HTDemucs. The confirmed constraint is "scientific purposes only", which is why this is shown as non-commercial rather than conditional.',
+        'The shipped catalog says "MIT (unverified)" with commercial use "yes". That is wrong. MIT is the licence on the code, and the maintainer has said explicitly that it does not extend to the weights. The common claim that the v4 weights are CC-BY-NC-4.0 could not be confirmed either: Demucs v1 was, but no current upstream page states it for HTDemucs. The confirmed constraint is "scientific purposes only", so this is shown as non-commercial, not conditional.',
     },
     downloadSize: null,
     quirks: [
-      "Requires exactly 44.1kHz. Anything else fails with a sample-rate mismatch, so Soundbox resamples the source first — a 48kHz ACE-Step render being split is the common case.",
+      "Requires exactly 44.1kHz. Anything else fails with a sample-rate mismatch, so Soundbox resamples the source first. The common case is splitting a 48kHz ACE-Step render.",
       "The source goes in as the audio input, not the reference input. The reference input is for voice conversion and style transfer; using it here fails with an unrelated-sounding contract error.",
-      "Stem names and count are read back from whatever the output directory contains rather than assumed, because this has not been run end-to-end here. htdemucs emits vocals, drums, bass and other.",
+      "Soundbox reads stem names and count from the output directory, because this has not been run end-to-end here. htdemucs emits vocals, drums, bass and other.",
     ],
     sources: [
       gh("facebookresearch/demucs", "Demucs upstream project"),
@@ -692,12 +692,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["separation"],
-    metaTitle: "BS-RoFormer stem separation — locally via audio.cpp | Soundbox",
+    metaTitle: "BS-RoFormer stem separation via audio.cpp | Soundbox",
     metaDescription:
       "Band-split RoFormer separation. The reference code is MIT, but the checkpoint's own licence is undeclared upstream and could not be confirmed.",
-    tagline: "MIT reference code, and a checkpoint whose licence nobody upstream has ever declared.",
+    tagline: "MIT reference code. The checkpoint's licence is not declared anywhere upstream.",
     distinctiveness:
-      "The separation family with the least licence discipline anywhere in this catalog. The reference implementation is MIT and the widely used training repo is MIT, but the actual checkpoints are listed by author across GitHub releases and Hugging Face with no licence stated for any of them, and third-party mirrors fill the gap by inventing tags. That is a real gap, not a formality, and it is not papered over here.",
+      "The weakest licence provenance in this catalog. The reference implementation and the widely used training repo are both MIT, but the checkpoints are listed by author across GitHub releases and Hugging Face with no licence stated for any of them. Third-party mirrors fill the gap with tags of their own. This page reports the licence as unknown.",
     spec: {
       vendor: "Community (BS-RoFormer)",
       family: "bs_roformer",
@@ -712,9 +712,9 @@ export const MODELS: ModelContent[] = [
       name: "Unconfirmed (MIT code; checkpoint licence undeclared)",
       commercial: "unknown",
       summary:
-        "No licence could be confirmed for these weights. The reference implementation and the training repo are both MIT, and audio.cpp's conversion table labels this package Apache-2.0 — but the upstream checkpoint list declares no licence for any of its models, and no statement from whoever trained this checkpoint could be found. Two secondary labels that disagree with each other is not a licence.",
+        "No licence could be confirmed for these weights. The reference implementation and the training repo are both MIT, and audio.cpp's conversion table labels this package Apache-2.0. The upstream checkpoint list declares no licence for any of its models, and no statement from whoever trained this checkpoint could be found. The two secondary labels also disagree with each other.",
       conditions: [
-        "Treat as unlicensed until you get an answer from the checkpoint's author. The argument that a release asset inherits its repository's MIT licence is a rationalisation seen on mirror cards, not an upstream statement.",
+        "Treat as unlicensed until you get an answer from the checkpoint's author. Some mirror cards argue that a release asset inherits its repository's MIT licence; no upstream source says so.",
       ],
       output:
         "No output clause found anywhere in this family. As with any separator, what you may do with the stems is governed mainly by your rights in the audio you fed in.",
@@ -722,14 +722,14 @@ export const MODELS: ModelContent[] = [
       sources: [
         gh("lucidrains/BS-RoFormer", "Reference implementation (MIT, code only, no weights)"),
         {
-          label: "ZFTurbo's checkpoint list — no licence declared for any entry",
+          label: "ZFTurbo's checkpoint list (no licence declared for any entry)",
           href: "https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md",
         },
         GGUF_TABLE,
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "Unknown", and after going and looking, "Unknown" is still the accurate answer — but for a specific reason now: it is not that nobody has written the licence down somewhere it could not be found, it is that the people distributing these checkpoints have never declared one. Note also that audio.cpp\'s table calls this package Apache-2.0 while the MIT reference code and the undeclared checkpoint say otherwise; those could not be reconciled, so no claim is made.',
+        'The shipped catalog says "Unknown", and that is still accurate. The reason is now specific: the people distributing these checkpoints have never declared a licence. audio.cpp\'s table calls this package Apache-2.0, which conflicts with the MIT reference code and the undeclared checkpoint. Those could not be reconciled, so no claim is made.',
     },
     downloadSize: null,
     quirks: [
@@ -751,12 +751,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["separation"],
-    metaTitle: "Mel-Band RoFormer separation — locally via audio.cpp | Soundbox",
+    metaTitle: "Mel-Band RoFormer separation via audio.cpp | Soundbox",
     metaDescription:
-      "Mel-band RoFormer vocal separation. The author's Hugging Face repo tags the checkpoint MIT, but there is no LICENSE file upstream — better than its sibling, still not airtight.",
+      "Mel-band RoFormer vocal separation. The author's Hugging Face repo tags the checkpoint MIT, but there is no LICENSE file upstream.",
     tagline: "The vocal-separation sibling. Author-tagged MIT, though only as repo metadata.",
     distinctiveness:
-      "Same lineage as BS-RoFormer and the same mel_band_roformer loader, but with better licence provenance: the checkpoint's own author tags their Hugging Face repo MIT, rather than leaving it undeclared. That is an author-controlled statement, which is why this one is treated as usable where its sibling is not.",
+      "Same lineage as BS-RoFormer, run through the mel_band_roformer loader, with better licence provenance: the checkpoint's author tags their Hugging Face repo MIT. That statement comes from the author, so this model is treated as usable and its sibling is not.",
     spec: {
       vendor: "Community (Mel-Band RoFormer)",
       family: "mel_band_roformer",
@@ -771,7 +771,7 @@ export const MODELS: ModelContent[] = [
       name: "MIT (repo metadata, no LICENSE file)",
       commercial: "conditional",
       summary:
-        "The checkpoint author's Hugging Face repo carries an MIT licence tag, and audio.cpp's conversion table agrees. That is a real statement from the person who owns the weights, so commercial use is probably fine — but it is a metadata field rather than a licence file, and the upstream GitHub repo states no licence at all. It is shown as conditional to mark that gap, not because the licence itself has conditions.",
+        "The checkpoint author's Hugging Face repo carries an MIT licence tag, and audio.cpp's conversion table agrees. The tag comes from the person who owns the weights, so commercial use is probably fine. It is a metadata field with no licence file behind it, and the upstream GitHub repo states no licence. It is shown as conditional to mark that gap; the licence itself has no conditions.",
       conditions: [
         "The only licence statement found is a Hugging Face card tag. There is no LICENSE file in the author's GitHub repo.",
         "A redistributor's card describes this checkpoint as GPL-3.0 at release and relicensed to MIT in April 2026. That account is consistent with the current MIT tag, but it could only be verified from the redistributor, not from the author.",
@@ -791,7 +791,7 @@ export const MODELS: ModelContent[] = [
     downloadSize: null,
     quirks: [
       "Untested end-to-end here.",
-      "Same input rules as the other separators — audio input, not reference input, and resampled to the model's rate first.",
+      "Same input rules as the other separators: audio input, not reference input, resampled to the model's rate first.",
     ],
     sources: [
       hf("KimberleyJSN/melbandroformer"),
@@ -819,12 +819,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: true,
     capabilities: ["tts"],
-    metaTitle: "VibeVoice 1.5B — long-form TTS locally | Soundbox",
+    metaTitle: "VibeVoice 1.5B: local long-form TTS | Soundbox",
     metaDescription:
-      "Microsoft's MIT-licensed 1.5B speech model, run through audio.cpp. The only voice entry anyone here has actually run — and the only one whose code Microsoft pulled.",
-    tagline: "MIT-licensed, up to ten minutes of speech, and the one voice model that has actually been run end-to-end here.",
+      "Microsoft's MIT-licensed 1.5B speech model, run through audio.cpp. The only voice entry that has been run here, and the only one whose code Microsoft pulled.",
+    tagline: "MIT-licensed, up to ten minutes of speech, and the only voice model run end-to-end here.",
     distinctiveness:
-      "The only entry in the voice half of this catalog that anyone here has run end-to-end, and the only one built for genuinely long output — 600 seconds against everything else's 60. It is also the one with a complicated story: Microsoft removed the inference code from GitHub after finding misuse, later restoring the repo without the synthesis code, while the weights stayed up. The licence is MIT; the model card says it is intended for research rather than commercial deployment. Those two statements are in tension and you should know that before you rely on either.",
+      "The only voice model here that has been run end-to-end, and the only one built for long output: 600 seconds, against 60 for the others. Microsoft removed the inference code from GitHub after finding misuse, and later restored the repo without the synthesis code. The weights stayed up. The licence is MIT, but the model card says the model is intended for research and not for commercial deployment. Those two statements conflict; know both before you rely on either.",
     spec: {
       vendor: "Microsoft",
       family: "vibevoice",
@@ -839,14 +839,14 @@ export const MODELS: ModelContent[] = [
       name: "MIT License",
       commercial: "conditional",
       summary:
-        "The licence is MIT, which permits commercial use outright — confirmed from Hugging Face's own metadata. But the model card states the model is intended for research only and not for commercial deployment. A non-binding intent statement does not override a licence grant, and is not presented here as doing so; nor is this shown as a clean green when the publisher has said in writing what they want.",
+        "The licence is MIT, which permits commercial use; this is confirmed from Hugging Face's metadata. The model card states the model is intended for research only and not for commercial deployment. That statement is non-binding and does not override the licence grant. The model is shown as conditional because the publisher has stated in writing what they want.",
       conditions: [
         "MIT itself imposes only the notice requirement.",
-        "The model card's research-only framing is the publisher's stated intent, not a licence term. Weigh it as a signal about support and future availability rather than as a restriction.",
+        "The model card's research-only framing is the publisher's stated intent, not a licence term. Weigh it as a signal about support and future availability; it is not a restriction.",
         "The card prohibits impersonating a voice without explicit, recorded consent, disinformation, and real-time voice conversion.",
       ],
       output:
-        "Generated audio carries an audible AI disclaimer plus an imperceptible watermark by design. There is no ownership claim over output, but that watermark is a fact about the audio you get, which matters if the output is meant to pass as a recording.",
+        "Generated audio carries an audible AI disclaimer and an imperceptible watermark by design. There is no ownership claim over output. The watermark matters if the output is meant to pass as a recording.",
       gated: "no",
       sources: [
         hf("microsoft/VibeVoice-1.5B"),
@@ -858,7 +858,7 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "MIT (unverified)". MIT is now verified. It has been moved from an unqualified commercial "yes" to conditional to reflect the model card\'s research-only language and Microsoft\'s withdrawal of the inference code, neither of which is a licence term but both of which are things you would want to know.',
+        'The shipped catalog says "MIT (unverified)". MIT is now verified. It is shown as conditional, not as an unqualified commercial "yes", because of the model card\'s research-only language and Microsoft\'s withdrawal of the inference code. Neither is a licence term.',
     },
     downloadSize: null,
     quirks: [
@@ -876,12 +876,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Chatterbox — MIT-licensed TTS locally | Soundbox",
+    metaTitle: "Chatterbox: MIT-licensed local TTS | Soundbox",
     metaDescription:
-      "Resemble AI's Chatterbox, run through audio.cpp. Plain MIT with no revenue cap — one of the cleanest licences in the voice half of this catalog.",
-    tagline: "Plain MIT, no cap, no gate — the least encumbered voice model here.",
+      "Resemble AI's Chatterbox, run through audio.cpp. Plain MIT: no revenue cap, no gate, no research-only clause.",
+    tagline: "Plain MIT, no revenue cap, no gate.",
     distinctiveness:
-      "Licensing-wise this is the easy one: MIT, ungated, no revenue threshold, no research carve-out. The thing to know is that Resemble embeds their Perth neural watermark in everything it generates, described as surviving MP3 compression and editing — a design decision rather than a licence term, and one that matters if you intended the output to be indistinguishable from a recording.",
+      "MIT, ungated, no revenue threshold, no research carve-out. Resemble embeds its Perth neural watermark in everything the model generates, and says the watermark survives MP3 compression and editing. That is a design decision, not a licence term. It matters if the output is meant to be indistinguishable from a recording.",
     spec: {
       vendor: "Resemble AI",
       family: "chatterbox",
@@ -895,13 +895,13 @@ export const MODELS: ModelContent[] = [
     license: {
       ...mit([hf("ResembleAI/chatterbox"), gh("resemble-ai/chatterbox")]),
       output:
-        "MIT claims nothing over output. But every generation is watermarked with Resemble's Perth neural watermark, which the project says survives compression and editing. Nobody is claiming your audio; they are marking it.",
+        "MIT claims nothing over output. But every generation is watermarked with Resemble's Perth neural watermark, which the project says survives compression and editing.",
       conditions: [],
     },
     downloadSize: null,
     quirks: [
-      "Opt-in and untested here — the numbers in the specs table are catalogued, not measured.",
-      'The card\'s only conduct guidance is an informal "don\'t use this model to do bad things". That is not a licence term, and it is not a consent requirement either — supplying reference audio you have the right to use is on you.',
+      "Opt-in and untested here. The numbers in the specs table come from the catalog and were not measured.",
+      'The card\'s only conduct guidance is an informal "don\'t use this model to do bad things". That is neither a licence term nor a consent requirement. Making sure you have the right to use any reference audio is your responsibility.',
     ],
     sources: [hf("ResembleAI/chatterbox"), gh("resemble-ai/chatterbox"), GGUF_TABLE],
   },
@@ -914,12 +914,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Fish Audio S2 Pro — research licence, locally | Soundbox",
+    metaTitle: "Fish Audio S2 Pro: research-only licence | Soundbox",
     metaDescription:
-      "Fish Audio S2 Pro through audio.cpp. Research and non-commercial only: commercial use needs a separate written agreement, and the weights are gated behind a non-commercial checkbox.",
-    tagline: "Research and non-commercial only, and gated behind a checkbox that says so.",
+      "Fish Audio S2 Pro through audio.cpp. Research and non-commercial only: commercial use needs a separate written agreement.",
+    tagline: "Research and non-commercial only. Commercial use needs a written agreement.",
     distinctiveness:
-      "One of the clearest non-commercial entries in the catalog, and unusually explicit about it: the download gate itself makes you tick a box agreeing to non-commercial use only, so there is no ambiguity to discover later. Commercial use is defined broadly enough to include internal business operations and indirect revenue, not just selling the audio.",
+      "Non-commercial, and explicit about it: the upstream download gate makes you tick a box agreeing to non-commercial use only. Soundbox's GGUF download has no gate, but the licence still applies. The licence defines commercial use broadly; internal business operations and indirect revenue count, as well as selling the audio.",
     spec: {
       vendor: "Fish Audio",
       family: "fish_audio",
@@ -934,15 +934,15 @@ export const MODELS: ModelContent[] = [
       name: "Fish Audio Research License Agreement",
       commercial: "no",
       summary:
-        'Research and non-commercial use only. "Any use of the Fish Audio Materials or Derivative Works for a Commercial Purpose requires a separate written license agreement from Fish Audio." Commercial Purpose is defined broadly — internal business operations and indirect revenue count.',
+        'Research and non-commercial use only. "Any use of the Fish Audio Materials or Derivative Works for a Commercial Purpose requires a separate written license agreement from Fish Audio." Commercial Purpose is defined broadly: internal business operations and indirect revenue count.',
       conditions: [
         "Commercial use requires a written agreement with Fish Audio (business@fish.audio).",
-        "The weights are gated: you supply country and date and tick a box agreeing to non-commercial use only, plus a DMCA/legal-compliance consent.",
+        "The original weights are gated: you supply country and date and tick a box agreeing to non-commercial use only, plus a DMCA/legal-compliance consent. Soundbox downloads an ungated GGUF conversion, and the licence still applies to it.",
         "You may not use the materials or their outputs to create or improve any other foundational generative AI model.",
       ],
       output:
-        'You own the outputs "to the extent permitted by applicable law" — but owning them does not license the non-commercial restriction away, and the no-training-on-outputs clause applies to them specifically. This is the only model in the catalog that contractually bars using its output to train another generative model.',
-      gated: "yes",
+        'You own the outputs "to the extent permitted by applicable law". Ownership does not lift the non-commercial restriction, and the no-training-on-outputs clause applies to outputs specifically. Few licences in the catalog restrict training on outputs; the DramaBox licence is another.',
+      gated: "no",
       sources: [
         {
           label: "Fish Audio Research License Agreement, full text",
@@ -953,10 +953,10 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "Unknown" and treats this as conditional. It is not unknown and it is not merely conditional: it is a research licence that forbids commercial use without a signed agreement.',
+        'The shipped catalog says "Unknown" and treats this as conditional. It is a research licence that forbids commercial use without a signed agreement.',
     },
     downloadSize: null,
-    quirks: ["Opt-in, untested here, and gated upstream behind a non-commercial agreement."],
+    quirks: ["Opt-in and untested here. The original weights are gated upstream behind a non-commercial agreement; the GGUF download is ungated, and the licence still applies."],
     sources: [hf("fishaudio/s2-pro"), gh("fishaudio"), GGUF_TABLE],
   },
   {
@@ -968,12 +968,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "IndexTTS2 — bilibili's speech model locally | Soundbox",
+    metaTitle: "IndexTTS2, bilibili's speech model | Soundbox",
     metaDescription:
       "IndexTTS2 through audio.cpp. Its Hugging Face repo declares no licence at all; the upstream project now ships the bilibili Model Use License. Treat it as bilibili-licensed.",
-    tagline: "The Hugging Face repo declares no licence at all — assume the bilibili agreement applies.",
+    tagline: "The Hugging Face repo declares no licence. Assume the bilibili agreement applies.",
     distinctiveness:
-      "The odd one in bilibili's lineup. Its Hugging Face repo has no licence field and its card has no licence section, while the upstream GitHub project now carries the bilibili Model Use License Agreement. Blog posts calling IndexTTS2 Apache-2.0 appear to describe the older v1 era. This could not be resolved from any authoritative page, so the more restrictive of the two readings is pointed to.",
+      "Its Hugging Face repo has no licence field and its card has no licence section. The upstream GitHub project now carries the bilibili Model Use License Agreement. Blog posts calling IndexTTS2 Apache-2.0 appear to describe the older v1 era. No authoritative page resolves this, so this page points to the more restrictive reading.",
     spec: {
       vendor: "bilibili",
       family: "index_tts2",
@@ -988,7 +988,7 @@ export const MODELS: ModelContent[] = [
       name: "bilibili Model Use License Agreement (inferred)",
       commercial: "unknown",
       summary:
-        "Which licence governs these weights could not be confirmed. The Hugging Face repo carries no licence metadata and no licence section. The upstream repository's current LICENSE is the bilibili Model Use License Agreement, and audio.cpp's conversion table also labels this package that way — so that is the most likely answer, but nothing on the weights repo itself says so.",
+        "Which licence governs these weights could not be confirmed. The Hugging Face repo carries no licence metadata and no licence section. The upstream repository's current LICENSE is the bilibili Model Use License Agreement, and audio.cpp's conversion table also labels this package that way. That is the most likely answer, but nothing on the weights repo itself says so.",
       conditions: [
         "If the bilibili agreement does govern, its conditions are the ones described on the IndexTTS2.5 page: a scale cap, notice retention, and a no-endorsement statement for modifications.",
         "Widely repeated claims that IndexTTS2 is Apache-2.0 are not supported by any current authoritative page that could be reached.",
@@ -1006,12 +1006,12 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "Unknown". After looking, "unknown" remains the accurate answer for this particular repo — but it is a documented unknown now: the weights repo declares nothing, and the project it came from declares the bilibili agreement. Prefer IndexTTS2.5, whose licence is unambiguous.',
+        'The shipped catalog says "Unknown", and that is still accurate for this repo. The details are now documented: the weights repo declares nothing, and the project it came from declares the bilibili agreement. Prefer IndexTTS2.5, whose licence is unambiguous.',
     },
     downloadSize: null,
     quirks: [
       "Opt-in and untested here.",
-      "If you want this family with a licence you can actually read, use IndexTTS2.5 instead.",
+      "For this family with a readable licence, use IndexTTS2.5.",
     ],
     sources: [hf("IndexTeam/IndexTTS-2"), gh("index-tts/index-tts"), GGUF_TABLE],
   },
@@ -1024,12 +1024,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "IndexTTS2.5 — bilibili Model Use License | Soundbox",
+    metaTitle: "IndexTTS2.5: bilibili Model Use License | Soundbox",
     metaDescription:
-      "IndexTTS2.5 through audio.cpp. Commercial use permitted below 100M monthly users or RMB 1bn revenue — a Llama-style scale cap most projects will never reach.",
+      "IndexTTS2.5 through audio.cpp. Commercial use permitted below 100M monthly users or RMB 1bn revenue, a Llama-style scale cap.",
     tagline: "Commercial use is fine below 100M monthly users or RMB 1bn revenue.",
     distinctiveness:
-      "The successor to IndexTTS2 and, unlike it, unambiguously licensed. The cap is the Llama-shaped kind: written authorisation is needed only if you exceeded 100 million monthly active users in the preceding month or a billion RMB in annual revenue, which is to say almost nobody reading this. The card is also unusually direct that it does not check whether the speaker in your reference clip consented, and that getting that consent is your job.",
+      "The successor to IndexTTS2, with an unambiguous licence. The cap is Llama-style: written authorisation is needed only if you exceeded 100 million monthly active users in the preceding month or a billion RMB in annual revenue. The card states that the model does not check whether the speaker in your reference clip consented, and that getting that consent is your job.",
     spec: {
       vendor: "bilibili",
       family: "index_tts2",
@@ -1079,12 +1079,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Higgs Audio v3 TTS 4B — creator grant, locally | Soundbox",
+    metaTitle: "Higgs Audio v3 TTS 4B: Creator Use Grant | Soundbox",
     metaDescription:
       "Boson AI's 4B speech model through audio.cpp. Research and non-commercial by default, with a Creator Use Grant that permits monetised creative work if you credit them.",
-    tagline: "Non-commercial by default — with a carve-out that lets creators monetise if they credit it.",
+    tagline: "Non-commercial by default, with a carve-out that lets creators monetise if they credit it.",
     distinctiveness:
-      "The most interestingly shaped licence in the catalog. The default is research and non-commercial: deploying it in production, behind a hosted API, or inside a product needs a commercial licence from Boson AI. But a Creator Use Grant sits on top of that and lets individual creators produce creative content — including monetised podcasts, video and social posts — for free, provided they credit Boson AI's Higgs Audio in the audio or prominently in accompanying text. Which side of that line you are on is the whole question.",
+      "The default is research and non-commercial: deploying it in production, behind a hosted API, or inside a product needs a commercial licence from Boson AI. A Creator Use Grant on top of that lets individual creators produce creative content, including monetised podcasts, video and social posts, for free, provided they credit Boson AI's Higgs Audio in the audio or prominently in accompanying text. Check which of the two cases your use falls under.",
     spec: {
       vendor: "Boson AI",
       family: "higgs_audio_tts",
@@ -1106,7 +1106,7 @@ export const MODELS: ModelContent[] = [
         "The acceptable-use terms prohibit voice cloning without consent, impersonation, fraud, election deception and biometric surveillance.",
       ],
       output:
-        "Where legally required, AI-generated audio must be disclosed. The Creator Use Grant's attribution requirement is itself an obligation attached to what you publish, which makes this one of the few entries where the output carries a duty rather than just the weights.",
+        "Where legally required, AI-generated audio must be disclosed. The Creator Use Grant's attribution requirement is itself an obligation attached to what you publish, so here the output carries a duty as well as the weights.",
       gated: "no",
       sources: [
         {
@@ -1118,7 +1118,7 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "Unknown". It is Boson AI\'s research and non-commercial licence with a Creator Use Grant. Note the naming mismatch you will hit if you go looking: the model is "Higgs Audio v3 TTS 4B" and the licence is named for "Higgs TTS 3".',
+        'The shipped catalog says "Unknown". It is Boson AI\'s research and non-commercial licence with a Creator Use Grant. The names differ: the model is "Higgs Audio v3 TTS 4B" and the licence is named for "Higgs TTS 3".',
     },
     downloadSize: null,
     quirks: ["Opt-in and untested here."],
@@ -1133,12 +1133,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts", "voice-conversion"],
-    metaTitle: "Vevo2 — non-commercial weights, locally | Soundbox",
+    metaTitle: "Vevo2: non-commercial weights | Soundbox",
     metaDescription:
       "Vevo2 from the Amphion project through audio.cpp. The code is MIT but the checkpoints are CC-BY-NC-ND-4.0: non-commercial, no derivatives, attribution required.",
-    tagline: "MIT code, CC-BY-NC-ND weights. The weights are what you run, so: non-commercial.",
+    tagline: "MIT code, CC-BY-NC-ND weights. You run the weights, so it is non-commercial.",
     distinctiveness:
-      "A textbook case of the code-versus-weights split. Amphion's toolkit is MIT, which is what a quick search will tell you, but the Vevo2 checkpoints are published CC-BY-NC-ND-4.0 — non-commercial, attribution required, and read strictly, no distributing derivatives, which would cover redistributing a fine-tune. The MIT code licence does not rescue that; the checkpoints are the binding constraint.",
+      "Amphion's toolkit is MIT, and that is the licence a quick search finds. The Vevo2 checkpoints are published CC-BY-NC-ND-4.0: non-commercial, attribution required, and, read strictly, no distributing derivatives, which would cover redistributing a fine-tune. The checkpoints' licence is the binding one; the MIT code licence does not change it.",
     spec: {
       vendor: "Amphion",
       family: "vevo2",
@@ -1165,14 +1165,14 @@ export const MODELS: ModelContent[] = [
       sources: [
         hf("RMSnow/Vevo2"),
         {
-          label: "Amphion LICENSE (MIT — the code, not the weights)",
+          label: "Amphion LICENSE (MIT; covers the code, not the weights)",
           href: "https://github.com/open-mmlab/Amphion/blob/main/LICENSE",
         },
         GGUF_TABLE,
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "Unknown" and "conditional". The real answer is stricter than conditional: these weights are non-commercial. The shipped catalog also once listed Vevo2 as a music generator; the 0.6.1 loader registry says it registers tts, vc, s2s and svc and no gen task at all, which is why it appears here as a voice model.',
+        'The shipped catalog says "Unknown" and "conditional". These weights are non-commercial, which is stricter than conditional. The shipped catalog also listed Vevo2 as a music generator at one point; the 0.6.1 loader registry says it registers tts, vc, s2s and svc and no gen task at all, which is why it appears here as a voice model.',
     },
     downloadSize: null,
     quirks: [
@@ -1181,7 +1181,7 @@ export const MODELS: ModelContent[] = [
     ],
     sources: [
       hf("RMSnow/Vevo2"),
-      gh("open-mmlab/Amphion", "Amphion — the project Vevo2 comes from"),
+      gh("open-mmlab/Amphion", "Amphion, the project Vevo2 comes from"),
       GGUF_TABLE,
     ],
   },
@@ -1194,12 +1194,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "NeuTTS 2E — $5M revenue cap | Soundbox",
+    metaTitle: "NeuTTS 2E: $5M revenue cap | Soundbox",
     metaDescription:
       "Neuphonic's NeuTTS 2E through audio.cpp. The sources disagree: the conversion table says Apache-2.0, the upstream repo ships a custom licence with a $5M revenue cap.",
-    tagline: "Two sources, two different licences. The stricter one is followed here: a $5M revenue cap.",
+    tagline: "Two sources give two different licences. This page follows the stricter one: a $5M revenue cap.",
     distinctiveness:
-      "The entry where the sources contradict each other most sharply. audio.cpp's conversion table labels this package Apache-2.0. The upstream Neuphonic repository ships a custom licence — the NeuTTS Open License v1.0 — that caps commercial use at $5M annual revenue and gates the download. Where a converter's label and the rights-holder's own licence file disagree, the rights-holder wins, so the cap is shown.",
+      "audio.cpp's conversion table labels this package Apache-2.0. The upstream Neuphonic repository ships a custom licence, the NeuTTS Open License v1.0, that caps commercial use at $5M annual revenue and gates the download of the original weights. Where a converter's label and the rights-holder's licence file disagree, this page follows the rights-holder, so the cap is shown.",
     spec: {
       vendor: "Neuphonic",
       family: "neutts",
@@ -1217,12 +1217,12 @@ export const MODELS: ModelContent[] = [
         "Commercial use is permitted below the licence's Threshold, defined as USD $5,000,000 in annual revenue; a legal entity above it needs a commercial licence from Neuphonic. Non-profits are exempt for research and non-commercial purposes.",
       conditions: [
         'The licence states that commercial use "by a Legal Entity that exceeds the Threshold is not licensed", with the Threshold set at USD $5,000,000 annual revenue.',
-        "The upstream weights are gated: you accept conditions and share contact details to get the files.",
+        "The original upstream weights are gated: you accept conditions and share contact details to get the files. Soundbox downloads an ungated GGUF conversion, and the licence still applies to it.",
         "Do not generalise from Neuphonic's other models. neutts-air is plain Apache-2.0 and the Nano models are 'other'; 2E is the restricted tier of the lineup.",
       ],
       output:
-        "No formal acceptable-use policy. Every audio file NeuTTS generates carries a Perth perceptual watermark by default — relevant if you plan to ship the audio, and a fact about the output rather than a claim on it.",
-      gated: "yes",
+        "No formal acceptable-use policy. Every audio file NeuTTS generates carries a Perth perceptual watermark by default. That matters if you plan to ship the audio; it is a property of the output, not a claim on it.",
+      gated: "no",
       sources: [
         {
           label: "NeuTTS Open License v1.0, full text",
@@ -1233,10 +1233,10 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        "audio.cpp's conversion table lists this package as Apache-2.0, and the shipped catalog lists it as Unknown. Neither matches the upstream licence file, which is a custom licence with a $5M revenue cap and a download gate. The upstream terms are followed and the restriction is shown; if you need Apache-2.0 terms for this family, that is neutts-air, not 2E.",
+        "audio.cpp's conversion table lists this package as Apache-2.0, and the shipped catalog lists it as Unknown. Neither matches the upstream licence file, which is a custom licence with a $5M revenue cap and a download gate. This page follows the upstream terms and shows the restriction. For Apache-2.0 terms in this family, use neutts-air.",
     },
     downloadSize: null,
-    quirks: ["Opt-in, untested here, and gated upstream."],
+    quirks: ["Opt-in and untested here. The original weights are gated upstream; the GGUF download is ungated, and the licence still applies."],
     sources: [hf("neuphonic/neutts-2e"), gh("neuphonic/neutts"), GGUF_TABLE],
   },
   {
@@ -1248,12 +1248,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Supertonic 3 — Open RAIL-M, locally | Soundbox",
+    metaTitle: "Supertonic 3: Open RAIL-M licence | Soundbox",
     metaDescription:
       "Supertone's Supertonic 3 through audio.cpp: ~800 MB of VRAM, BigScience Open RAIL-M, with use restrictions that travel into anything you redistribute.",
-    tagline: "The lightest voice model here at ~800 MB — licensed Open RAIL-M, restrictions and all.",
+    tagline: "~800 MB of VRAM, licensed Open RAIL-M with its use restrictions.",
     distinctiveness:
-      "The smallest footprint of any voice model in this catalog by a wide margin, and the only one licensed Open RAIL-M. RAIL is worth understanding rather than skimming: it permits commercial use, but it attaches a list of prohibited uses that you must pass through to everyone you redistribute to. It is also the only licence here that makes non-consensual voice cloning an actual licence violation rather than a line in a model card.",
+      "About 800 MB of VRAM, and the only model here licensed Open RAIL-M. RAIL permits commercial use but attaches a list of prohibited uses that you must pass through to everyone you redistribute to. It is also the only licence here under which non-consensual voice cloning is a licence violation; elsewhere it is at most a line in a model card.",
     spec: {
       vendor: "Supertone",
       family: "supertonic",
@@ -1268,13 +1268,13 @@ export const MODELS: ModelContent[] = [
       name: "BigScience Open RAIL-M License",
       commercial: "conditional",
       summary:
-        "Open RAIL-M permits commercial use, but binds you — and every downstream recipient — to the use restrictions in its Attachment A, which you must pass through in any redistribution or derivative. The sample code is separately MIT.",
+        "Open RAIL-M permits commercial use, but binds you and every downstream recipient to the use restrictions in its Attachment A, which you must pass through in any redistribution or derivative. The sample code is separately MIT.",
       conditions: [
         "You must pass the Attachment A use restrictions through to anyone you redistribute the model or a derivative to.",
         "Attachment A prohibits, among other things: violating applicable law; harming minors; generating false information intended to cause harm; generating content without disclaiming that it is machine-generated; defamation and harassment; impersonation or deepfakes without consent; automated decision-making affecting legal rights; discrimination; medical advice; and predictive-policing applications.",
       ],
       output:
-        'Unusually explicit and unusually favourable: "Licensor claims no rights in the Output You generate using the Model. You are accountable for the Output you generate and its subsequent uses." Note the disclosure restriction cuts the other way — generating content without disclaiming that it is machine-generated is a prohibited use.',
+        'Explicit and in your favour: "Licensor claims no rights in the Output You generate using the Model. You are accountable for the Output you generate and its subsequent uses." The disclosure restriction still applies: generating content without disclaiming that it is machine-generated is a prohibited use.',
       gated: "no",
       sources: [
         {
@@ -1289,7 +1289,7 @@ export const MODELS: ModelContent[] = [
     },
     downloadSize: null,
     quirks: [
-      "~800 MB of VRAM — this is the one to try first if your GPU is small.",
+      "~800 MB of VRAM. Try this one first if your GPU is small.",
       "Opt-in and untested here.",
     ],
     sources: [hf("Supertone/supertonic-3"), gh("supertone-inc/supertonic"), GGUF_TABLE],
@@ -1303,12 +1303,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "DramaBox — LTX-2 Community License | Soundbox",
+    metaTitle: "DramaBox: LTX-2 Community License | Soundbox",
     metaDescription:
       "DramaBox through audio.cpp: ~21 GB of VRAM and the LTX-2 Community License, which caps free commercial use at $10M revenue and bars training on its output.",
     tagline: "~21 GB of VRAM, a $10M revenue cap, and outputs you may not train on.",
     distinctiveness:
-      "Heavier than every other voice model here by a factor of five, and licensed by someone other than who you would expect: DramaBox is a fine-tune of Lightricks' LTX-2, so the weights carry the LTX-2 Community License even though Resemble published the model and the inference code is MIT. That licence has the most output-side obligations of anything in this catalog.",
+      "Heavier than every other voice model here. DramaBox is a fine-tune of Lightricks' LTX-2, so the weights carry the LTX-2 Community License, although Resemble published the model and the inference code is MIT. That licence has the most output-side obligations of any in this catalog.",
     spec: {
       vendor: "Resemble AI / Lightricks",
       family: "dramabox",
@@ -1323,14 +1323,14 @@ export const MODELS: ModelContent[] = [
       name: "LTX-2 Community License Agreement",
       commercial: "conditional",
       summary:
-        "Free commercial use below $10,000,000 in annual revenue. At or above that you are a “Commercial Entity” under the licence and must obtain a paid commercial licence from Lightricks — with liquidated damages set at double the fees owed if you do not. The licensor is Lightricks, not Resemble.",
+        "Free commercial use below $10,000,000 in annual revenue. At or above that you are a “Commercial Entity” under the licence and must obtain a paid commercial licence from Lightricks. If you do not, liquidated damages are set at double the fees owed. The licensor is Lightricks, not Resemble.",
       conditions: [
         "Entities at or above USD $10,000,000 annual revenue must obtain a paid commercial licence from Lightricks.",
         "Attachment A carries roughly twenty use restrictions (harm to minors, false information, impersonation, automated decision-making, discrimination, malware, military, competitive use), and downstream agreements must pass them through.",
         "The inference code is MIT, but the weights are what carry the LTX-2 terms.",
       ],
       output:
-        'Three real constraints on what you generate. Machine-generated content must carry an "expressly and intelligibly" stated disclaimer that it is machine generated. Outputs may not be used to train, improve or fine-tune any other machine-learning model, other than LTX-2 derivatives. And every output of the upstream inference path is watermarked with Resemble Perth by default.',
+        'Three constraints on what you generate. Machine-generated content must carry an "expressly and intelligibly" stated disclaimer that it is machine generated. Outputs may not be used to train, improve or fine-tune any other machine-learning model, other than LTX-2 derivatives. And every output of the upstream inference path is watermarked with Resemble Perth by default.',
       gated: "no",
       sources: [
         {
@@ -1342,7 +1342,7 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "Unknown" and lists the vendor as "Unverified". It is the LTX-2 Community License, and the licensor is Lightricks Ltd — DramaBox is an adapter fine-tune of Lightricks\' LTX-2, published by Resemble AI.',
+        'The shipped catalog says "Unknown" and lists the vendor as "Unverified". It is the LTX-2 Community License, and the licensor is Lightricks Ltd. DramaBox is an adapter fine-tune of Lightricks\' LTX-2, published by Resemble AI.',
     },
     downloadSize: null,
     quirks: [
@@ -1360,12 +1360,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "OmniVoice — non-commercial weights | Soundbox",
+    metaTitle: "OmniVoice: non-commercial weights | Soundbox",
     metaDescription:
-      "OmniVoice through audio.cpp. Apache-2.0 code but CC-BY-NC weights, because of its training data — so commercial use is out, whatever the conversion table says.",
-    tagline: "Apache-2.0 code, CC-BY-NC weights. Non-commercial, and easy to get wrong.",
+      "OmniVoice through audio.cpp. Apache-2.0 code, CC-BY-NC weights because of the training data. No commercial use, whatever the conversion table says.",
+    tagline: "Apache-2.0 code, CC-BY-NC weights. Non-commercial.",
     distinctiveness:
-      "Another split-licence trap, and a well-signposted one: the project states outright that while the code is Apache-2.0, the pre-trained weights are CC-BY-NC because of constraints from their training data. audio.cpp's conversion table lists this package as Apache-2.0, which is the code's licence rather than the weights'. The weights are the thing you download.",
+      "The project states that the code is Apache-2.0 and the pre-trained weights are CC-BY-NC because of constraints from their training data. audio.cpp's conversion table lists this package as Apache-2.0, which is the code's licence. You download the weights.",
     spec: {
       vendor: "k2-fsa",
       family: "omnivoice",
@@ -1380,11 +1380,11 @@ export const MODELS: ModelContent[] = [
       name: "CC-BY-NC (weights) / Apache-2.0 (code)",
       commercial: "no",
       summary:
-        "The pre-trained weights are CC-BY-NC — non-commercial only — which the project attributes to constraints from its training data. The code is Apache-2.0. Forks inherit the weights restriction.",
+        "The pre-trained weights are CC-BY-NC (non-commercial only), which the project attributes to constraints from its training data. The code is Apache-2.0. Forks inherit the weights restriction.",
       conditions: [
         "Non-commercial use of the weights only; attribution required.",
         'The card prohibits "unauthorized voice cloning, voice impersonation, fraud, scams, or any other illegal or unethical activities".',
-        "One caveat about the source: the model card has no machine-readable licence field, so the CC-BY-NC statement is prose in the card body. That is the rights-holder speaking, but it is prose, not metadata.",
+        "The model card has no machine-readable licence field, so the CC-BY-NC statement is prose in the card body. It comes from the rights-holder, but it is not metadata.",
       ],
       output:
         "No ownership or watermarking statement found on the card. No output terms could be confirmed either way.",
@@ -1392,7 +1392,7 @@ export const MODELS: ModelContent[] = [
       sources: [hf("k2-fsa/OmniVoice"), gh("k2-fsa/OmniVoice"), GGUF_TABLE],
       readByUs: true,
       correction:
-        'The shipped catalog says "Unknown". The weights are non-commercial. Note that audio.cpp\'s conversion table labels this package Apache-2.0 — that is the code licence, and following it would put you on the wrong side of the weights\' terms.',
+        'The shipped catalog says "Unknown". The weights are non-commercial. audio.cpp\'s conversion table labels this package Apache-2.0. That is the code licence; following it would breach the weights\' terms.',
     },
     downloadSize: null,
     quirks: ["Opt-in and untested here."],
@@ -1407,12 +1407,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["voice-conversion"],
-    metaTitle: "Seed-VC voice conversion — GPL-3.0 | Soundbox",
+    metaTitle: "Seed-VC voice conversion, GPL-3.0 | Soundbox",
     metaDescription:
-      "Seed-VC through audio.cpp. GPL-3.0 on both code and weights — the only copyleft licence in this catalog, and a real constraint if you ship closed source.",
+      "Seed-VC through audio.cpp. GPL-3.0 on both code and weights: the only copyleft licence in this catalog, and a constraint if you ship closed source.",
     tagline: "The only copyleft entry here: GPL-3.0 on the code and the weights alike.",
     distinctiveness:
-      "The one licence in this catalog that can reach back into your own software. GPL-3.0 permits commercial use, but distributing a derivative work or an application linked against it obliges you to release the corresponding source under GPL-3.0 too. Running it internally or behind a hosted service is fine — this is GPL, not AGPL — but shipping it inside a closed-source product is not a decision to make casually.",
+      "The only licence in this catalog that can apply to your own software. GPL-3.0 permits commercial use, but distributing a derivative work or an application linked against it obliges you to release the corresponding source under GPL-3.0. Running it internally or behind a hosted service is fine, because this is GPL and not AGPL. Check the obligations before you ship it inside a closed-source product.",
     spec: {
       vendor: "Plachtaa (Seed-VC)",
       family: "seed_vc",
@@ -1427,11 +1427,11 @@ export const MODELS: ModelContent[] = [
       name: "GNU General Public License v3.0",
       commercial: "conditional",
       summary:
-        "GPL-3.0 on both the code and the weights repo. Commercial use is permitted, but the copyleft obligation is the point: distribute a derivative or an application built on it and you must offer the corresponding source under GPL-3.0.",
+        "GPL-3.0 on both the code and the weights repo. Commercial use is permitted. The copyleft obligation is the main condition: distribute a derivative or an application built on it and you must offer the corresponding source under GPL-3.0.",
       conditions: [
         "Strong copyleft: distributing a derivative work triggers the source-release obligation.",
         "This is GPL-3.0, not AGPL, so a hosted service you do not distribute does not trigger it.",
-        "The obligation attaches to your software, not to the audio — see the output note.",
+        "The obligation attaches to your software, not to the audio. See the output note.",
       ],
       output:
         "GPL does not claim rights over the output of a program, and there is no output clause here. Converting a voice does not put your audio under the GPL; linking your application against the model might put your application under it.",
@@ -1446,7 +1446,7 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "Unknown". It is GPL-3.0, on both the code and the weights repo — the only copyleft licence anywhere in this catalog, and the one most likely to matter to whoever is embedding Soundbox rather than using it.',
+        'The shipped catalog says "Unknown". It is GPL-3.0, on both the code and the weights repo. It is the only copyleft licence in this catalog, and it matters most to anyone embedding Soundbox in other software.',
     },
     downloadSize: null,
     quirks: [
@@ -1464,12 +1464,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["voice-conversion"],
-    metaTitle: "RVC voice conversion — MIT, locally | Soundbox",
+    metaTitle: "RVC voice conversion, MIT | Soundbox",
     metaDescription:
       "Retrieval-based Voice Conversion through audio.cpp. MIT on both code and weights, with the caveat that RVC bundles third-party components that were not separately checked.",
-    tagline: "MIT on both code and weights — with bundled components not separately checked.",
+    tagline: "MIT on both code and weights. Bundled components not separately checked.",
     distinctiveness:
-      "The best-known open voice-conversion stack, and rare in this half of the catalog for having the same permissive licence on the code and the weights. The upstream project also notes its base model was trained on the openly licensed VCTK set, which is the provenance question that usually goes unanswered. The caveat is compositional: RVC bundles third-party pieces — ContentVec/HuBERT, RMVPE — whose own licences were not separately verified.",
+      "The best-known open voice-conversion stack, and one of the few voice entries with the same permissive licence on code and weights. The upstream project states its base model was trained on the openly licensed VCTK set, so the training-data provenance is documented. The caveat: RVC bundles third-party pieces (ContentVec/HuBERT, RMVPE) whose own licences were not separately verified.",
     spec: {
       vendor: "RVC-Project",
       family: "rvc",
@@ -1490,7 +1490,7 @@ export const MODELS: ModelContent[] = [
       ]),
       commercial: "conditional",
       summary:
-        "MIT on the code and MIT tagged on the weights repo — no divergence found, which is unusual here. It is shown as conditional for one reason only: RVC bundles third-party components (ContentVec/HuBERT, RMVPE) whose upstream licences were not verified, and the MIT grant on RVC does not speak for them.",
+        "MIT on the code and MIT tagged on the weights repo; no divergence found. It is shown as conditional for one reason: RVC bundles third-party components (ContentVec/HuBERT, RMVPE) whose upstream licences were not verified, and the MIT grant on RVC does not speak for them.",
       conditions: [
         "The bundled ContentVec/HuBERT and RMVPE components have their own upstream licences, which were not checked here. Check them before shipping.",
       ],
@@ -1517,12 +1517,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["voice-conversion"],
-    metaTitle: "MioCodec — MIT neural audio codec | Soundbox",
+    metaTitle: "MioCodec: MIT neural audio codec | Soundbox",
     metaDescription:
-      "MioCodec through audio.cpp: ~700 MB of VRAM, MIT licensed. Upstream it is the neural audio codec behind MioTTS rather than a voice-conversion model.",
-    tagline: "The smallest entry in the catalog at ~700 MB. MIT, and really a codec.",
+      "MioCodec through audio.cpp: ~700 MB of VRAM, MIT licensed. Upstream it is the neural audio codec behind MioTTS, not a voice-conversion model.",
+    tagline: "~700 MB of VRAM. MIT. Upstream, it is a codec.",
     distinctiveness:
-      "The lightest thing in the catalog, and one that needs a correction: upstream, MioCodec is a neural audio codec — the 25 Hz tokenizer that MioTTS is built on — rather than a voice-conversion model in its own right. The shipped catalog drives it through the vc task. The licence is straightforwardly MIT on both code and weights.",
+      "Upstream, MioCodec is a neural audio codec (the 25 Hz tokenizer that MioTTS is built on), not a voice-conversion model in its own right. The shipped catalog drives it through the vc task. The licence is MIT on both code and weights.",
     spec: {
       vendor: "Aratako",
       family: "miocodec",
@@ -1536,11 +1536,11 @@ export const MODELS: ModelContent[] = [
     license: {
       ...mit([gh("Aratako/MioCodec"), hf("Aratako/MioCodec-25Hz-44.1kHz-v2")]),
       correction:
-        'The shipped catalog says "Unknown" and lists the vendor as "Unverified". Both the GitHub project and the weights card are MIT, and the author is Aratako — the same author as the Irodori and MioTTS entries. Separately: upstream this is a codec, not a voice-conversion model. The repo credits kanade-tokenizer, AliasingFreeNeuralAudioSynthesis and XCodec2 as inspirations, whether any code was carried across from them was not checked.',
+        'The shipped catalog says "Unknown" and lists the vendor as "Unverified". Both the GitHub project and the weights card are MIT, and the author is Aratako, who also wrote the Irodori and MioTTS entries. Separately: upstream this is a codec, not a voice-conversion model. The repo credits kanade-tokenizer, AliasingFreeNeuralAudioSynthesis and XCodec2 as inspirations; whether any code was carried across from them was not checked.',
     },
     downloadSize: null,
     quirks: [
-      "~700 MB — the smallest download here.",
+      "~700 MB of VRAM.",
       "Opt-in and untested here.",
     ],
     sources: [gh("Aratako/MioCodec"), hf("Aratako/MioCodec-25Hz-44.1kHz-v2"), GGUF_TABLE],
@@ -1554,12 +1554,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Confucius4 TTS — Apache-2.0, 14 languages | Soundbox",
+    metaTitle: "Confucius4 TTS: Apache-2.0, 14 languages | Soundbox",
     metaDescription:
-      "NetEase Youdao's Confucius4 TTS through audio.cpp. Apache-2.0 and unencumbered — with no consent clause at all despite advertising unconstrained voice cloning.",
-    tagline: "Apache-2.0 across 14 languages — and no consent clause anywhere, despite the cloning.",
+      "NetEase Youdao's Confucius4 TTS through audio.cpp. Apache-2.0. It advertises unconstrained voice cloning and has no consent clause.",
+    tagline: "Apache-2.0, 14 languages, voice cloning, and no consent clause.",
     distinctiveness:
-      "Permissively licensed and multilingual, and the entry where the absence of an acceptable-use policy is itself the finding. The card advertises unconstrained zero-shot voice cloning and cross-lingual voice transfer without a reference transcript, and carries no consent requirement, no AUP and no output disclaimer that could be found. Read that as something that could not be found rather than as permission granted.",
+      "Permissively licensed and multilingual. The card advertises unconstrained zero-shot voice cloning and cross-lingual voice transfer without a reference transcript. No consent requirement, AUP or output disclaimer could be found on it. That absence is not a grant of permission.",
     spec: {
       vendor: "NetEase Youdao",
       family: "confucius4_tts",
@@ -1573,13 +1573,13 @@ export const MODELS: ModelContent[] = [
     license: {
       ...apache2(
         [hf("netease-youdao/Confucius4-TTS"), gh("netease-youdao/Confucius4-TTS")],
-        "Apache-2.0 asserts nothing over output. No acceptable-use policy, consent requirement or output disclaimer was found on the model card at all — which, for a model advertising unconstrained voice cloning, is a gap rather than a permission. Consent for any voice you clone is entirely your own responsibility.",
+        "Apache-2.0 asserts nothing over output. No acceptable-use policy, consent requirement or output disclaimer was found on the model card. For a model that advertises unconstrained voice cloning, that is a gap, not a permission. Consent for any voice you clone is your responsibility.",
       ),
       correction: 'The shipped catalog says "Unknown". It is Apache-2.0, per the model repo and the conversion table.',
     },
     downloadSize: null,
     quirks: [
-      "~9.3 GB of VRAM — one of the heavier speech models here.",
+      "~9.3 GB of VRAM, one of the heavier speech models here.",
       "Opt-in and untested here.",
     ],
     sources: [hf("netease-youdao/Confucius4-TTS"), gh("netease-youdao/Confucius4-TTS"), GGUF_TABLE],
@@ -1593,12 +1593,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Inflect Micro v2 — 9M parameters, Apache-2.0 | Soundbox",
+    metaTitle: "Inflect Micro v2: 9M parameters, Apache-2.0 | Soundbox",
     metaDescription:
-      "A 9.36M-parameter speech model with one fixed synthetic voice, Apache-2.0, ~400 MB of VRAM. No reference audio, so no cloning question at all.",
+      "A 9.36M-parameter speech model with one fixed synthetic voice, Apache-2.0, ~400 MB of VRAM. It takes no reference audio, so it cannot clone a voice.",
     tagline: "9.36M parameters, ~400 MB, one fixed synthetic voice. Apache-2.0.",
     distinctiveness:
-      "By far the smallest model in the catalog and the only one where the voice-cloning question simply does not arise: it has one fixed synthetic English voice and takes no reference audio or external model at inference. Apache-2.0, ~400 MB of VRAM. If you want speech on a machine that cannot run anything else, this is the entry.",
+      "By far the smallest model in the catalog, and the only one that cannot clone a voice: it has one fixed synthetic English voice and takes no reference audio or external model at inference. Apache-2.0, ~400 MB of VRAM. Use it for speech on a machine that cannot run anything else.",
     spec: {
       vendor: "Owen Song",
       family: "inflect_v2",
@@ -1635,12 +1635,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "VoxCPM2 — Apache-2.0 speech from OpenBMB | Soundbox",
+    metaTitle: "VoxCPM2: Apache-2.0 speech from OpenBMB | Soundbox",
     metaDescription:
       "OpenBMB's VoxCPM2 through audio.cpp. Apache-2.0 on weights and code, with the model card explicitly stating it is free for commercial use.",
     tagline: "Apache-2.0 on weights and code, and the card says commercial use is fine.",
     distinctiveness:
-      "One of the few entries whose publisher states in plain words on the model card that it is free for commercial use, rather than leaving you to infer it from a tag. The card's prohibitions — no impersonation, no fraud, no disinformation, label AI-generated content — sit in the card text rather than in Apache-2.0, so they are norms the publisher is asking you to follow rather than conditions you are agreeing to.",
+      "One of the few entries whose model card states in plain words that it is free for commercial use. The card's prohibitions (no impersonation, no fraud, no disinformation, label AI-generated content) are in the card text, not in Apache-2.0. They are norms the publisher asks you to follow, not licence conditions.",
     spec: {
       vendor: "OpenBMB",
       family: "voxcpm2",
@@ -1654,7 +1654,7 @@ export const MODELS: ModelContent[] = [
     license: {
       ...apache2(
         [hf("openbmb/VoxCPM2"), gh("OpenBMB/VoxCPM")],
-        'Apache-2.0 claims nothing over output. The card adds advisory guidance — "strictly forbidden to use for impersonation, fraud, or disinformation" and "AI-generated content should be clearly labeled" — which is the publisher\'s norm rather than an enforceable licence condition. There is no mechanism verifying consent for reference audio.',
+        'Apache-2.0 claims nothing over output. The card adds advisory guidance: "strictly forbidden to use for impersonation, fraud, or disinformation" and "AI-generated content should be clearly labeled". That is the publisher\'s norm, not an enforceable licence condition. There is no mechanism verifying consent for reference audio.',
       ),
       correction: 'The shipped catalog says "Unknown". Weights and code are both Apache-2.0.',
     },
@@ -1671,12 +1671,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "MOSS TTS Local v1.5 — Apache-2.0 | Soundbox",
+    metaTitle: "MOSS TTS Local v1.5, Apache-2.0 | Soundbox",
     metaDescription:
       "OpenMOSS's 4B local speech transformer through audio.cpp. Apache-2.0 across the whole MOSS-TTS family, with no acceptable-use policy attached.",
     tagline: "The 4B half of OpenMOSS's pair. Apache-2.0, ~8.6 GB of VRAM.",
     distinctiveness:
-      "The larger of the two OpenMOSS entries here — upstream it is MOSS-TTS-Local-Transformer-v1.5, a 4B model. The whole MOSS-TTS family is Apache-2.0 by an explicit statement in the project README rather than by a tag alone, and no acceptable-use policy, consent clause or output terms were found attached to any of it.",
+      "The larger of the two OpenMOSS entries here. Upstream it is MOSS-TTS-Local-Transformer-v1.5, a 4B model. The project README states explicitly that the whole MOSS-TTS family is Apache-2.0. No acceptable-use policy, consent clause or output terms were found for any of it.",
     spec: {
       vendor: "OpenMOSS",
       family: "moss_tts_local",
@@ -1690,7 +1690,7 @@ export const MODELS: ModelContent[] = [
     license: {
       ...apache2([hf("OpenMOSS-Team/MOSS-TTS-Local-Transformer-v1.5"), gh("OpenMOSS/MOSS-TTS")]),
       correction:
-        'The shipped catalog says "Unknown". The MOSS-TTS project README states plainly that "Models in MOSS-TTS Family are licensed under the Apache License 2.0".',
+        'The shipped catalog says "Unknown". The MOSS-TTS project README states that "Models in MOSS-TTS Family are licensed under the Apache License 2.0".',
     },
     downloadSize: null,
     quirks: ["~8.6 GB of VRAM.", "Opt-in and untested here."],
@@ -1705,7 +1705,7 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "MOSS TTS Nano 100M — Apache-2.0, ~600 MB | Soundbox",
+    metaTitle: "MOSS TTS Nano 100M: Apache-2.0, ~600 MB | Soundbox",
     metaDescription:
       "The 100M-parameter member of OpenMOSS's MOSS-TTS family, ~600 MB of VRAM, Apache-2.0 like the rest of the family.",
     tagline: "100M parameters, ~600 MB of VRAM, same Apache-2.0 as its 4B sibling.",
@@ -1739,12 +1739,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "MioTTS 1.7B — Apache-2.0, Qwen3-based | Soundbox",
+    metaTitle: "MioTTS 1.7B: Apache-2.0, Qwen3-based | Soundbox",
     metaDescription:
       "MioTTS 1.7B through audio.cpp. Apache-2.0, built on Qwen3-1.7B-Base (also Apache-2.0), so nothing restrictive is inherited from the base model.",
-    tagline: "Apache-2.0 on top of an Apache-2.0 base — no inherited restrictions.",
+    tagline: "Apache-2.0 on an Apache-2.0 base, so no inherited restrictions.",
     distinctiveness:
-      "Worth noting for its lineage rather than its size: MioTTS is built on Qwen3-1.7B-Base, which is itself Apache-2.0, so unlike several models here it inherits nothing restrictive from what it was built on. It uses the same author's MioCodec as its tokenizer — the codec that also appears in this catalog as its own entry.",
+      "MioTTS is built on Qwen3-1.7B-Base, which is also Apache-2.0, so it inherits no restrictions from its base model, unlike several models here. Its tokenizer is the same author's MioCodec, which has its own entry in this catalog.",
     spec: {
       vendor: "Aratako",
       family: "miotts",
@@ -1758,7 +1758,7 @@ export const MODELS: ModelContent[] = [
     license: {
       ...apache2(
         [hf("Aratako/MioTTS-1.7B"), gh("Aratako/MioTTS-Inference")],
-        'Apache-2.0 claims nothing over output, and no watermarking is mentioned. The card asks users not to clone real voices "especially non-consenting individuals" for deceptive or harmful purposes, and states that users are solely responsible for legal compliance — advisory, not licence terms.',
+        'Apache-2.0 claims nothing over output, and no watermarking is mentioned. The card asks users not to clone real voices "especially non-consenting individuals" for deceptive or harmful purposes, and states that users are solely responsible for legal compliance. Both are advisory, not licence terms.',
       ),
       correction: 'The shipped catalog says "Unknown" and the vendor "Unverified". It is Apache-2.0, by Aratako.',
     },
@@ -1775,7 +1775,7 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Irodori TTS 500M v3 — MIT, ~1.5 GB | Soundbox",
+    metaTitle: "Irodori TTS 500M v3: MIT, ~1.5 GB | Soundbox",
     metaDescription:
       "The smallest Irodori TTS variant, MIT licensed, ~1.5 GB of VRAM, through audio.cpp with no Python stack.",
     tagline: "The compact Irodori: MIT, ~1.5 GB of VRAM.",
@@ -1808,12 +1808,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Irodori TTS 600M v3 VoiceDesign — MIT | Soundbox",
+    metaTitle: "Irodori TTS 600M v3 VoiceDesign, MIT | Soundbox",
     metaDescription:
-      "Describe a voice in text rather than supplying a reference clip. MIT licensed, and it watermarks what it generates with SilentCipher.",
-    tagline: "Describe the voice in words instead of supplying a clip. MIT, and watermarked.",
+      "Describe a voice in text; no reference clip needed. MIT licensed, and it watermarks what it generates with SilentCipher.",
+    tagline: "Describe the voice in words; no clip needed. MIT, and watermarked.",
     distinctiveness:
-      "The VoiceDesign variant takes a text description of a voice rather than a reference recording, which sidesteps the consent question at the input — you are not cloning anyone — while raising a different one the card addresses directly: a described voice can end up resembling a real person as a probabilistic artifact of the latent space rather than by intent. It also embeds SilentCipher invisible watermarks in its output.",
+      "The VoiceDesign variant takes a text description of a voice in place of a reference recording, so no one's voice is cloned at the input. The card raises a different issue: a described voice can end up resembling a real person, unintentionally, as a probabilistic artifact of the latent space. It also embeds SilentCipher invisible watermarks in its output.",
     spec: {
       vendor: "Aratako",
       family: "irodori_tts",
@@ -1827,7 +1827,7 @@ export const MODELS: ModelContent[] = [
     license: {
       ...irodoriTts("Aratako/Irodori-TTS-600M-v3-VoiceDesign"),
       conditions: [
-        "The model composes third-party components — llm-jp-3-150m for tokenizer and embeddings, a DACVAE codec, and SilentCipher watermarking — whose own licences were not separately verified. If MIT-only matters to you, check those.",
+        "The model composes third-party components (llm-jp-3-150m for tokenizer and embeddings, a DACVAE codec, and SilentCipher watermarking) whose own licences were not separately verified. If MIT-only matters to you, check those.",
       ],
       correction: 'The shipped catalog says "Unknown". It is MIT, per the upstream repo and the model card.',
     },
@@ -1847,12 +1847,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Irodori TTS v4 Small — MIT, and already superseded | Soundbox",
+    metaTitle: "Irodori TTS v4 Small: MIT, superseded upstream | Soundbox",
     metaDescription:
-      "The newest Irodori variant in the shipped catalog, MIT licensed — though its own model card points at a newer v4.1 Small that this catalog does not carry.",
-    tagline: "The newest Irodori carried here — and its own card points at a newer one.",
+      "The newest Irodori variant in the shipped catalog, MIT licensed. Its model card points to a newer v4.1 Small that this catalog does not carry.",
+    tagline: "The newest Irodori carried here. Its card points to a newer one.",
     distinctiveness:
-      "Built on the VoiceDesign model rather than on the 500M base, and the largest of the three Irodori entries at ~1.9 GB. Its own model card says a v4.1 Small supersedes it upstream; the shipped catalog does not carry that one, which is the kind of drift a catalogued model accumulates when nobody has run it.",
+      "Built on the VoiceDesign model, not the 500M base, and the largest of the three Irodori entries at ~1.9 GB. Its model card says a v4.1 Small supersedes it upstream. The shipped catalog does not carry v4.1.",
     spec: {
       vendor: "Aratako",
       family: "irodori_tts",
@@ -1884,12 +1884,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Dots TTS SOAR — Apache-2.0 | Soundbox",
+    metaTitle: "Dots TTS SOAR, Apache-2.0 | Soundbox",
     metaDescription:
       "The SOAR variant of rednote HiLab's dots.tts, Apache-2.0 and ungated, run locally through audio.cpp.",
     tagline: "Apache-2.0 and ungated, one of three dots.tts variants here.",
     distinctiveness:
-      "One of three dots.tts variants in the catalog, all sharing the dots_tts loader. SOAR and MF are cleanly Apache-2.0 on their own repos; the Edit variant is not, which is why it has its own warning. The card's conduct guidance — no impersonation, disclose synthetic audio, use consent-aware reference policies — is advisory rather than licensed.",
+      "One of three dots.tts variants in the catalog, all sharing the dots_tts loader. SOAR and MF are cleanly Apache-2.0 on their own repos; the Edit variant is not, and has its own warning. The card's conduct guidance (no impersonation, disclose synthetic audio, use consent-aware reference policies) is advisory, not a licence term.",
     spec: {
       vendor: "rednote HiLab",
       family: "dots_tts",
@@ -1917,12 +1917,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Dots TTS MF — Apache-2.0 | Soundbox",
+    metaTitle: "Dots TTS MF, Apache-2.0 | Soundbox",
     metaDescription:
       "The MF variant of rednote HiLab's dots.tts, Apache-2.0 with the licence linked from the model card itself, run locally through audio.cpp.",
-    tagline: "Apache-2.0, with the licence linked from the card rather than just tagged.",
+    tagline: "Apache-2.0, with the licence text linked from the card.",
     distinctiveness:
-      "The MF variant, and the best-documented of the three on the licence question: its card links the Apache-2.0 text directly rather than relying on a metadata tag. Same loader and same footprint as SOAR.",
+      "The best-documented of the three on licensing: its card links the Apache-2.0 text directly. Same loader and footprint as SOAR.",
     spec: {
       vendor: "rednote HiLab",
       family: "dots_tts",
@@ -1950,12 +1950,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Dots TTS Edit — licence unresolved | Soundbox",
+    metaTitle: "Dots TTS Edit: licence unresolved | Soundbox",
     metaDescription:
       "The Edit variant of dots.tts declares 'other' with no licence name, link or LICENSE file, while its siblings are Apache-2.0. Its terms could not be confirmed.",
     tagline: "Its siblings are Apache-2.0. This one declares 'other' and names nothing.",
     distinctiveness:
-      "The genuine unknown of the dots.tts trio, and a good illustration of why a sibling's licence is not simply copied across. SOAR and MF are Apache-2.0 on their own repos. Edit declares “other” with no licence name, no licence link and no LICENSE file, and lives under a different Hugging Face organisation than the other two. The upstream README says dots.tts checkpoints are Apache-2.0 without carving Edit out — so Apache-2.0 is the likely intent, and the repo itself contradicts it.",
+      "The dots.tts variant with no confirmed licence. SOAR and MF are Apache-2.0 on their own repos, and that is not assumed to carry over. Edit declares “other” with no licence name, no licence link and no LICENSE file, and lives under a different Hugging Face organisation from the other two. The upstream README says dots.tts checkpoints are Apache-2.0 and does not carve Edit out, so Apache-2.0 is the likely intent. The repo itself contradicts it.",
     spec: {
       vendor: "rednote HiLab",
       family: "dots_tts",
@@ -1967,12 +1967,12 @@ export const MODELS: ModelContent[] = [
       vramEstimateMb: 3600,
     },
     license: {
-      name: 'Unresolved — declared "other", unnamed',
+      name: 'Unresolved: declared "other", unnamed',
       commercial: "unknown",
       summary:
-        "This model's licence could not be confirmed. Its Hugging Face repo declares “other” with no licence name and no licence link, and there is no LICENSE file in it — the repo's files were enumerated and the licence path returns nothing. Its own card only says to see the repository licence metadata, which is the thing that declares nothing.",
+        "This model's licence could not be confirmed. Its Hugging Face repo declares “other” with no licence name and no licence link, and there is no LICENSE file in it (the repo's files were enumerated and the licence path returns nothing). The card only says to see the repository licence metadata, which declares nothing.",
       conditions: [
-        "The upstream dots.tts README states that code and released checkpoints are Apache-2.0, without carving out Edit. That makes Apache-2.0 the likely intent — but the repo's own metadata says “other”, and the contradiction is not resolved here in the publisher's favour on their behalf.",
+        "The upstream dots.tts README states that code and released checkpoints are Apache-2.0, without carving out Edit. That makes Apache-2.0 the likely intent, but the repo's metadata says “other”. This page does not resolve that contradiction on the publisher's behalf.",
         "Ask rednote HiLab before any commercial use. If you want this family with terms you can read, use SOAR or MF.",
       ],
       output:
@@ -1985,7 +1985,7 @@ export const MODELS: ModelContent[] = [
       ],
       readByUs: true,
       correction:
-        'The shipped catalog says "Unknown", and having gone and looked, unknown is still right — with detail. audio.cpp\'s conversion table labels this package Apache-2.0, matching the other two variants, but the weights repo declares "other" and names no licence at all. Note also that Edit lives under the dots-studio organisation on Hugging Face rather than rednote-hilab.',
+        'The shipped catalog says "Unknown", and that is still right. audio.cpp\'s conversion table labels this package Apache-2.0, matching the other two variants, but the weights repo declares "other" and names no licence at all. Edit lives under the dots-studio organisation on Hugging Face, not rednote-hilab.',
     },
     downloadSize: null,
     quirks: [
@@ -2003,12 +2003,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Qwen3 TTS 0.6B Base — Apache-2.0 | Soundbox",
+    metaTitle: "Qwen3 TTS 0.6B Base, Apache-2.0 | Soundbox",
     metaDescription:
       "The smallest Qwen3 TTS variant, Apache-2.0 and ungated like the rest of the family, run locally through audio.cpp.",
     tagline: "The small Qwen3 TTS. Apache-2.0, ungated, ~2.5 GB.",
     distinctiveness:
-      "The entry point to a family of four in this catalog, all sharing the qwen3_tts loader and all Apache-2.0 — each repo was checked individually rather than assuming the family, because size tiers sometimes differ in licence, and here they do not. There is no separate Qwen licence in play for these.",
+      "The smallest of four Qwen3 TTS entries in this catalog. All four share the qwen3_tts loader and all are Apache-2.0. Each repo was checked individually, because size tiers sometimes differ in licence; here they do not. No separate Qwen licence applies.",
     spec: {
       vendor: "Alibaba",
       family: "qwen3_tts",
@@ -2022,7 +2022,7 @@ export const MODELS: ModelContent[] = [
     license: {
       ...qwen3Tts("Qwen/Qwen3-TTS-12Hz-0.6B-Base"),
       correction:
-        'The shipped catalog says "Unknown". It is Apache-2.0 — verified on this specific repo, not inferred from the family. Note the tokenizer is a separate repo (Qwen/Qwen3-TTS-Tokenizer-12Hz), also Apache-2.0.',
+        'The shipped catalog says "Unknown". It is Apache-2.0, verified on this specific repo and not inferred from the family. The tokenizer is a separate repo (Qwen/Qwen3-TTS-Tokenizer-12Hz), also Apache-2.0.',
     },
     downloadSize: null,
     quirks: ["Opt-in and untested here."],
@@ -2037,12 +2037,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Qwen3 TTS 1.7B Base — Apache-2.0 | Soundbox",
+    metaTitle: "Qwen3 TTS 1.7B Base, Apache-2.0 | Soundbox",
     metaDescription:
       "The 1.7B Qwen3 TTS base model, Apache-2.0 and ungated, run locally through audio.cpp with no Python stack.",
     tagline: "The larger Qwen3 TTS base model. Apache-2.0, ungated, ~3.3 GB.",
     distinctiveness:
-      "Same family and same licence as the 0.6B, with roughly three times the parameters. This is the one to start from if you want the Qwen3 TTS family at its most general — the CustomVoice and VoiceDesign entries are specialisations of the same size class.",
+      "Same family and same licence as the 0.6B, with roughly three times the parameters. Start here for the general-purpose Qwen3 TTS model. The CustomVoice and VoiceDesign entries are specialisations of the same size class.",
     spec: {
       vendor: "Alibaba",
       family: "qwen3_tts",
@@ -2070,12 +2070,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Qwen3 TTS 1.7B CustomVoice — Apache-2.0 | Soundbox",
+    metaTitle: "Qwen3 TTS 1.7B CustomVoice, Apache-2.0 | Soundbox",
     metaDescription:
-      "The voice-cloning variant of Qwen3 TTS 1.7B. Apache-2.0 — which means no consent clause, so the consent question is entirely yours.",
-    tagline: "Clones a voice from a reference. Apache-2.0, which means no consent clause at all.",
+      "The voice-cloning variant of Qwen3 TTS 1.7B. Apache-2.0 has no consent clause, so consent is your responsibility.",
+    tagline: "Clones a voice from a reference. Apache-2.0, with no consent clause.",
     distinctiveness:
-      "The reference-conditioned variant of the 1.7B model. Its licence is the same clean Apache-2.0 as the rest of the family, and that is precisely the thing to notice: Apache-2.0 imposes no consent requirement, so nothing in the terms of this model stops you cloning a voice you have no right to. That obligation is entirely yours.",
+      "The reference-conditioned variant of the 1.7B model, Apache-2.0 like the rest of the family. Apache-2.0 imposes no consent requirement, so nothing in this model's terms stops you cloning a voice you have no right to. That obligation is yours.",
     spec: {
       vendor: "Alibaba",
       family: "qwen3_tts",
@@ -2103,12 +2103,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Qwen3 TTS 1.7B VoiceDesign — Apache-2.0 | Soundbox",
+    metaTitle: "Qwen3 TTS 1.7B VoiceDesign, Apache-2.0 | Soundbox",
     metaDescription:
-      "Describe a voice in text rather than cloning one. Apache-2.0 and ungated, run locally through audio.cpp.",
-    tagline: "Describe the voice instead of cloning it. Apache-2.0, ungated.",
+      "Generates a voice from a text description, with no cloning. Apache-2.0 and ungated, run locally through audio.cpp.",
+    tagline: "Describe the voice in text; no cloning. Apache-2.0, ungated.",
     distinctiveness:
-      "The text-described-voice variant of the 1.7B model — the same idea as Irodori's VoiceDesign, in a family with a cleaner licence. Describing a voice rather than supplying a reference clip is the version of this technology with the fewest consent problems attached, which is worth preferring where it does the job.",
+      "The text-described-voice variant of the 1.7B model: the same idea as Irodori's VoiceDesign. Describing a voice avoids most of the consent problems of cloning from a reference clip, so prefer it where it does the job.",
     spec: {
       vendor: "Alibaba",
       family: "qwen3_tts",
@@ -2136,12 +2136,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Pocket TTS English — CC-BY-4.0 weights | Soundbox",
+    metaTitle: "Pocket TTS English: CC-BY-4.0 weights | Soundbox",
     metaDescription:
-      "Kyutai's Pocket TTS with 26 bundled speakers. CC-BY-4.0 weights, MIT code — but each voice carries its own licence, and some collections are non-commercial.",
-    tagline: "26 named speakers, CC-BY-4.0 weights — and each voice has its own licence.",
+      "Kyutai's Pocket TTS with 26 bundled speakers. CC-BY-4.0 weights and MIT code. Each voice carries its own licence, and some collections are non-commercial.",
+    tagline: "26 named speakers, CC-BY-4.0 weights, and a separate licence for each voice.",
     distinctiveness:
-      "The only entry in the catalog that ships a named voice list — 26 of them — and the only one where the licence question has two layers. The weights are CC-BY-4.0 and the code is MIT, which is straightforward. The voices are licensed separately, per collection: Kyutai's voice repository ranges from CC0 through CC-BY-4.0 to CC-BY-NC-4.0, so which speaker you pick can decide whether your use is commercial-safe.",
+      "The only entry in the catalog with a named voice list (26 voices), and the only one with two layers of licence. The weights are CC-BY-4.0 and the code is MIT. The voices are licensed separately, per collection: Kyutai's voice repository ranges from CC0 through CC-BY-4.0 to CC-BY-NC-4.0, so the speaker you pick can decide whether your use is commercial-safe.",
     spec: {
       vendor: "Kyutai",
       family: "pocket_tts",
@@ -2164,7 +2164,7 @@ export const MODELS: ModelContent[] = [
     sources: [
       hf("kyutai/pocket-tts"),
       gh("kyutai-labs/pocket-tts"),
-      { label: "kyutai/tts-voices — the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
+      { label: "kyutai/tts-voices: the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
       GGUF_TABLE,
     ],
   },
@@ -2177,12 +2177,12 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Pocket TTS German — CC-BY-4.0 weights | Soundbox",
+    metaTitle: "Pocket TTS German: CC-BY-4.0 weights | Soundbox",
     metaDescription:
       "The German Pocket TTS package. Same CC-BY-4.0 weights and MIT code as the English entry, same per-voice licensing caveat.",
     tagline: "The German package. Same weights licence, same per-voice caveat.",
     distinctiveness:
-      "One of five language packages Kyutai publishes that this catalog carries. Mechanically identical to the English entry — same loader, same footprint, same speaker list — and it inherits the same two-layer licence question, where the weights are clear and the individual voices are not.",
+      "One of five Pocket TTS language packages in this catalog. Identical to the English entry (same loader, footprint and speaker list), with the same two-layer licence: the weights are clear and the individual voices are not.",
     spec: {
       vendor: "Kyutai",
       family: "pocket_tts",
@@ -2202,7 +2202,7 @@ export const MODELS: ModelContent[] = [
     sources: [
       hf("kyutai/pocket-tts"),
       gh("kyutai-labs/pocket-tts"),
-      { label: "kyutai/tts-voices — the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
+      { label: "kyutai/tts-voices: the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
       GGUF_TABLE,
     ],
   },
@@ -2215,7 +2215,7 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Pocket TTS Italian — CC-BY-4.0 weights | Soundbox",
+    metaTitle: "Pocket TTS Italian: CC-BY-4.0 weights | Soundbox",
     metaDescription:
       "The Italian Pocket TTS package. Same CC-BY-4.0 weights and MIT code as the English entry, same per-voice licensing caveat.",
     tagline: "The Italian package. Same weights licence, same per-voice caveat.",
@@ -2240,7 +2240,7 @@ export const MODELS: ModelContent[] = [
     sources: [
       hf("kyutai/pocket-tts"),
       gh("kyutai-labs/pocket-tts"),
-      { label: "kyutai/tts-voices — the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
+      { label: "kyutai/tts-voices: the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
       GGUF_TABLE,
     ],
   },
@@ -2253,7 +2253,7 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Pocket TTS Portuguese — CC-BY-4.0 weights | Soundbox",
+    metaTitle: "Pocket TTS Portuguese: CC-BY-4.0 weights | Soundbox",
     metaDescription:
       "The Portuguese Pocket TTS package. Same CC-BY-4.0 weights and MIT code as the English entry, same per-voice licensing caveat.",
     tagline: "The Portuguese package. Same weights licence, same per-voice caveat.",
@@ -2278,7 +2278,7 @@ export const MODELS: ModelContent[] = [
     sources: [
       hf("kyutai/pocket-tts"),
       gh("kyutai-labs/pocket-tts"),
-      { label: "kyutai/tts-voices — the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
+      { label: "kyutai/tts-voices: the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
       GGUF_TABLE,
     ],
   },
@@ -2291,7 +2291,7 @@ export const MODELS: ModelContent[] = [
     tier: "extra",
     verified: false,
     capabilities: ["tts"],
-    metaTitle: "Pocket TTS Spanish — CC-BY-4.0 weights | Soundbox",
+    metaTitle: "Pocket TTS Spanish: CC-BY-4.0 weights | Soundbox",
     metaDescription:
       "The Spanish Pocket TTS package. Same CC-BY-4.0 weights and MIT code as the English entry, same per-voice licensing caveat.",
     tagline: "The Spanish package. Same weights licence, same per-voice caveat.",
@@ -2316,7 +2316,7 @@ export const MODELS: ModelContent[] = [
     sources: [
       hf("kyutai/pocket-tts"),
       gh("kyutai-labs/pocket-tts"),
-      { label: "kyutai/tts-voices — the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
+      { label: "kyutai/tts-voices: the voices' own licences", href: "https://huggingface.co/kyutai/tts-voices" },
       GGUF_TABLE,
     ],
   },

@@ -133,11 +133,11 @@ function CategoryBody({ category }: { category: PublishedCategory }) {
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <Button asChild>
-            <MarketingLink href={GENERATOR_HREF}>Open the generator</MarketingLink>
+            <MarketingLink href={GENERATOR_HREF}>Download Soundbox</MarketingLink>
           </Button>
           <Button variant="outline" asChild>
             <a href={REPO_URL} target="_blank" rel="noreferrer noopener">
-              Install Soundbox
+              View on GitHub
             </a>
           </Button>
         </div>
@@ -149,7 +149,7 @@ function CategoryBody({ category }: { category: PublishedCategory }) {
         // names are now plural or compound — "10 trailer hits & braams samples"
         // is what the obvious template produces.
         title={`Listen: ${content.samples.length} samples from the ${category.name.toLowerCase()} collection`}
-        lede="Every clip shows the exact prompt that produced it — the render script reads these prompts from the same file this page does, so what you hear is what the words made. Copy one, change a word, and you have your own."
+        lede="Every clip shows the exact prompt that produced it. The render script reads its prompts from the same file as this page. Copy one, change a word and generate your own."
       >
         <SampleGrid categorySlug={category.slug} samples={content.samples} />
       </Section>
@@ -157,7 +157,7 @@ function CategoryBody({ category }: { category: PublishedCategory }) {
       <Section
         id="recipes"
         title="Prompts that work"
-        lede="These models answer to physical description, not mood labels. Name the material, the action and the space."
+        lede="These models respond to physical description. Name the material, the action and the space."
       >
         <ul className="grid gap-4 sm:grid-cols-2">
           {content.recipes.map((r) => (
@@ -189,24 +189,24 @@ function CategoryBody({ category }: { category: PublishedCategory }) {
       <Section
         id="why-local"
         title="Why generate locally"
-        lede="The differentiators here are structural, not marketing: the models run on your machine, so the cost, the privacy and the automation story all change."
+        lede="The models run on your machine, which changes the cost, the privacy and what you can automate."
       >
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             {
               icon: WifiOffIcon,
               title: "Offline after download",
-              body: "Weights are fetched once. After that, generation, the library and the API all work with the network off. Everything lives in one SQLite file and one folder of WAVs under ~/.soundbox — nothing is uploaded.",
+              body: "Weights are fetched once. After that, generation, the library and the API all work with the network off. Everything lives in one SQLite file and one folder of WAVs under ~/.soundbox, and nothing is uploaded.",
             },
             {
               icon: BotIcon,
               title: "Your agent can use it",
-              body: "Soundbox runs an MCP server inside the same process, with tools for generating and listing sounds. Generated files come back as absolute paths, so an agent can pipe them straight into a project.",
+              body: "Soundbox runs an MCP server in the same process, with tools for generating and listing sounds. Generated files come back as absolute paths, so an agent can copy them into a project.",
             },
             {
               icon: ScaleIcon,
               title: "Licences stated up front",
-              body: "Every model's terms are shown before you download it, and non-commercial weights need an explicit confirmation. Soundbox is MIT; the model that made a sound governs what you may do with that sound.",
+              body: "Every model's terms are shown before you download it, and non-commercial weights need an explicit confirmation. Soundbox is MIT. The licence of the model that made a sound governs what you may do with it.",
             },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="bg-card ring-border/70 rounded-2xl p-5 ring-1">

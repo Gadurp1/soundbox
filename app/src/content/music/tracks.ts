@@ -57,7 +57,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/neon-arcade-nights.webp",
     prompt:
       "1980s synthwave arcade title theme, wide analog saw lead synth melody, gated reverb drum machine, pulsing sidechained bass synth, bright neon major key, 110 BPM, seamless loop",
-    why: "Naming the drum treatment — gated reverb — does more period work than the word 'retro' ever does, because it is a specific production technique the model has heard thousands of examples of.",
+    why: "Name the drum treatment (gated reverb); it says more about the 1980s than 'retro'. It is a specific production technique the model has heard thousands of examples of.",
   },
   {
     slug: "crystal-caverns",
@@ -69,7 +69,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/crystal-caverns.webp",
     prompt:
       "ambient underground exploration theme, glassy bell synth arpeggio, deep sustained pad underneath, sparse hand percussion, long dripping-water reverb tail, slow minor key, seamless loop",
-    why: "'Sparse' is the load-bearing word: left to itself the model fills every bar, and an exploration bed has to leave room for footsteps and dialogue on top of it.",
+    why: "'Sparse' matters most here. Left to itself the model fills every bar, and an exploration bed has to leave room for footsteps and dialogue on top.",
   },
   {
     slug: "final-gate",
@@ -81,7 +81,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/final-gate.webp",
     prompt:
       "orchestral hybrid final boss theme, staccato low string ostinato, brass ensemble stabs, taiko drum hits on the downbeat, choir pad sustained underneath, dark minor key, 150 BPM",
-    why: "Four named sections with a named articulation each (staccato strings, brass stabs, taiko downbeats, sustained choir) is what turns a mood request into an arrangement the model can actually voice.",
+    why: "Four named sections, each with a named articulation (staccato strings, brass stabs, taiko downbeats, sustained choir), turn a mood request into an arrangement the model can voice.",
   },
   {
     slug: "pixel-sunrise",
@@ -93,7 +93,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/pixel-sunrise.webp",
     prompt:
       "lo-fi hip hop chiptune beat, dusty vinyl crackle, mellow square wave lead synth melody, warm sub bass, laid-back swung drum machine, 82 BPM, seamless loop",
-    why: "Two genres crossed on purpose — the vinyl crackle and swung drums come from lo-fi, the square wave lead from chiptune — and the model blends them cleanly because both halves are named as concrete timbres.",
+    why: "Two genres crossed on purpose: the vinyl crackle and swung drums come from lo-fi, the square wave lead from chiptune. The model blends them cleanly because both halves are named as concrete timbres.",
   },
   {
     slug: "iron-foundry",
@@ -105,7 +105,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/iron-foundry.webp",
     prompt:
       "industrial factory level theme, metallic percussion struck on scrap steel, distorted bass synth ostinato, mechanical clanking locked to the grid, driving minor key, 128 BPM, seamless loop",
-    why: "'Locked to the grid' is the difference between a factory ambience and a factory *track* — without it the clanking drifts out of time and stops reading as music.",
+    why: "'Locked to the grid' keeps the clanking in time. Without it the clanking drifts and the loop sounds like factory ambience instead of a track.",
   },
   {
     slug: "starlight-drift",
@@ -117,7 +117,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/starlight-drift.webp",
     prompt:
       "slow space ambient theme, evolving analog pad, distant reverb-drenched piano notes, soft granular texture, weightless and spacious, no percussion",
-    why: "'No percussion' is the rare negative instruction that earns its keep: the model's default for anything called a 'theme' is to put a beat under it.",
+    why: "'No percussion' is a negative instruction worth including: the model's default for anything called a 'theme' is to put a beat under it.",
   },
   {
     slug: "street-circuit",
@@ -129,7 +129,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/street-circuit.webp",
     prompt:
       "high energy racing game theme, distorted electric guitar riff, driving four-on-the-floor drum kit, aggressive bass synth, rising tension across the loop, 165 BPM, seamless loop",
-    why: "Tempo is the single highest-leverage token in a racing prompt: 165 BPM gets urgency out of the model that no amount of 'fast' and 'intense' will.",
+    why: "Tempo is the strongest instruction in a racing prompt. 165 BPM gets more urgency from the model than 'fast' or 'intense'.",
   },
   {
     slug: "market-of-lanterns",
@@ -141,7 +141,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/market-of-lanterns.webp",
     prompt:
       "cheerful fantasy town market theme, plucked lute melody, hand drum and tambourine groove, wooden flute counter-melody, warm major key, seamless loop",
-    why: "'Counter-melody' rather than 'second instrument' tells the model the flute has its own line to play against the lute, which is what stops the two collapsing into unison.",
+    why: "'Counter-melody' tells the model the flute has its own line to play against the lute, which keeps the two from collapsing into unison.",
   },
 
   /* ---------------------------------------------------------------- */
@@ -159,7 +159,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "triumphant power pop victory anthem, bright electric guitars, punchy live drums, gang vocal chorus, major key, 140 BPM",
     lyrics: "[chorus]\nWe took the long way home\nWe took the crown\nVictory lap, victory lap\nWe are not coming down",
-    why: "Short repeated lines are what a 20-second render can actually fit — hand ACE-Step a dense verse and it either rushes the syllables or drops half of them.",
+    why: "Short repeated lines fit a 20-second render. Give ACE-Step a dense verse and it rushes the syllables or drops half of them.",
   },
   {
     slug: "game-over-blues",
@@ -173,7 +173,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
       "slow electric blues, weeping guitar bends, brushed drums, warm upright bass, smoky male lead vocal, minor key, 68 BPM",
     lyrics:
       "[verse]\nOne more life, one more try\nThe screen goes dark, so do I\n[chorus]\nGame over blues again",
-    why: "The vocal timbre belongs in `prompt`, not in the lyrics — 'smoky male lead vocal' is arrangement, and ACE-Step reads it there while it reads the lyrics block purely as words to sing.",
+    why: "Put the vocal timbre in the prompt. 'Smoky male lead vocal' is arrangement, and ACE-Step reads the lyrics block only as words to sing.",
   },
   {
     slug: "co-op-forever",
@@ -187,7 +187,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
       "upbeat indie pop duet, jangly electric guitars, handclaps, warm synth pads, cheerful male and female vocals trading lines, major key, 124 BPM",
     lyrics:
       "[verse]\nYou take the left, I take the right\n[chorus]\nCo-op forever, player one and two",
-    why: "'Trading lines' asks for two voices in alternation rather than in harmony, and it is the only reliable way to get a call-and-response out of a model with no per-voice controls.",
+    why: "'Trading lines' asks for two voices that alternate. It is the only reliable way to get call-and-response from a model with no per-voice controls.",
   },
   {
     slug: "loading-screen-lullaby",
@@ -201,7 +201,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
       "gentle lullaby, soft nylon-string guitar arpeggio, airy female vocal, quiet sustained strings, slow and tender, major key, 70 BPM",
     lyrics:
       "[verse]\nClose your eyes, the world will wait\n[chorus]\nSleep now little one, the stars are loading",
-    why: "Everything in this prompt pushes the same direction — nylon strings, airy, quiet, slow, tender — because a lullaby fails the moment any one element gets assertive.",
+    why: "Every element in this prompt points the same way: nylon strings, airy, quiet, slow, tender. If any one element turns assertive, the lullaby stops working.",
   },
 
   /* ---------------------------------------------------------------- */
@@ -233,7 +233,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/log-drum-sunset.webp",
     prompt:
       "amapiano instrumental, deep detuned log drum bassline, airy shaker and rim-click percussion, soft Rhodes chord stabs, wide reverb, laid-back groove, 112 BPM",
-    why: "The log drum is the entire genre, so it is named as an instrument rather than left to 'amapiano bass' — asked for generically the model reaches for an ordinary sub and the track stops reading as amapiano at all.",
+    why: "The log drum defines amapiano, so the prompt names it as an instrument. Ask for 'amapiano bass' and the model reaches for an ordinary sub, and the track no longer sounds like amapiano.",
   },
   {
     slug: "drift-tape",
@@ -247,7 +247,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/drift-tape.webp",
     prompt:
       "phonk instrumental, distorted cowbell melody, heavily saturated 808 bass, lo-fi tape hiss and vinyl noise, halftime trap drums, dark minor key, 140 BPM, seamless loop",
-    why: "Phonk is defined by damage, and the model's default is polish — 'heavily saturated', 'tape hiss' and 'vinyl noise' are three separate requests for degradation because one is not enough to overcome that default.",
+    why: "Phonk depends on degraded sound, and the model defaults to a clean mix. 'Heavily saturated', 'tape hiss' and 'vinyl noise' are three separate requests for degradation because one is not enough to override that default.",
   },
   {
     slug: "club-bounce-140",
@@ -261,7 +261,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/club-bounce-140.webp",
     prompt:
       "jersey club instrumental, triplet kick pattern in groups of three, chopped vocal stab hook, punchy layered claps, sparse bright percussion, 140 BPM, seamless loop",
-    why: "Spelling the rhythm out — 'triplet kick pattern in groups of three' — rather than trusting the genre name is what separates jersey club from any other track at 140 BPM.",
+    why: "Spell out the rhythm: 'triplet kick pattern in groups of three' is what separates jersey club from any other track at 140 BPM. The genre name alone does not do it.",
   },
   {
     slug: "two-step-rain",
@@ -275,7 +275,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/two-step-rain.webp",
     prompt:
       "UK garage two-step instrumental, shuffled syncopated drum groove, warm sub bass, filtered organ chord stabs, crisp offbeat hi-hats, night-time city mood, 134 BPM, seamless loop",
-    why: "'Shuffled syncopated' is the swing that makes it two-step; drop those two words and the identical instrument list renders as straight four-to-the-floor house.",
+    why: "'Shuffled syncopated' is the swing that makes it two-step. Without those two words the same instrument list renders as straight four-to-the-floor house.",
   },
   {
     slug: "basement-rollers",
@@ -289,7 +289,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/basement-rollers.webp",
     prompt:
       "rolling tech house instrumental, dry four-on-the-floor kick, tight rubbery bassline on the offbeat, filtered percussion loop, minimal dub chord stab, 126 BPM, seamless loop",
-    why: "'Dry' and 'minimal' are subtractive instructions, and tech house needs both — left alone the model adds the reverb and pads that turn a rolling groove into progressive house.",
+    why: "'Dry' and 'minimal' are subtractive instructions, and tech house needs both. Left alone the model adds the reverb and pads that turn a rolling groove into progressive house.",
   },
   {
     slug: "baile-heat",
@@ -303,7 +303,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/baile-heat.webp",
     prompt:
       "brazilian baile funk instrumental, punchy tamborzao drum pattern, distorted bass drop, chopped vocal shout sample, whistle hook, raw and loud, 130 BPM, seamless loop",
-    why: "Naming the tamborzão by its own name gets a specific pattern that 'brazilian percussion' never will, because the term appears in training data attached to the rhythm itself.",
+    why: "Naming the tamborzão gets a specific pattern that 'brazilian percussion' does not, because the term appears in training data attached to the rhythm itself.",
   },
   {
     slug: "velvet-rhodes",
@@ -317,7 +317,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/velvet-rhodes.webp",
     prompt:
       "neo-soul instrumental, lush Rhodes electric piano chords with extended jazz voicings, loose pocket drums slightly behind the beat, warm fretless bass, muted trumpet fills, 88 BPM",
-    why: "'Slightly behind the beat' asks for a feel rather than a sound, and it is the single instruction separating neo-soul from ordinary Rhodes-and-bass jazz at the same tempo.",
+    why: "'Slightly behind the beat' asks for a feel. It is the instruction that separates neo-soul from ordinary Rhodes-and-bass jazz at the same tempo.",
   },
   {
     slug: "kick-cathedral",
@@ -331,7 +331,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/kick-cathedral.webp",
     prompt:
       "hardstyle instrumental, distorted pitched-down kick drum, screeching reverse lead synth, euphoric supersaw chord progression, festival main stage energy, 155 BPM",
-    why: "In hardstyle the kick carries the pitch, so it is named first — prompt order is not decoration, and the head of the list gets the most of the model's attention.",
+    why: "In hardstyle the kick carries the pitch, so it is named first. Prompt order matters: the start of the list gets the most of the model's attention.",
   },
   {
     slug: "slow-lean",
@@ -359,7 +359,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/liquid-mile.webp",
     prompt:
       "liquid drum and bass instrumental, fast broken breakbeat, smooth rolling sub bass, warm major-seventh pad chords, sparse piano flourishes, 174 BPM, seamless loop",
-    why: "'Major-seventh pad chords' is what makes this liquid rather than neurofunk — same 174 BPM breakbeat, opposite emotional register, decided by one chord-quality word.",
+    why: "'Major-seventh pad chords' make this liquid drum and bass. Neurofunk uses the same 174 BPM breakbeat; the chord quality decides which one you get.",
   },
   {
     slug: "wall-of-blue",
@@ -373,7 +373,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/wall-of-blue.webp",
     prompt:
       "shoegaze instrumental, thick layered guitar wall drenched in reverb and chorus, bent tremolo lead buried in the mix, steady live drum kit, hazy major key, 108 BPM",
-    why: "'Buried in the mix' is a mixing instruction rather than an instrument, and shoegaze is the rare genre where telling the model to hide the lead is the correct call.",
+    why: "'Buried in the mix' is a mixing instruction. Shoegaze is one of the few genres where telling the model to hide the lead is correct.",
   },
   {
     slug: "desert-drum",
@@ -387,7 +387,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     cover: "/music/covers/desert-drum.webp",
     prompt:
       "afro house instrumental, tribal hand drum polyrhythm, deep round sub bass, hypnotic marimba melody, breathy vocal chop texture, 122 BPM, seamless loop",
-    why: "'Hypnotic' earns its place beside 'polyrhythm': it tells the model to repeat rather than develop, which is what stops a groove track turning into a composition over twenty seconds.",
+    why: "'Hypnotic' tells the model to repeat a figure instead of developing it, which keeps a groove track from turning into a composition over twenty seconds.",
   },
 
   /* --- Sung, ACE-Step 1.5 Turbo --- */
@@ -404,7 +404,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "afrobeats, syncopated log drum and shaker groove, bright plucked guitar riff, warm sub bass, smooth melodic male vocal, major key, 104 BPM",
     lyrics: "[chorus]\nLagos midnight, hold me slow\nDance until the morning show\nSay you never let me go",
-    why: "Three short lines, all hook: at twenty seconds there is room for a chorus and nothing else, and a verse written at real-single density gets swallowed or rushed.",
+    why: "Three short lines, all hook. Twenty seconds has room for a chorus and nothing else; a verse written at the density of a real single gets swallowed or rushed.",
   },
   {
     slug: "cold-corner",
@@ -419,7 +419,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "melodic drill, sliding 808 bass, skippy drill hi-hat pattern, dark piano loop, half-sung half-rapped male vocal, minor key, 142 BPM",
     lyrics: "[chorus]\nCold corner, same old street\nNothing changes but the beat\nI been running on repeat",
-    why: "'Half-sung half-rapped' is the entire melodic-drill delivery in four words, and it belongs in `prompt` — ACE-Step reads that field as performance direction and the lyrics field as words to sing.",
+    why: "'Half-sung half-rapped' describes melodic-drill delivery in four words. Put it in the prompt: ACE-Step reads that field as performance direction and the lyrics field as words to sing.",
   },
   {
     slug: "corrido-de-la-frontera",
@@ -434,7 +434,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "corridos tumbados, requinto guitar lead melody, tuba bassline, twelve-string bajo sexto strumming, earnest male vocal, no drums, moderate tempo",
     lyrics: "[verse]\nCruzando la frontera al amanecer\nCon el corazon pesado y nada que perder",
-    why: "'No drums' is the load-bearing exclusion. Sierreño runs on requinto, tuba and bajo sexto alone, and left to itself the model puts a kit under everything.",
+    why: "'No drums' is the exclusion that matters. Sierreño uses only requinto, tuba and bajo sexto, and left to itself the model puts a kit under everything.",
   },
   {
     slug: "sugar-crash",
@@ -449,7 +449,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "hyperpop, pitched-up processed vocals, glitchy chopped drums, brittle saw synth chords, extreme sidechain pumping, sugary major key, 160 BPM",
     lyrics: "[chorus]\nSugar crash, love it when it hurts\nTurn it up until it breaks\nEverything at once or nothing",
-    why: "Every phrase here is a production verb rather than an instrument — pitched-up, chopped, sidechained — because hyperpop is produced more than it is played, and an instrument list alone renders as ordinary pop.",
+    why: "Every phrase here is a production verb: pitched-up, chopped, sidechained. Hyperpop is defined by its production, and an instrument list alone renders as ordinary pop.",
   },
   {
     slug: "two-lane-heart",
@@ -464,7 +464,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "modern country pop, acoustic guitar strum, slide guitar fills, stomp-clap drums, warm bass, earnest male vocal with a slight drawl, major key, 96 BPM",
     lyrics: "[chorus]\nTwo-lane heart, one-way town\nI keep driving, you keep pulling me down",
-    why: "'With a slight drawl' shapes the accent without naming a singer to imitate, which is both the honest way to ask for a regional vocal and the way that survives a model update.",
+    why: "'With a slight drawl' shapes the accent without naming a singer to imitate, which also keeps the prompt working after a model update.",
   },
   {
     slug: "neon-signal",
@@ -479,7 +479,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "K-pop, glossy synth-pop production, punchy electronic drums, staccato synth bass, layered female group vocals with harmony stacks, bright major key, 128 BPM",
     lyrics: "[chorus]\nNeon signal, catch the light\nWe go up, we go up tonight",
-    why: "'Harmony stacks' is what buys the layered group vocal the genre is built on; 'female vocals' on its own gets one tracked voice and a much smaller chorus.",
+    why: "'Harmony stacks' gets the layered group vocal the genre is built on; 'female vocals' on its own gets one tracked voice and a much smaller chorus.",
   },
   {
     slug: "bedroom-ceiling",
@@ -494,7 +494,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "bedroom pop, softly clipped lo-fi drums, warm detuned synth pad, simple clean electric guitar, intimate close-mic breathy female vocal, hazy major key, 92 BPM",
     lyrics: "[verse]\nStaring at the bedroom ceiling\nCounting all the ways of healing",
-    why: "'Close-mic' and 'softly clipped' describe the recording rather than the song, which is the point — bedroom pop is a production aesthetic, and prompted as a genre alone it comes back as clean studio pop.",
+    why: "'Close-mic' and 'softly clipped' describe the recording. Bedroom pop is a production style, and prompted by genre name alone it comes back as clean studio pop.",
   },
   {
     slug: "silk-hours",
@@ -509,7 +509,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "contemporary R&B slow jam, sparse finger-snap percussion, deep warm bass, muted Rhodes chords, breathy layered female vocal with runs, minor key, 74 BPM",
     lyrics: "[chorus]\nSilk hours, don't turn on the light\nStay a little longer, make it last all night",
-    why: "'With runs' is the one phrase that gets melisma out of the model; without it ACE-Step sings the line straight and the take reads as pop rather than R&B.",
+    why: "'With runs' is the phrase that gets melisma from the model. Without it ACE-Step sings the line straight and the take sounds like pop.",
   },
   {
     slug: "perreo-nocturno",
@@ -524,7 +524,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "reggaeton, classic dembow drum pattern, deep boomy kick, minor key synth plucks, confident male vocal, club atmosphere, 96 BPM",
     lyrics: "[chorus]\nPerreo nocturno, baja la luz\nMuevete conmigo, no pares tu",
-    why: "Naming 'dembow' rather than 'reggaeton beat' pins one exact rhythm, and writing the lyric in Spanish keeps the vowel shapes the genre's phrasing is built around.",
+    why: "Naming 'dembow' pins one exact rhythm. Writing the lyric in Spanish keeps the vowel shapes the genre's phrasing is built around.",
   },
   {
     slug: "suburb-static",
@@ -539,7 +539,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "pop punk revival, palm-muted distorted power chords, fast driving punk drums, melodic bass, urgent young male vocal, gang vocal backing, major key, 168 BPM",
     lyrics: "[chorus]\nSuburb static, same four walls\nScreaming down an empty hall",
-    why: "'Gang vocal backing' costs three words and buys a chorus that sounds like a room rather than a person, which is most of what makes the genre feel live.",
+    why: "'Gang vocal backing' adds three words and gives a chorus that sounds like a room full of people. That is most of what makes the genre feel live.",
   },
   {
     slug: "lift-me-higher",
@@ -554,7 +554,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "soulful gospel house, four-on-the-floor kick, organ chord stabs, rolling piano riff, powerful belting female lead vocal with choir backing, uplifting major key, 124 BPM",
     lyrics: "[chorus]\nLift me higher, higher than before\nI can feel it, I can feel it in my soul",
-    why: "'Belting' sets the vocal effort level explicitly, and effort level is the difference between house with a singer on it and gospel house.",
+    why: "'Belting' sets the vocal effort level, and effort level is what separates gospel house from house with a singer on it.",
   },
   {
     slug: "paper-thin",
@@ -569,7 +569,7 @@ export const MUSIC_TRACKS: MusicTrack[] = [
     prompt:
       "indie folk, fingerpicked acoustic guitar, brushed snare, quiet swelling strings, close intimate female vocal with a second harmony voice, minor key, 76 BPM",
     lyrics: "[verse]\nEverything I built was paper thin\nThe wind came through and found its way in",
-    why: "'A second harmony voice' gets two-part harmony out of a model with no per-voice controls by describing the arrangement instead of trying to conduct it — the same trick as 'trading lines' on Co-op Forever, aimed at harmony rather than alternation.",
+    why: "'A second harmony voice' gets two-part harmony from a model with no per-voice controls by describing the arrangement. Co-op Forever does the same with 'trading lines' for alternation.",
   },
 ];
 

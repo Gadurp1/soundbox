@@ -40,7 +40,7 @@ function SampleBody({
   return (
     <>
       <SeoHead
-        title={`${sample.title} Sound Effect — Free to Generate | Soundbox`}
+        title={`${sample.title} sound effect | Soundbox`}
         description={`Listen to "${sample.title}", a ${category.name.toLowerCase()} sound effect, and see the exact prompt that made it. Generate your own variation locally.`}
         path={`/sfx/${category.slug}/${sample.slug}`}
         jsonLd={[
@@ -80,14 +80,14 @@ function SampleBody({
                   Placeholder
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent>{sample.placeholderNote ?? "Not an model render."}</TooltipContent>
+              <TooltipContent>{sample.placeholderNote ?? "Not a model render."}</TooltipContent>
             </Tooltip>
           )}
         </div>
         <p className="text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-          One of our {category.name.toLowerCase()} sound effects
-          {sample.model ? `, generated with ${sample.model}` : ""}. The prompt below is the exact
-          one that produced it — copy it, change a word, and generate your own take.
+          A {category.name.toLowerCase()} sound effect
+          {sample.model ? `, generated with ${sample.model}` : ""} from the prompt below. Copy
+          the prompt, change a word and generate your own version.
         </p>
       </header>
 
@@ -125,8 +125,8 @@ function SampleBody({
         </div>
         <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
           Generated{sample.model ? ` with ${sample.model}` : ""}. These models respond to
-          material, action and space — not mood labels — so the most useful edit is usually
-          swapping one concrete noun for another.
+          material, action and space, so the most useful edit is usually swapping one concrete
+          noun for another.
         </p>
       </section>
 

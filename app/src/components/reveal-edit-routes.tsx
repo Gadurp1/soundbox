@@ -68,7 +68,7 @@ const ROUTES: Route[] = [
     id: "extend",
     title: "extend",
     detail:
-      "The source unchanged, followed by new material up to the target length. It survives sample-for-sample because extend is a repaint whose window starts past the end — not a re-render that happens to start similar.",
+      "The source unchanged, followed by new material up to the target length. Extend is a repaint whose window starts past the end of the clip, so the source survives sample for sample.",
   },
   {
     id: "cover",
@@ -80,13 +80,13 @@ const ROUTES: Route[] = [
     id: "repaint",
     title: "repaint",
     detail:
-      "Regenerate a window inside the clip and keep both edges. For when one moment in an otherwise good take is wrong.",
+      "Regenerate a window inside the clip and keep both edges. Use it when one moment in an otherwise good take is wrong.",
   },
   {
     id: "separate",
     title: "separation",
     detail:
-      "Split a mix into stems — htdemucs gives vocals, drums, bass and other. Its own task mode rather than a kind of generation, and it needs 44.1 kHz, so Soundbox resamples first.",
+      "Split a mix into stems. htdemucs gives vocals, drums, bass and other. Separation is a task mode of its own, separate from generation. It needs 44.1 kHz, so Soundbox resamples first.",
   },
 ];
 
@@ -145,8 +145,8 @@ export function RevealEditRoutes() {
     <ScrollStage
       id="routes"
       eyebrow="Covering, extending, repainting"
-      title="A clip you have is a starting point, not an outcome"
-      intro="Generation is one route of several. The rest take a clip you already own and change part of it — keeping the samples you wanted to keep."
+      title="Change a clip you already have"
+      intro="Generation is one route of several. The others take a clip you already have, change part of it and keep the rest."
       steps={ROUTES}
       layout="centered"
       lane={2}
@@ -158,7 +158,7 @@ export function RevealEditRoutes() {
 
         return (
           <figure className="border-border/60 bg-card/80 overflow-hidden rounded-xl border shadow-sm">
-            <WindowChrome label="Sound — what you can do to a clip you already have" />
+            <WindowChrome label="Sound: edit a clip you already have" />
 
             <div className="p-4 sm:p-5">
               {/* The rail is the control. Four routes with genuinely different

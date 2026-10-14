@@ -130,7 +130,6 @@ const MODELS: ModelCard[] = [
     license: STABILITY_LICENSE,
     status: "Verified",
     verified: true,
-    gated: true,
   },
   {
     id: "audiocpp-stable-audio-3-small-music",
@@ -142,7 +141,6 @@ const MODELS: ModelCard[] = [
     license: STABILITY_LICENSE,
     status: "Verified",
     verified: true,
-    gated: true,
   },
   {
     id: "audiocpp-ace-step",
@@ -160,6 +158,21 @@ const MODELS: ModelCard[] = [
       url: "https://github.com/ace-step/ACE-Step-1.5/blob/main/LICENSE",
     },
     status: "Verified",
+    verified: true,
+  },
+  {
+    id: "audiocpp-minimax-music3",
+    name: "MiniMax Music 3",
+    vendor: "MiniMax",
+    spec: "audio.cpp (GGUF)",
+    maxDuration: "—",
+    download: "—",
+    license: {
+      name: "MiniMax-Music3 Community License",
+      commercial: "conditional",
+      url: "https://huggingface.co/MiniMaxAI/MiniMax-Music3/blob/main/LICENSE",
+    },
+    status: "Verified. Needs about 10 GB of VRAM",
     verified: true,
   },
 ];
@@ -329,7 +342,7 @@ function HeroPrompt({
             type="submit"
             size="icon"
             disabled={!value.trim()}
-            aria-label="Get Soundbox to run this prompt"
+            aria-label="Download Soundbox to run this prompt"
             className="mb-1 shrink-0 rounded-full shadow-sm transition-transform hover:scale-105 active:scale-95"
           >
             <ArrowUpIcon />
@@ -337,9 +350,9 @@ function HeroPrompt({
         </div>
       </div>
       <p id="hero-prompt-hint" className="text-muted-foreground mt-2 text-xs">
-        Soundbox runs on your own machine — this opens the install guide. Say
-        the material, the action and the space, and it is the kind of prompt
-        these models answer to.
+        Soundbox runs on your own machine, so this opens the download page.
+        Prompts work best when they name the material, the action and the
+        space.
       </p>
     </form>
   );
@@ -373,14 +386,14 @@ function Hero() {
           id="hero-heading"
           className="font-heading mt-5 text-4xl font-semibold tracking-tight text-balance sm:text-5xl"
         >
-          Sound effects from a text prompt, generated on your own machine
+          Sound effects, music and voices, generated on your own machine
         </h1>
 
         <p className="text-muted-foreground mx-auto mt-5 max-w-xl text-base leading-relaxed text-pretty sm:text-lg">
-          Soundbox puts several open-weight text-to-audio models behind one
-          interface, an HTTP API and an MCP server. No cloud, no API key, no
-          per-generation billing — and every model&rsquo;s licence is on screen
-          before you download it.
+          Describe a sound and get a WAV. Write lyrics and get a song. Clone a
+          voice from a short clip. Arrange it all on a timeline, or let your
+          coding agent do it over MCP. Open-weight models, no account, works
+          offline.
         </p>
 
         {/* The product, under the pitch rather than above it. The banner led
@@ -413,8 +426,7 @@ function Hero() {
           ))}
         </div>
         <p className="text-muted-foreground mx-auto mt-3 max-w-md text-xs leading-relaxed">
-          Every example names a material, an action and a space — the shape these
-          models actually answer to.
+          Each example names a material, an action and a space.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
@@ -424,8 +436,8 @@ function Hero() {
             <Link to={MODELS_HUB_HREF}>Browse the models</Link>
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <a href={`${REPO_URL}#install`} target="_blank" rel="noreferrer noopener">
-              Install guide
+            <a href={GENERATOR_HREF} target="_blank" rel="noreferrer noopener">
+              Download
               <ExternalLinkIcon aria-hidden="true" />
             </a>
           </Button>
@@ -509,9 +521,9 @@ function Models() {
       <SectionHead
         id="models-heading"
         eyebrow="Models"
-        title="One runtime, every model — and the licence stated first"
+        title="One runtime for every model, with the licence shown first"
       >
-        Every model here runs through{" "}
+        Every model runs through{" "}
         <a
           href="https://github.com/0xShug0/audio.cpp"
           target="_blank"
@@ -520,11 +532,11 @@ function Models() {
         >
           audio.cpp
         </a>
-        , a single native binary rather than a Python stack per model. That
-        does not mean any GGUF file works: audio.cpp implements a fixed set of
-        model architectures, and a model has to be one of those — quantised to
-        GGUF — to run. Point it at your own weights for an architecture it
-        already knows (see{" "}
+
+        , a native runtime, so there is no Python to set up. audio.cpp
+        implements a fixed set of model architectures, and a model must be one
+        of them, quantised to GGUF, to run. You can point it at your own weights
+        for an architecture it already supports (see{" "}
         <a
           href={`${repoFile("docs/AUDIOCPP.md")}#bring-your-own-model`}
           target="_blank"
@@ -533,11 +545,9 @@ function Models() {
         >
           bring your own model
         </a>
-        ) and it just works; a genuinely new architecture needs a new loader in
-        audio.cpp itself. Licensing is the other axis Soundbox leads with: every
-        model shows what you may do with its output before you spend gigabytes
-        downloading it, and the non-commercial ones make you confirm that in
-        writing.
+        ). A new architecture needs a new loader in audio.cpp. Each model shows
+        what you may do with its output before you download it, and
+        non-commercial models ask you to confirm the restriction.
       </SectionHead>
 
       <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -548,19 +558,20 @@ function Models() {
 
       <div className="border-border/60 mt-6 rounded-2xl border border-dashed p-5">
         <h3 className="text-sm font-semibold tracking-tight">
-          About those &ldquo;verified&rdquo; labels
+          What &ldquo;verified&rdquo; means
         </h3>
         <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
-          This is a young project. The three models above have been run end to
-          end on real hardware; start with Stable Audio 3.0 SFX to prove your
-          setup. The catalog has further entries — Stable Audio 3.0 Medium and
-          HeartMuLa — that are opt-in via Settings and say &ldquo;unverified&rdquo;
-          plainly rather than being quietly listed as supported. Reports either
-          way are the most useful contribution you can make.
+          The four models above have been run end to end on real hardware and
+          are on by default. Start with Stable Audio 3.0 SFX to check your
+          setup. 42 more models (text-to-speech, music, stem separation and
+          voice conversion) are in the catalog and can be switched on from the
+          Models page. Of those, VibeVoice 1.5B has also been run end to end;
+          the rest are marked unverified until someone reports a result.
+          Reports either way help.
         </p>
         <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-          The licence chips above are a summary, not legal advice. Read the
-          licences yourself.
+          The licence chips are a summary and are not legal advice. Read each
+          licence before you ship what a model made.
         </p>
       </div>
     </Section>
@@ -574,27 +585,27 @@ function Local() {
     <Section labelledBy="local-heading">
       <SectionHead
         id="local-heading"
-        eyebrow="Local by construction"
-        title="Nothing is uploaded, because there is nowhere to upload it to"
+        eyebrow="Local and offline"
+        title="Nothing is uploaded"
       >
         Soundbox is a server on your loopback interface and a folder on your
-        disk. Weights are pulled from Hugging Face at your direction, under your
-        account; after that you can unplug the network and keep working.
+        disk. Weights download from Hugging Face when you ask for them. After
+        that it works offline.
       </SectionHead>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
         <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-          <Feature icon={WifiOffIcon} title="No account, no key, no credits">
-            There is no sign-up, no token to paste (except your own Hugging Face
-            one for gated weights), and no meter running while you iterate.
+          <Feature icon={WifiOffIcon} title="No account or credits">
+            There is no sign-up and no usage meter. Audio models download
+            without an account.
           </Feature>
-          <Feature icon={FolderIcon} title="Your library is just files">
+          <Feature icon={FolderIcon} title="Your library is files on disk">
             One SQLite file and one folder of WAVs under <code>~/.soundbox</code>.
-            Back it up, sync it, grep it, delete it — it is yours.
+            Back it up, sync it or delete it like any other folder.
           </Feature>
           <Feature icon={ScaleIcon} title="Licences before downloads">
             Every model card states its terms and colour-codes commercial use.
-            Non-commercial weights need an explicit confirmation naming the
+            Non-commercial weights need an explicit confirmation that names the
             restriction.
           </Feature>
           <Feature icon={AudioLinesIcon} title="Prompt, seed and settings kept">
@@ -629,10 +640,11 @@ function Prompting() {
       <SectionHead
         id="prompting-heading"
         eyebrow="Writing prompts that work"
-        title="Describe the physics, not the mood"
+        title="Name the material, the action and the space"
       >
-        These models were trained on captions of recordings, so they answer
-        material, action and space. Mood labels give you noise.
+        These models were trained on captions of recordings, so they respond to
+        descriptions of what is making the sound and where. Mood words produce
+        noise.
       </SectionHead>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -642,7 +654,7 @@ function Prompting() {
           </p>
           <p className="mt-3 font-mono text-sm">scary sound</p>
           <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-            Nothing here names a thing that could vibrate. You get noise.
+            It names no material and no action, so the model returns noise.
           </p>
         </div>
         <div className="ring-primary/30 bg-card rounded-2xl p-5 ring-1">
@@ -661,9 +673,8 @@ function Prompting() {
       </div>
 
       <p className="text-muted-foreground mt-6 max-w-2xl text-sm leading-relaxed">
-        Keep clips short and layer them in your editor. One three-second
-        generation you can place precisely beats one twenty-second generation you
-        cannot.
+        Keep clips short and layer them in your editor. A three-second clip is
+        easier to place than a twenty-second one.
       </p>
     </Section>
   );
@@ -696,13 +707,12 @@ function Agents() {
       <SectionHead
         id="agents-heading"
         eyebrow="Built for agents"
-        title="See what your agents are generating, live"
+        title="An MCP server, and a log of every call"
       >
-        Point Claude Code, Cursor, or anything else that speaks MCP at the
-        endpoint below and it can generate sound effects as part of a bigger
-        task. The Agents page in the app is where you watch it happen — which
-        agent, what it asked for, whether it worked — not a log file you have
-        to go find.
+        Connect Claude Code, Cursor or any MCP client and it can generate,
+        speak, arrange and export audio as part of a larger task. The Agents
+        page in the app logs every call: which client made it, what it asked
+        for, and whether it worked.
       </SectionHead>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_1fr]">
@@ -759,19 +769,19 @@ function Agents() {
 
         <div className="grid min-w-0 gap-4">
           <Feature icon={BotIcon} title="Every agent, identified">
-            Calls are attributed to the client that made them — name and
-            version, straight from MCP&rsquo;s own handshake. No wiring, no
-            headers to add.
+            Each call is attributed to the client that made it, by name and
+            version, from the MCP handshake. There are no headers to add.
           </Feature>
-          <Feature icon={ActivityIcon} title="OpenTelemetry, if you want it">
-            Point <code className="font-mono text-xs">otel_endpoint</code> at
-            your own collector and every tool call becomes a trace and a
-            metric — the standard OTLP/HTTP shape, no vendor lock-in.
+          <Feature icon={ActivityIcon} title="Optional OpenTelemetry">
+            Set <code className="font-mono text-xs">otel_endpoint</code> to
+            your own collector and each tool call is exported as a trace and a
+            metric over standard OTLP/HTTP.
           </Feature>
-          <Feature icon={SparklesIcon} title="Skills that ship in the box">
-            Bundled agent skills teach a connected agent how to prompt these
-            models well and run a full sound pass over a project, installed
-            with one click from the Agents page or{" "}
+          <Feature icon={SparklesIcon} title="Bundled agent skills">
+            Three skills ship with Soundbox: prompting for sound effects, a
+            sound pass that finds and generates every sound a project needs,
+            and writing and voicing dialogue. Install them from the Agents page
+            or with{" "}
             <code className="font-mono text-xs">soundbox skills install</code>.
           </Feature>
         </div>
@@ -788,12 +798,12 @@ function Developers() {
       <SectionHead
         id="dev-heading"
         eyebrow="API &amp; MCP"
-        title="Sound generation your coding agent can call"
+        title="An HTTP API and an MCP endpoint on port 17494"
       >
-        The same server that backs the UI exposes an HTTP API and an MCP
-        endpoint, so &ldquo;build the level, then make me a door sound&rdquo; can
-        be one task rather than two. Results come back with an absolute
-        filesystem path, ready to pipe into ffmpeg or drop into a project.
+        The server behind the UI also serves an HTTP API and an MCP endpoint,
+        so an agent can build a level and make its door sound in the same task.
+        Results include the WAV&rsquo;s absolute path, which you can pass to
+        ffmpeg or copy into a project.
       </SectionHead>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
@@ -805,11 +815,12 @@ function Developers() {
         <p className="text-muted-foreground flex items-start gap-2 text-sm leading-relaxed">
           <BotIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
-            Tools: <code className="font-mono text-xs">soundbox.generate</code>,{" "}
-            <code className="font-mono text-xs">list_models</code>,{" "}
-            <code className="font-mono text-xs">list_sounds</code>,{" "}
-            <code className="font-mono text-xs">get_sound</code>,{" "}
-            <code className="font-mono text-xs">delete_sound</code>.
+            21 tools, including{" "}
+            <code className="font-mono text-xs">generate</code>,{" "}
+            <code className="font-mono text-xs">speak</code>,{" "}
+            <code className="font-mono text-xs">separate</code>,{" "}
+            <code className="font-mono text-xs">list_sounds</code> and{" "}
+            <code className="font-mono text-xs">export_story</code>.
           </span>
         </p>
         <div className="flex shrink-0 gap-2 self-start sm:self-auto">
@@ -829,39 +840,36 @@ function Developers() {
 
 const STEPS: { title: string; body: React.ReactNode }[] = [
   {
-    title: "Clone it and install",
+    title: "Install the app",
     body: (
       <>
-        Node 20+ is the whole requirement — no Python, no torch, no
-        GPU-specific wheel to pick. Inference is{" "}
+        Download the installer for Windows 10 or 11, or macOS on Apple silicon
+        or Intel. It carries its own runtime, so nothing else needs installing.
+        The builds are not signed yet, so the first launch asks you to confirm.
+      </>
+    ),
+  },
+  {
+    title: "Download a model",
+    body: (
+      <>
+        The first run walks you through picking models for your GPU, and each
+        model downloads from inside the app the first time you use it. Start
+        with Stable Audio 3.0 SFX to check your setup, then pick the model
+        whose licence suits what you are making.
+      </>
+    ),
+  },
+  {
+    title: "Or run from source",
+    body: (
+      <>
+        Requires Node 22.12 or later, with no Python and no CUDA toolkit.{" "}
+        <code className="font-mono text-xs">npm run dev</code> starts the server
+        on port 17494 and the UI on 5174. Inference runs in{" "}
         <code className="font-mono text-xs">audiocpp_cli</code>, a native binary
-        with CUDA/HIP/Metal/Vulkan/CPU backends selected automatically, fetched
-        on first use and cached under{" "}
-        <code className="font-mono text-xs">~/.soundbox/bin/</code>.
-      </>
-    ),
-  },
-  {
-    title: "Run the dev stack",
-    body: (
-      <>
-        <code className="font-mono text-xs">npm run dev</code> starts the backend
-        on port 17494 and the UI on 5174 and stops both together. Prefer a real
-        window? <code className="font-mono text-xs">npm run desktop</code> runs
-        it in a Tauri shell.
-      </>
-    ),
-  },
-  {
-    title: "Download one model",
-    body: (
-      <>
-        Start with Stable Audio 3.0 SFX on the Models page — the model the
-        README&rsquo;s prompting advice is written against, and the fastest way
-        to confirm the pipeline works on your machine. It is gated: accept
-        Stability&rsquo;s terms with your own Hugging Face account and paste an
-        access token into Settings first. Then pick the model whose licence
-        suits what you are building.
+        that picks CUDA, HIP, Metal, Vulkan or CPU automatically and is cached
+        under <code className="font-mono text-xs">~/.soundbox/bin/</code>.
       </>
     ),
   },
@@ -873,12 +881,13 @@ function GetStarted() {
       <SectionHead
         id="start-heading"
         eyebrow="Getting started"
-        title="Three steps, and no account anywhere"
+        title="Install, pick a model, generate"
       >
-        A GPU with 8 GB or more makes this pleasant. CPU works, but generation
-        takes minutes rather than seconds. No GPU and just curious?{" "}
-        <code className="font-mono text-xs">npm run dev:mock</code> runs the whole
-        UI against an in-browser fake.
+        A GPU is not required, but CPU generation is slow. A few GB of VRAM
+        covers the verified models, and each model card shows its footprint. To
+        try the UI with no GPU or server,{" "}
+        <code className="font-mono text-xs">npm run dev:mock</code> runs it
+        against an in-browser fake.
       </SectionHead>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1fr]">
@@ -911,7 +920,7 @@ function GetStarted() {
               </a>
             </Button>
             <Button variant="outline" asChild>
-              <Link to="/docs/install">Install it</Link>
+              <Link to="/docs/install">Install guide</Link>
             </Button>
           </div>
         </div>
@@ -938,10 +947,9 @@ function Footer() {
               Soundbox is MIT licensed. The model weights are not.
             </strong>{" "}
             Each model carries its own licence and several forbid commercial
-            use. Soundbox downloads weights from Hugging Face at your direction,
-            under your account — it does not redistribute them. What you may do
-            with a generated sound is governed by the licence of whichever model
-            produced it.
+            use. Soundbox downloads weights from Hugging Face at your direction
+            and does not redistribute them. What you may do with a generated
+            sound is governed by the licence of the model that produced it.
           </p>
         </div>
 
@@ -1033,12 +1041,11 @@ export function WelcomePage() {
         <Section id="screens" labelledBy="screens-heading">
           <SectionHead
             id="screens-heading"
-            eyebrow="The app itself"
-            title="What it looks like once it is running"
+            eyebrow="Screenshots"
+            title="The running app"
           >
-            Screenshots of the running application, not mockups — the library
-            with its prompts and seeds, the Agents page with real call history,
-            and the music studio.
+            Captured from the app: the library with its prompts and seeds, the
+            Agents page with its call history, and the music studio.
           </SectionHead>
           <div className="mt-8">
             <ProductShots />

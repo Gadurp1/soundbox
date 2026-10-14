@@ -23,7 +23,7 @@
 
 export const LABEL = {
   name: "Soundbox Records",
-  tagline: "The first label where every artist is a prompt.",
+  tagline: "A fictional label where every artist is a prompt.",
   /** Catalog prefix — each act's number is SBX- plus its roster position. */
   catalogPrefix: "SBX",
 } as const;

@@ -52,7 +52,7 @@ const EXCHANGES: Exchange[] = [
     actions: ['Generate “rain on a tin roof” onto track 0 at 0.00s'],
     title: "Ask for a sound",
     detail:
-      "A new sound, generated and placed in one go. The model picks the lane and the moment from the arrangement it was shown, not from thin air.",
+      "A new sound, generated and placed in one go. The model picks the lane and the start time from the arrangement it was shown.",
   },
   {
     said: "this track needs reverb",
@@ -61,7 +61,7 @@ const EXCHANGES: Exchange[] = [
     actions: ["Add reverb to track 3", "Set reverb on track 3: decay 2.4, mix 0.35"],
     title: "Ask for an effect",
     detail:
-      "Eight device kinds exist — compressor, eq, reverb, delay, distortion, gate, limiter, autotune — and the model may only name one of those. Anything else is dropped rather than sent to a rack that cannot build it.",
+      "There are eight device kinds: compressor, eq, reverb, delay, distortion, gate, limiter and autotune. The model may only name one of those. Any other name is dropped, because the rack cannot build it.",
   },
   {
     said: "rename all tracks to what is on them",
@@ -91,9 +91,9 @@ const EXCHANGES: Exchange[] = [
     intent: "edit",
     icon: MicIcon,
     actions: ["Read 2 lines aloud"],
-    title: "And then hear it",
+    title: "Then hear it",
     detail:
-      "The written lines become audio on the lanes they were already sitting on. Writing, arranging and voicing are the same surface rather than three round trips.",
+      "The written lines become audio on the lanes they already sit on. Writing, arranging and voicing all happen in the same view.",
   },
 ];
 
@@ -111,14 +111,14 @@ export function RevealAgenticChat() {
       id="chat"
       eyebrow="Chat, script and timeline"
       title="Say what you want changed, read it back, then apply it"
-      intro="The assistant returns operations, not prose — and never runs them itself. It picks from clip ids and lane numbers it was handed, so anything it invents is thrown away before it reaches the API."
+      intro="The assistant returns a list of operations and never runs them itself. It picks from the clip ids and lane numbers it was given, and anything it invents is thrown away before it reaches the API."
       steps={EXCHANGES}
       layout="text-left"
       lane={1}
     >
       {(_progress, step, select) => (
         <figure className="border-border/60 bg-card/80 overflow-hidden rounded-xl border shadow-sm">
-          <WindowChrome label="Chat — a panel of the studio, beside the thing it changes" />
+          <WindowChrome label="Chat: a studio panel, beside the timeline it edits" />
 
         {/* A column, not a stack of absolutely-positioned pieces: the thread
             and the suggestions each need their own space, and the four-operation
@@ -181,7 +181,7 @@ export function RevealAgenticChat() {
                         ))}
                       </ul>
                       <p className="text-muted-foreground/70 mt-2.5 text-[11px]">
-                        Review, then apply — every one of these lands on the undo stack.
+                        Review, then apply. Each one lands on the undo stack.
                       </p>
                     </div>
                   </div>

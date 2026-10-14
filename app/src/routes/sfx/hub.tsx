@@ -143,8 +143,8 @@ export function SfxHubPage() {
   return (
     <div className="bg-background text-foreground min-h-svh">
       <SeoHead
-        title="Sound Effect Collections — Generate Them Locally | Soundbox"
-        description="Browse sound effect collections by category. Every page carries real prompts and samples, and generation runs on your own machine."
+        title="Sound effect collections | Soundbox"
+        description="Sound effect collections by category. Each page lists the prompts and the samples they produced. Generation runs on your own machine."
         path="/sfx"
       />
 
@@ -155,13 +155,13 @@ export function SfxHubPage() {
             Sound effect collections
           </h1>
           <p className="text-muted-foreground mt-4 max-w-2xl leading-relaxed">
-            Each collection is a working guide to one family of sounds: the prompts that
-            produce it, the samples those prompts made, and what actually goes wrong.
-            Generation runs locally on open-weight models — no account, no per-sound cost.
+            Each collection is a guide to one family of sounds: the prompts that produce
+            it, the samples those prompts made, and what goes wrong. Generation runs
+            locally on open-weight models, with no account and no per-sound cost.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Button asChild>
-              <MarketingLink href={GENERATOR_HREF}>Open the generator</MarketingLink>
+              <MarketingLink href={GENERATOR_HREF}>Download Soundbox</MarketingLink>
             </Button>
             <Button variant="outline" asChild>
               <MarketingLink href={WELCOME_HREF}>What Soundbox is</MarketingLink>
@@ -177,7 +177,7 @@ export function SfxHubPage() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search collections and samples — try “slam”, “riser”, “rain”"
+              placeholder="Search collections and samples, e.g. “slam”, “riser”, “rain”"
               aria-label="Search sound effect collections"
               className="pr-9 pl-9"
             />
@@ -196,18 +196,18 @@ export function SfxHubPage() {
           <p className="text-muted-foreground mt-3 text-xs" aria-live="polite">
             {needle
               ? `${matches.length} of ${indexed.length} collections match “${query.trim()}”.`
-              : `${indexed.length} collections, ${totalSamples} samples, every one generated locally.`}
+              : `${indexed.length} collections, ${totalSamples} samples, all generated locally.`}
           </p>
         </header>
 
         {matches.length === 0 && (
           <p className="border-border/60 text-muted-foreground border-t py-12 text-sm">
-            Nothing matches that. The collections cover families of sounds rather than
-            individual ones — try a broader word, or{" "}
+            Nothing matches. Collections cover families of sounds, so try a broader word,
+            or{" "}
             <MarketingLink href={GENERATOR_HREF} className="text-foreground underline">
               generate it directly
             </MarketingLink>
-            , which is what these pages are for anyway.
+            .
           </p>
         )}
 

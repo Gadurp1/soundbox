@@ -71,7 +71,7 @@ const SETUPS: Setup[] = [
   {
     title: "The default",
     detail:
-      "Script on the left, timeline in the middle, chat on the right, each column at 20%. Drag either divider — the handles below work, clamped between 12% and 45% a side exactly as the app clamps them.",
+      "Script on the left, timeline in the middle, chat on the right, each column at 20%. Drag either divider. The handles below work and are clamped between 12% and 45% a side, the same as in the app.",
     left: "script",
     right: "chat",
     leftPct: 20,
@@ -80,7 +80,7 @@ const SETUPS: Setup[] = [
   {
     title: "Writing",
     detail:
-      "Give the script room and close everything else. The lines still hold their place on the timeline while you write them; nothing has to be voiced for the arrangement to be real.",
+      "Give the script room and close everything else. The lines hold their place on the timeline while you write them, before any of them is voiced.",
     left: "script",
     right: null,
     leftPct: 42,
@@ -89,7 +89,7 @@ const SETUPS: Setup[] = [
   {
     title: "Arranging",
     detail:
-      "Both columns closed and the timeline across the full width. The timeline is a panel like the others and can be closed too — hiding it to write is a real way to work.",
+      "Both columns closed and the timeline across the full width. The timeline is a panel like the others and can be closed too, for example while you write.",
     left: null,
     right: null,
     leftPct: 20,
@@ -98,7 +98,7 @@ const SETUPS: Setup[] = [
   {
     title: "Mixing",
     detail:
-      "The device rack on the right, per track. Eight kinds — compressor, eq, reverb, delay, distortion, gate, limiter, autotune — so the narration lane can be compressed while the music under it is ducked.",
+      "The device rack on the right, per track. There are eight kinds (compressor, eq, reverb, delay, distortion, gate, limiter and autotune), so the narration lane can be compressed while the music under it is ducked.",
     left: null,
     right: "devices",
     leftPct: 20,
@@ -107,7 +107,7 @@ const SETUPS: Setup[] = [
   {
     title: "On a narrow screen",
     detail:
-      "Below the layout's breakpoint the columns stop flanking the timeline and stack under it. Panels are not dropped to make room — the same ones are open, in one column instead of three.",
+      "Below the layout's breakpoint the columns stop flanking the timeline and stack under it. The same panels stay open, in one column instead of three.",
     left: "library",
     right: "sample",
     leftPct: 20,
@@ -234,8 +234,8 @@ export function RevealWorkspace() {
     <ScrollStage
       id="workspace"
       eyebrow="Panels and gestures"
-      title="A workspace you rearrange, not a fixed screen"
-      intro="Every part of the studio is a panel you open, close or drag wider. The dividers below really work, and the clips really open their menu — this is the layout, not a picture of it."
+      title="A workspace you rearrange"
+      intro="Every part of the studio is a panel you open, close or drag wider. The dividers below work, and right-clicking a clip opens its menu."
       steps={SETUPS}
       layout="centered"
       lane={4}
@@ -306,7 +306,7 @@ function Workspace({ setup, step }: { setup: Setup; step: number }) {
 
   return (
     <figure className="border-border/60 bg-card/80 overflow-hidden rounded-xl border shadow-sm">
-      <WindowChrome label="Studio — panels open, close and resize" />
+      <WindowChrome label="Studio: panels open, close and resize" />
 
       <div
         ref={rowRef}

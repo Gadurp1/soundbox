@@ -92,7 +92,7 @@ const BEATS: Beat[] = [
     pill: "music",
     title: "The same box writes music",
     detail:
-      "Give it lyrics and a style and ACE-Step sings them; leave the lyrics out and it stays instrumental. Same window, same prompt field, a different model behind it.",
+      "Give it lyrics and a style and ACE-Step sings them; leave the lyrics out and it stays instrumental. It uses the same window and prompt field, with a different model behind it.",
     href: "/music",
     cta: "Hear the music models",
   },
@@ -100,7 +100,7 @@ const BEATS: Beat[] = [
     pill: "voices",
     title: "And speech, in a voice you supply",
     detail:
-      "Text to speech from a short reference recording, so a line can be read by the same character twice. The voice stays on your disk — cloning happens on your machine or not at all.",
+      "Text to speech from a short reference recording, so a line can be read by the same character twice. The voice stays on your disk, and cloning runs on your machine.",
     href: "/voices",
     cta: "See how voices work",
   },
@@ -108,7 +108,7 @@ const BEATS: Beat[] = [
     pill: "studio",
     title: "All three land on one timeline",
     detail:
-      "Every clip arrives on a lane of its own, where it can be moved, split, regenerated or extended against the others. The generator and the arranger are one application, not an export step between two.",
+      "Every clip arrives on a lane of its own, where it can be moved, split, regenerated or extended against the others. Generating and arranging happen in one application, with no export step between them.",
     href: STUDIO_HREF,
     cta: "See the studio",
   },
@@ -116,7 +116,7 @@ const BEATS: Beat[] = [
     pill: "models",
     title: "Every model runs on your machine",
     detail:
-      "Weights are memory-mapped off your disk through audio.cpp, and each one carries its licence in the catalog — including the ones whose terms restrict commercial use. Nothing is uploaded and nothing is billed per second.",
+      "Weights are memory-mapped off your disk through audio.cpp. Each one carries its licence in the catalog, including the ones whose terms restrict commercial use. Nothing is uploaded and nothing is billed per second.",
     href: MODELS_HUB_HREF,
     cta: "Read the model write-ups",
   },
@@ -365,7 +365,7 @@ export function RevealPillars() {
 
         return (
           <figure className="border-border/60 bg-card/80 overflow-hidden rounded-xl border shadow-sm">
-            <WindowChrome label="Soundbox — one box, one workspace" />
+            <WindowChrome label="Soundbox: one prompt box, one workspace" />
 
             <div className="p-4 sm:p-5">
               <PillRail step={step} select={select} />

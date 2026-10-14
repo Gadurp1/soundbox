@@ -167,7 +167,7 @@ function LineClip({
 function StoryFigure() {
   return (
     <figure className="border-border/60 bg-card/80 overflow-hidden rounded-xl border shadow-sm">
-      <WindowChrome label="Story — Night shift, scene 2" />
+      <WindowChrome label="Story: Night shift, scene 2" />
       <div className="space-y-2 p-4">
         <LineClip
           speaker="NARRATOR"
@@ -196,8 +196,7 @@ function StoryFigure() {
       </div>
       <figcaption className="border-border/60 text-muted-foreground border-t px-4 py-2 text-[11px] leading-relaxed">
         Each line of the script is a clip on its speaker&apos;s lane. Drag one earlier and the
-        script reorders to match — the timeline decides the reading order, not the other way
-        around.
+        script reorders to match: the timeline sets the reading order.
       </figcaption>
     </figure>
   );
@@ -225,15 +224,15 @@ function Hero() {
           id="voices-hero-heading"
           className="font-heading mt-5 text-4xl font-semibold tracking-tight text-balance sm:text-5xl"
         >
-          Text to speech and voice cloning, out of the box
+          Text to speech, voice cloning and scripts
         </h1>
 
         <p className="text-muted-foreground mx-auto mt-5 max-w-xl text-base leading-relaxed text-pretty sm:text-lg">
           Type a line and get it read as a clip in your library. Clone a voice from a WAV you
           upload or a sound you already made, and use it anywhere a built-in speaker would go.
-          Write a whole script — speakers, pauses, deliveries — and the studio reads it line by
-          line onto a timeline you can rearrange. All of it on your own machine, through
-          open-weight models you choose and download yourself.
+          Write a script with speakers, pauses and deliveries, and the studio reads it line by
+          line onto a timeline you can rearrange. It runs on your own machine, with open-weight
+          models you choose and download.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
@@ -269,14 +268,14 @@ function Close() {
             id="voices-close-heading"
             className="font-heading mt-2 text-2xl font-semibold tracking-tight text-balance sm:text-3xl"
           >
-            Voices ship with the app, like everything else
+            Voices ship with the app
           </h2>
           <p className="text-muted-foreground mt-3 leading-relaxed">
-            The Voice Studio, the stories and the Voice Lab are all part of Soundbox — the same
-            local server on <code className="font-mono text-xs">127.0.0.1:17494</code>, the same
-            library, no account. What you need before your first read is a text-to-speech model,
-            and which one is a decision worth ten minutes: the licences differ more here than
-            anywhere else in the catalog.
+            The Voice Studio, stories and the Voice Lab are part of Soundbox. They use the same
+            local server on <code className="font-mono text-xs">127.0.0.1:17494</code> and the
+            same library, with no account. Before your first read you need a text-to-speech
+            model. Check its licence first: voice licences vary more than any other category in
+            the catalog.
           </p>
         </div>
 
@@ -305,8 +304,8 @@ export function VoicesPage() {
   return (
     <div className="bg-background text-foreground min-h-svh overflow-x-clip">
       <SeoHead
-        title="Local AI Voices, Narration and Scripts | Soundbox"
-        description={`Text-to-speech, voice cloning and multi-speaker scripts on your own machine. ${VOICE_STATS.count} open-weight voice models catalogued, each with its licence researched — several are non-commercial, and the page says which.`}
+        title="Text to speech, voice cloning and scripts | Soundbox"
+        description={`Text-to-speech, voice cloning and multi-speaker scripts on your own machine. ${VOICE_STATS.count} open-weight voice models, each listed with its licence. Several are non-commercial.`}
         path="/voices"
       />
       <a
@@ -326,26 +325,26 @@ export function VoicesPage() {
           <Section
             id="one-line"
             title="One line, one clip"
-            lede="The smallest unit of the voice workflow is a single read."
+            lede="The simplest case is a single read."
           >
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               <div className="text-muted-foreground space-y-4 text-sm leading-relaxed">
                 <p>
                   Type a line, pick a voice, press Speak. The result is an ordinary sound in your
-                  library — taggable, searchable, exportable as WAV — not a preview that
-                  evaporates when you navigate away.
+                  library: you can tag it, search for it and export it as WAV, and it stays there
+                  after you leave the page.
                 </p>
                 <p>
-                  How a line is <em>performed</em> is separate from what it says. Writing{" "}
+                  Delivery is set separately from the text. Writing{" "}
                   <code className="font-mono text-xs">(whispering)</code> into the text makes the
-                  model say the word &ldquo;whispering&rdquo; out loud; delivery is its own set of
-                  controls instead, and Soundbox reads each model family&apos;s actual parameter
-                  table so the knobs you see are the ones that model listens to. A model with no
-                  delivery knobs shows none — its words and its voice are its only controls.
+                  model say the word &ldquo;whispering&rdquo; out loud, so delivery has its own
+                  controls. Soundbox reads each model family&apos;s parameter table, and the
+                  controls you see are the ones that model accepts. A model with no delivery
+                  controls shows none.
                 </p>
               </div>
               <div className="border-border/60 bg-card/80 overflow-hidden rounded-xl border shadow-sm">
-                <WindowChrome label="Voice Studio — Speak" />
+                <WindowChrome label="Voice Studio: Speak" />
                 <div className="space-y-3 p-4 text-sm">
                   <p className="border-border/60 bg-background/60 rounded-md border px-3 py-2 leading-relaxed">
                     The depot is empty by nine. Most nights, anyway.
@@ -369,23 +368,21 @@ export function VoicesPage() {
           <Section
             id="stories"
             title="A script that stays"
-            lede="A story is a document, not a log: ordered lines that each know where they read in the script and where they sit in time."
+            lede="A story is an ordered list of lines. Each line has a place in the script and a position on the timeline."
           >
             <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
               <StoryFigure />
               <div className="text-muted-foreground space-y-4 text-sm leading-relaxed">
                 <p>
                   Write lines, give each a speaker, and voice them one at a time. Generation is
-                  per line on purpose: regenerating one read is the single most common thing you
-                  do to a script — a word was mispronounced, a take was flat — and it should cost
-                  seconds, not a re-render of the whole piece.
+                  per line, so when one read is wrong (a mispronounced word, a flat take) you
+                  regenerate that line and leave the rest of the script alone.
                 </p>
                 <p>
-                  The lines live on a multi-track timeline. Clips can be moved, split at a point,
-                  reordered, muted per lane; when you are done, the story exports as one mixed
-                  WAV. Deleting a story leaves its audio in the library unless you say otherwise —
-                  throwing away a draft and clearing out a finished piece are different acts, so
-                  it is your call each time.
+                  The lines sit on a multi-track timeline. You can move clips, split them,
+                  reorder them and mute a lane. When you are done, the story exports as one mixed
+                  WAV. Deleting a story keeps its audio in the library unless you choose to remove
+                  that as well.
                 </p>
                 <p>
                   A story can also start from existing audio: hand it a library sound and it opens
@@ -397,8 +394,8 @@ export function VoicesPage() {
 
           <Section
             id="cast"
-            title="The cast is yours to build"
-            lede="Voices are objects in a library of their own, picked from a list or cloned from a clip."
+            title="Building a cast"
+            lede="Voices have a library of their own. Pick a built-in speaker or clone one from a clip."
           >
             <div className="text-muted-foreground grid gap-6 text-sm leading-relaxed sm:grid-cols-2">
               <div className="border-border/60 bg-card/80 rounded-xl border p-5">
@@ -407,8 +404,8 @@ export function VoicesPage() {
                 </h3>
                 <p className="mt-2">
                   Many model families ship named speakers. Saving one as a voice gives it a name
-                  and notes of your own, so &ldquo;the tired dispatcher&rdquo; stays the tired
-                  dispatcher across every script that casts her.
+                  and notes of your own, so you can cast &ldquo;the tired dispatcher&rdquo; in
+                  every script and get the same speaker.
                 </p>
               </div>
               <div className="border-border/60 bg-card/80 rounded-xl border p-5">
@@ -416,52 +413,49 @@ export function VoicesPage() {
                   Cloned voices
                 </h3>
                 <p className="mt-2">
-                  Models that support cloning take a reference clip — a sound already in your
-                  library, or a WAV you upload — and read new text in that voice. The Voice Lab is
-                  where you audition the result: a test read per voice, judged by listening before
-                  it is committed to a script.
+                  Models that support cloning take a reference clip (a sound already in your
+                  library, or a WAV you upload) and read new text in that voice. In the Voice Lab
+                  you audition each voice with a test read before you use it in a script.
                 </p>
               </div>
             </div>
             <p className="text-muted-foreground mt-5 max-w-3xl text-sm leading-relaxed">
-              One thing to be clear-eyed about: almost none of these models&apos; licences require
-              you to have a speaker&apos;s permission before cloning their voice. That makes
-              consent your responsibility rather than nobody&apos;s. Get it.
+              Almost none of these models&apos; licences require a speaker&apos;s permission
+              before you clone their voice. Getting that consent is your responsibility.
             </p>
           </Section>
 
           <Section
             id="tuning"
-            title="One composer, every model's own controls"
-            lede="The parameter panel is generated from what each model actually accepts, so switching models rebuilds the knobs rather than showing a lowest common denominator."
+            title="Controls for each model"
+            lede="The parameter panel is built from what each model accepts. Switching models rebuilds the controls."
           >
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-8">
               <div className="text-muted-foreground space-y-4 text-sm leading-relaxed">
                 <p>
                   Soundbox ships parameter definitions for{" "}
-                  <span className="text-foreground font-medium">29 model families</span> —{" "}
+                  <span className="text-foreground font-medium">29 model families</span>,{" "}
                   <span className="text-foreground font-medium">165 controls</span> in total,
-                  across sliders, numbers, toggles, choices and text. They are not a guess at what
-                  each model listens to: they are vendored from audio.cpp&apos;s own parameter
-                  file and checked against its per-family source, then grouped so that &ldquo;how
-                  should this line be said&rdquo; and &ldquo;how hard should the sampler
-                  work&rdquo; are not the same list.
+                  across sliders, numbers, toggles, choices and text. They are vendored from
+                  audio.cpp&apos;s own parameter file and checked against its per-family source.
+                  Delivery settings (&ldquo;how should this line be said&rdquo;) and sampler
+                  settings (&ldquo;how hard should the sampler work&rdquo;) are grouped
+                  separately.
                 </p>
                 <p>
-                  That matters because these are request options, not command-line flags, and
-                  audio.cpp accepts unknown keys silently — a misspelled parameter is invisible
-                  rather than an error. Generating the panel from the real definitions is what
-                  stops a control existing for a model that will ignore it.
+                  These are request options, and audio.cpp accepts unknown keys silently, so a
+                  misspelled parameter produces no error. Because the panel is built from the real
+                  definitions, it never shows a control that the model would ignore.
                 </p>
                 <p>
-                  Two behaviours in the demo are the real ones. A parameter can be listed and
-                  still do nothing until another is on, so dependent controls grey out until their
-                  gate is set. And only values you actually change are sent — touch nothing and
-                  the request carries nothing, leaving the model&apos;s own defaults standing.
+                  The demo shows two behaviours from the app. Some parameters do nothing until
+                  another is on, so dependent controls grey out until their gate is set. Only
+                  values you change are sent: if you change nothing, the request carries no
+                  options and the model&apos;s own defaults apply.
                 </p>
                 <p className="text-muted-foreground/80">
-                  The same panel drives sound effects and music. Voice models simply have the most
-                  to tune, which is why it is shown here.
+                  The same panel drives sound effects and music. It is shown here because voice
+                  models have the most to tune.
                 </p>
               </div>
 
@@ -477,42 +471,41 @@ export function VoicesPage() {
             <div className="text-muted-foreground max-w-3xl space-y-4 text-sm leading-relaxed">
               <p>
                 A connected agent can speak a one-off line, create a story, add lines with
-                speakers and per-line delivery, revise them, and voice the result — the same
-                endpoints the app itself uses. Every generated file comes back with an absolute
-                path, so the agent can hand narration straight to ffmpeg or drop it into a video
-                project.
+                speakers and per-line delivery, revise them, and voice the result, through the
+                same endpoints the app uses. Every generated file comes back with an absolute
+                path, so the agent can pass narration to ffmpeg or drop it into a video project.
               </p>
               <p>
-                And you can watch it happen: the story page holds a live connection open, so a
-                script an agent is writing appears line by line as it is written, not on the next
-                refresh. Every call is attributed to the client that made it on the Agents page.
+                The story page holds a live connection open, so lines an agent writes appear as
+                they are written, without a refresh. The Agents page attributes every call to the
+                client that made it.
               </p>
             </div>
           </Section>
 
           <Section
             id="models"
-            title={`${VOICE_STATS.count} voice models, verified status and licence stated per model`}
-            lede={`Voice is the largest category in the catalog — ${VOICE_STATS.count} of ${VOICE_STATS.total} models are text-to-speech, voice conversion or cloning. It is also the least uniform.`}
+            title={`${VOICE_STATS.count} voice models, each with its licence and verified status`}
+            lede={`Voice is the largest category in the catalog: ${VOICE_STATS.count} of ${VOICE_STATS.total} models are text-to-speech, voice conversion or cloning. Their licences also vary the most.`}
           >
             <div className="text-muted-foreground max-w-3xl space-y-4 text-sm leading-relaxed">
               <p>
-                Every voice model in the catalog is opt-in: none appears in the app&apos;s picker
-                until it is enabled in Settings.{" "}
+                Every voice model in the catalog is opt-in: it appears in the app&apos;s picker
+                only after you enable it on the Models page.{" "}
                 {VOICE_STATS.verified === 1
                   ? "One of the " + VOICE_STATS.count + " has been verified end to end"
                   : VOICE_STATS.verified + " of the " + VOICE_STATS.count + " have been verified end to end"}
-                ; the rest are catalogued from audio.cpp&apos;s shipped model list and are marked
-                unverified. The model pages say which is which.
+                ; the rest come from audio.cpp&apos;s shipped model list and are marked
+                unverified. Each model page says which.
               </p>
               <p>
                 The licences vary widely. Of the {VOICE_STATS.count}:{" "}
-                {VOICE_STATS.nonCommercial} are non-commercial outright,{" "}
-                {VOICE_STATS.conditional} permit commercial use only under conditions — revenue
-                caps, attribution duties, per-speaker voice licences — and{" "}
-                {VOICE_STATS.unknown} have no confirmed licence, which their model pages state
-                plainly rather than defaulting to permissive. For commercial work, the entry for
-                the specific model applies — read it before generating anything meant to ship.
+                {VOICE_STATS.nonCommercial} are non-commercial,{" "}
+                {VOICE_STATS.conditional} permit commercial use only under conditions (revenue
+                caps, attribution duties, per-speaker voice licences), and{" "}
+                {VOICE_STATS.unknown} have no confirmed licence and are treated as
+                non-commercial. For commercial work, read the entry for the specific model before
+                you generate anything you plan to ship.
               </p>
             </div>
             <div className="mt-6">

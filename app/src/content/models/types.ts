@@ -79,7 +79,9 @@ export interface LicenseFinding {
    * when that is the truth.
    */
   output: string;
-  /** Whether the upstream Hugging Face weights require accepting terms. */
+  /** Whether the weights Soundbox downloads require accepting terms on a
+   *  Hugging Face account. Every audio model downloads audio.cpp's ungated
+   *  GGUF conversion, so "no" even where the original upstream repo is gated. */
   gated: Tristate;
   /** Where each claim above came from. Never empty: an unsourced licence
    *  assertion is the thing this whole file is designed to prevent. */

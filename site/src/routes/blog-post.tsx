@@ -105,12 +105,12 @@ export function BlogPostPage() {
                   who wants to listen to a post wants a play button that works
                   before any JavaScript has run. */}
               <audio controls preload="none" src={assetUrl(post.audio)} className="w-full">
-                Your browser cannot play audio inline —{" "}
-                <a href={assetUrl(post.audio)}>download the recording</a> instead.
+                Your browser cannot play audio inline.{" "}
+                <a href={assetUrl(post.audio)}>Download the recording</a> instead.
               </audio>
               <figcaption className="text-muted-foreground mt-2.5 text-xs leading-relaxed">
-                Read aloud by Soundbox, on the machine that wrote it. A synthetic
-                voice, not a person — which is the point.
+                Read aloud by Soundbox with a synthetic voice, on the machine that
+                wrote it.
               </figcaption>
             </figure>
           )}

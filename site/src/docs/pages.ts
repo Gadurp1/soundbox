@@ -44,7 +44,7 @@ export const DOC_PAGES: DocPage[] = [
     label: "Generating sound",
     section: "Using Soundbox",
     blurb:
-      "Prompt, model, seed, takes — how a generation runs, and what each parameter actually changes.",
+      "Prompt, model, seed and takes: how a generation runs, and what each parameter changes.",
     ...generating,
   },
   {
@@ -75,7 +75,7 @@ export const DOC_PAGES: DocPage[] = [
   {
     slug: "architecture",
     label: "Architecture",
-    section: "Under the hood",
+    section: "Internals",
     blurb:
       "One process, one port: the app, the API, the MCP server, the database and where your files live.",
     ...architecture,
@@ -83,15 +83,15 @@ export const DOC_PAGES: DocPage[] = [
   {
     slug: "audiocpp",
     label: "audio.cpp",
-    section: "Under the hood",
+    section: "Internals",
     blurb:
-      "The inference engine: one binary, no Python, no CUDA install ritual — and how Soundbox picks a backend for your machine.",
+      "The inference engine: one binary, no Python and no CUDA install, and how Soundbox picks a backend for your machine.",
     ...audiocpp,
   },
   {
     slug: "desktop",
     label: "Desktop app",
-    section: "Under the hood",
+    section: "Internals",
     blurb: "Building and shipping Soundbox as a Tauri desktop app.",
     ...desktop,
   },

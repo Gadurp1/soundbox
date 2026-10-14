@@ -64,15 +64,15 @@ function Close() {
             id="studio-close-heading"
             className="font-heading mt-2 text-2xl font-semibold tracking-tight text-balance sm:text-3xl"
           >
-            The studio is part of the app, not a separate product
+            The studio ships with Soundbox
           </h2>
           <p className="text-muted-foreground mt-3 leading-relaxed">
-            There is nothing to sign up for and nothing extra to buy. The
-            timeline ships with Soundbox, runs against the same local server on{" "}
-            <code className="font-mono text-xs">127.0.0.1:17494</code> as
-            everything else, and generates through whichever models you chose
-            to download. Which models those are is worth reading first — the
-            licence decides what you may do with what comes out.
+            There is no account and nothing extra to buy. The timeline runs
+            against the same local server on{" "}
+            <code className="font-mono text-xs">127.0.0.1:17494</code> as the
+            rest of the app, and generates with the models you downloaded. Read
+            each model's licence first: it decides what you may do with the
+            output.
           </p>
         </div>
 

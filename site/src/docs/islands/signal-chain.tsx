@@ -29,31 +29,31 @@ const STAGES: Stage[] = [
     id: "prompt",
     label: "Prompt",
     detail:
-      "Words, a duration and a seed. Nothing has been loaded yet — the request is queued against whichever model you picked.",
+      "Words, a duration and a seed. Nothing has been loaded yet. The request is queued against the model you picked.",
   },
   {
     id: "binary",
     label: "audio.cpp",
     detail:
-      "One native binary, chosen for your machine: CUDA, Vulkan, Metal or CPU. No Python environment, no toolchain, nothing to compile.",
+      "One native binary, chosen for your machine: CUDA, HIP, Vulkan, Metal or CPU. There is no Python environment and nothing to compile.",
   },
   {
     id: "weights",
     label: "Weights",
     detail:
-      "A GGUF file on your disk, memory-mapped. Downloaded once and reused; the same file every run, which is why a seed reproduces a take.",
+      "A GGUF file on your disk, memory-mapped. It is downloaded once and reused, so the same seed on the same file reproduces a take.",
   },
   {
     id: "samples",
     label: "Samples",
     detail:
-      "Float audio out of the model, at the rate it was trained on — 44.1 kHz stereo for Stable Audio, 48 kHz for ACE-Step.",
+      "Float audio out of the model, at the rate it was trained on: 44.1 kHz stereo for Stable Audio, 48 kHz for ACE-Step.",
   },
   {
     id: "wav",
     label: "WAV",
     detail:
-      "Peaks measured, loudness checked, written into your library as a file you own. From here it is a clip you can drag onto a timeline.",
+      "Peaks are measured, loudness is checked, and the file is written into your library. From there you can drag it onto a timeline.",
   },
 ];
 

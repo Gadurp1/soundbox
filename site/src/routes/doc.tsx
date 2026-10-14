@@ -96,7 +96,7 @@ function DocBody({ page }: { page: DocPage }) {
           className="text-muted-foreground hover:text-foreground mt-4 inline-flex items-center gap-1.5 text-xs"
         >
           <PencilIcon className="size-3" />
-          This page is {page.slug.toUpperCase()}.md — edit it on GitHub
+          Edit {page.slug.toUpperCase()}.md on GitHub
         </a>
       </footer>
     </>

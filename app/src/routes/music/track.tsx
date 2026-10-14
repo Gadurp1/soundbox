@@ -90,7 +90,7 @@ function TrackBody({ track }: { track: MusicTrack }) {
   return (
     <>
       <SeoHead
-        title={`${track.title} — ${track.genre} Generated Locally | Soundbox`}
+        title={`${track.title} (${track.genre}) | Soundbox`}
         description={`Listen to "${track.title}", a ${track.genre.toLowerCase()} ${kind} track generated on one desktop GPU with ${MUSIC_MODEL_NAMES[track.model]}, and copy the exact prompt that made it.`}
         path={`/music/${track.slug}`}
         jsonLd={[
@@ -161,7 +161,7 @@ function TrackBody({ track }: { track: MusicTrack }) {
               {track.lyrics
                 ? "A sung track: the prompt below set the arrangement and the script is what the model was given to sing."
                 : "An instrumental track, generated in a single pass on one desktop GPU."}{" "}
-              Both are reproducible — copy the prompt, change a word, and render your own.
+              Copy the prompt, change a word and render your own.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" asChild>
@@ -214,7 +214,7 @@ function TrackBody({ track }: { track: MusicTrack }) {
               <p className="text-muted-foreground/70 max-w-lg text-xs leading-relaxed">
                 Line positions are the rendered length divided by {totalLines} lines. Neither
                 model returns per-line timings and there is no forced aligner here, so the
-                highlight follows the playhead approximately, not to the syllable.
+                highlight follows the playhead approximately.
               </p>
               <CopyButton value={track.lyrics} label="Copy lyrics" className="shrink-0" />
             </div>

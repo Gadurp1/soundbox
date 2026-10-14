@@ -221,9 +221,8 @@ export function ApiMcpReference({ health }: { health?: HealthStatus }) {
           API &amp; MCP
         </h1>
         <p className="text-muted-foreground mt-1 max-w-2xl text-sm leading-relaxed">
-          Soundbox is a local server with a browser front end bolted on, not the other way round.
-          Everything this app does, it does over the HTTP API documented below — and an agent can
-          drive the same pipeline over MCP. Every example here points at this instance, so a copied
+          Soundbox is a local server with a browser front end. Everything the app does goes through
+          the HTTP API documented below, and an agent can drive the same pipeline over MCP. Every example here points at this instance, so a copied
           command works as-is.
         </p>
 
@@ -263,7 +262,7 @@ export function ApiMcpReference({ health }: { health?: HealthStatus }) {
               />
               <p className="text-muted-foreground text-xs leading-relaxed">
                 Returns <C>{"{ \"job_id\": \"…\" }"}</C> immediately with <C>202</C>. The audio does
-                not exist yet. If the model isn't loaded, the job loads it first — that is the{" "}
+                not exist yet. If the model isn't loaded, the job loads it first. That is the{" "}
                 <C>loading</C> phase, and it can take a while the first time.
               </p>
             </div>
@@ -283,15 +282,15 @@ curl "${origin}/api/sounds/$SOUND_ID"`}
               />
               <p className="text-muted-foreground text-xs leading-relaxed">
                 The <C>Sound</C> you get back has a <C>file</C> field like{" "}
-                <C>/files/&lt;id&gt;.wav</C> — fetch that from this same origin to get the audio, or
+                <C>/files/&lt;id&gt;.wav</C>. Fetch that from this same origin to get the audio, or
                 add <C>?format=mp3</C> to have it transcoded.
               </p>
             </div>
 
             <Note>
-              Prompts are physical descriptions, not moods. “Scary sound” produces noise; “low
-              metallic groan of a ship's hull under pressure, distant, reverberant” produces
-              something usable. Short clips layered in an editor beat one long generation.
+              Describe the physical sound. “Scary sound” produces noise; “low metallic groan of a
+              ship's hull under pressure, distant, reverberant” produces something usable. Short
+              clips layered in an editor work better than one long generation.
             </Note>
           </DocSection>
 
@@ -303,13 +302,13 @@ curl "${origin}/api/sounds/$SOUND_ID"`}
           <DocSection
             id="http-api"
             title="Every endpoint"
-            intro="The quickstart above is the core loop. The rest of the HTTP surface — sounds, voices, stories, sessions, models, settings and the MCP log — is indexed route by route in the API reference."
+            intro="The quickstart above is the core loop. The API reference indexes the rest of the HTTP surface route by route: sounds, voices, stories, sessions, models, settings and the MCP log."
           >
             <p className="text-sm leading-relaxed">
               <a className="underline underline-offset-2" href={assetUrl("/docs/api")}>
                 Read the full API reference
               </a>{" "}
-              — every route with its method, purpose and key fields, kept in the repository as{" "}
+              for every route with its method, purpose and key fields. It is kept in the repository as{" "}
               <C>docs/API.md</C> beside the code it describes. Mutating requests need a JSON body
               or an <C>X-Soundbox</C> header; see the reference for why.
             </p>
