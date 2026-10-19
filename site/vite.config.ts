@@ -1,5 +1,5 @@
 import path from "node:path";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -7,6 +7,8 @@ import { markdownDocs } from "./plugins/markdown";
 import { blogFeed } from "./plugins/blog-feed";
 import { sharedPublicFiles } from "./plugins/shared-public";
 import { notFoundPage } from "./plugins/not-found";
+import { writeSitemap } from "./plugins/sitemap";
+import { sfxSampleFacts } from "./plugins/sfx-sample-facts";
 
 /**
  * Where the site is served from, for hosts that put it under a path.
@@ -27,6 +29,28 @@ const SITE_BASE = normalizeBase(process.env.SITE_BASE);
  */
 if (process.env.SITE_ORIGIN && !process.env.VITE_SITE_ORIGIN) {
   process.env.VITE_SITE_ORIGIN = process.env.SITE_ORIGIN.replace(/\/+$/, "");
+}
+
+/**
+ * Point the site's and the borrowed app components' `react-router-dom`
+ * imports at `src/router-links.tsx`, whose `Link`/`NavLink` add the trailing
+ * slash each prerendered page is served at. Imports from that file itself, and
+ * from anything in node_modules (vite-react-ssg's own renderer), get the real
+ * package.
+ */
+function trailingSlashLinks(): Plugin {
+  const shim = path.resolve(__dirname, "src/router-links.tsx");
+  const ours = [path.resolve(__dirname, "src"), path.resolve(__dirname, "../app/src")];
+  return {
+    name: "soundbox:trailing-slash-links",
+    enforce: "pre",
+    resolveId(source, importer) {
+      if (source !== "react-router-dom" || !importer) return null;
+      const from = path.resolve(importer.split("?")[0]);
+      if (from === shim || !ours.some((dir) => from.startsWith(dir + path.sep))) return null;
+      return shim;
+    },
+  };
 }
 
 function normalizeBase(raw: string | undefined): string {
@@ -57,10 +81,13 @@ export default defineConfig({
   // `markdownDocs` turns `docs/*.md?doc` into `{ title, html, headings }` at
   // build time — see the plugin for why the docs are read rather than copied.
   plugins: [
+    trailingSlashLinks(),
     react(),
     tailwindcss(),
     markdownDocs(),
     blogFeed(),
+    // Duration and size per sfx sample, for the prerendered sample pages.
+    sfxSampleFacts(path.resolve(__dirname, "public/sfx")),
     // Files both builds serve stay in app/public; see the plugin.
     sharedPublicFiles(path.resolve(__dirname, "../app/public"), ["favicon.svg"]),
     // 404.html for static hosts, with links that carry the base path.
@@ -147,5 +174,11 @@ export default defineConfig({
     // with `content` (see isPublished in content/sfx/types.ts). This keeps
     // the hub itself and the other static routes in the default set.
     includeAllRoutes: false,
+    // Runs once every page is on disk, so the sitemap is exactly what was
+    // prerendered. See plugins/sitemap.ts.
+    onFinished(dir) {
+      const count = writeSitemap(dir, process.env.VITE_SITE_ORIGIN ?? "", SITE_BASE);
+      if (count) console.log(`[sitemap] ${count} URLs -> sitemap.xml`);
+    },
   },
 });

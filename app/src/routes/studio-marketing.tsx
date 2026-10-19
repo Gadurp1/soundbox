@@ -33,6 +33,7 @@
 import { Link } from "react-router-dom";
 import { ExternalLinkIcon } from "lucide-react";
 
+import { SeoHead, softwareAppJsonLd } from "@/components/seo-head";
 import { Button } from "@/components/ui/button";
 import { RevealEditRoutes } from "@/components/reveal-edit-routes";
 import { RevealStudio } from "@/components/reveal-studio";
@@ -100,6 +101,14 @@ function Close() {
 export function StudioMarketingPage() {
   return (
     <div className="bg-background text-foreground min-h-svh overflow-x-clip">
+      <SeoHead
+        title="Multi-track studio for generated audio | Soundbox"
+        description="Cast a script across speakers, lay music and sound effects on a timeline, add per-track effects and mix down to one file. Everything is generated and arranged on your own machine."
+        path="/studio"
+        image="/product/studio.png"
+        imageAlt="The Soundbox studio: a script cast across three speakers above a multi-track timeline of spoken lines, music and sound effects"
+        jsonLd={[softwareAppJsonLd()]}
+      />
       <a
         href="#main"
         className="bg-card ring-ring sr-only rounded-lg px-3 py-2 text-sm font-medium focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:ring-2"

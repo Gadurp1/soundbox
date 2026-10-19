@@ -31,7 +31,7 @@ import {
   groupOf,
   type SfxGroup,
 } from "@/content/sfx/categories";
-import { isPublished, type SfxCategory } from "@/content/sfx/types";
+import { coverThumb, isPublished, type SfxCategory } from "@/content/sfx/types";
 import { assetUrl } from "@/lib/asset-url";
 
 /**
@@ -62,6 +62,10 @@ function sampleCount(category: SfxCategory): number {
   return category.content?.samples.length ?? 0;
 }
 
+// Counted, not written down, so the title cannot drift from the catalogue.
+const PUBLISHED = SFX_CATEGORIES.filter(isPublished);
+const TOTAL_SAMPLES = PUBLISHED.reduce((n, c) => n + sampleCount(c), 0);
+
 function CategoryRow({ category }: { category: SfxCategory }) {
   const count = sampleCount(category);
   return (
@@ -72,10 +76,13 @@ function CategoryRow({ category }: { category: SfxCategory }) {
       >
         {category.coverImage ? (
           <img
-            src={assetUrl(category.coverImage)}
+            src={assetUrl(coverThumb(category.coverImage))}
             alt=""
+            width={96}
+            height={96}
             className="size-12 shrink-0 rounded-lg object-cover"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div
@@ -143,8 +150,8 @@ export function SfxHubPage() {
   return (
     <div className="bg-background text-foreground min-h-svh">
       <SeoHead
-        title="Sound effect collections | Soundbox"
-        description="Sound effect collections by category. Each page lists the prompts and the samples they produced. Generation runs on your own machine."
+        title={`AI sound effects generated locally: ${TOTAL_SAMPLES} samples with prompts | Soundbox`}
+        description={`${TOTAL_SAMPLES} sound effects across ${PUBLISHED.length} categories, each with the exact prompt that made it. Download the MP3 or generate your own on your machine, with no account.`}
         path="/sfx"
       />
 

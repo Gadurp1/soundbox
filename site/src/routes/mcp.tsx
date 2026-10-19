@@ -216,6 +216,8 @@ export function McpPage() {
         title="MCP server for local sound generation | Soundbox"
         description="Connect Claude Code, Claude Desktop, Cursor or any MCP client to Soundbox in one line. Sound effects, music and speech are generated on your own GPU and returned as absolute file paths. No API key, no account, no per-generation billing."
         path="/mcp"
+        image="/og/mcp.jpg"
+        imageAlt="The one command that connects Claude Code to Soundbox's MCP server"
         jsonLd={[faqJsonLd(FAQS)]}
       />
 

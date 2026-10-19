@@ -39,7 +39,7 @@ export function ModelsHubPage() {
   return (
     <div className="bg-background text-foreground min-h-svh">
       <SeoHead
-        title="Models: specs and licences | Soundbox"
+        title="Open-weight audio models: specs and licences | Soundbox"
         description={`${MODEL_STATS.total} open-weight audio models for sound effects, music, speech and stem separation, run locally through audio.cpp with no Python. Licence findings for each, with sources.`}
         path="/models"
       />

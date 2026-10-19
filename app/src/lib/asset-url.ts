@@ -38,3 +38,28 @@ export function assetUrl(path: string): string {
 export function siteUrl(path: string): string {
   return SITE_ORIGIN ? `${SITE_ORIGIN}${assetUrl(path)}` : "";
 }
+
+/**
+ * A root-relative *page* path with a trailing slash: "/sfx/door" -> "/sfx/door/".
+ *
+ * The prerender writes each page as `<path>/index.html`, and static hosts
+ * (GitHub Pages included) answer the slashless URL with a 301 to the slashed
+ * one. Links and canonicals that already carry the slash skip that hop. A
+ * query or fragment stays after the slash, and a path whose last segment has a
+ * file extension ("/blog/rss.xml") is a file, not a page, so it is left alone.
+ */
+export function pagePath(path: string): string {
+  const match = /^([^?#]*)(.*)$/.exec(path);
+  const [pathname, rest] = [match?.[1] ?? path, match?.[2] ?? ""];
+  if (!pathname.startsWith("/") || pathname.endsWith("/")) return path;
+  if (/\.[a-z0-9]+$/i.test(pathname.slice(pathname.lastIndexOf("/")))) return path;
+  return `${pathname}/${rest}`;
+}
+
+/**
+ * The absolute URL of a page, always ending in "/" — for canonicals, og:url,
+ * breadcrumbs and feeds. Use `siteUrl` for files (MP3s, images).
+ */
+export function pageUrl(path: string): string {
+  return siteUrl(pagePath(path));
+}

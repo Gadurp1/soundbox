@@ -1,0 +1,23 @@
+# NVIDIA GPU override for docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d --build
+#
+# Needs an NVIDIA driver and the NVIDIA Container Toolkit on the host
+# (`docker run --rm --gpus all ubuntu nvidia-smi` should list your GPU).
+# full-cuda12 needs a driver new enough for CUDA 12.9 (575+ on GeForce); with
+# a CUDA 13 driver, full-cuda13 works too.
+
+services:
+  soundbox:
+    image: soundbox:cuda
+    build:
+      args:
+        AUDIOCPP_TAG: full-cuda12
+        AUDIOCPP_BACKEND: cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

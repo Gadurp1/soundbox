@@ -1,3 +1,4 @@
+/// <reference path="../../sfx-sample-facts.d.ts" />
 /**
  * `/sfx/:slug/:sample` — one sample's own indexable page.
  *
@@ -21,10 +22,55 @@ import { WaveformPlayer } from "@/components/waveform-player";
 import { MarketingLink } from "@/components/marketing-link";
 import { SeoHead, breadcrumbJsonLd } from "@/components/seo-head";
 import { getCategory } from "@/content/sfx/categories";
-import { isPublished } from "@/content/sfx/types";
+import { coverCard, isPublished } from "@/content/sfx/types";
 import type { PublishedCategory, SfxSample } from "@/content/sfx/types";
+import { getModelByCatalogId } from "@/content/models/models";
 import { sampleAudioUrl, sampleToSound, useSampleManifest } from "@/lib/sfx-sample";
 import { GENERATOR_HREF } from "@/lib/marketing-links";
+import { pageUrl, siteUrl } from "@/lib/asset-url";
+import sampleFacts from "virtual:sfx-sample-facts";
+
+/** The prompt cut at a word boundary, for a meta description. */
+function excerpt(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,;:]+$/, "")}…`;
+}
+
+function formatSize(bytes: number): string {
+  return bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/**
+ * `AudioObject` for the clip. Only what the page can back: the file, its
+ * length and size, the prompt it came from and the model that made it. No
+ * licence: what a model's terms say about generated output is a separate
+ * question from the weights (see the model page), and a structured-data
+ * `license` would answer it more firmly than we can.
+ */
+function audioJsonLd(
+  category: PublishedCategory,
+  sample: SfxSample,
+  facts: [number, number] | undefined,
+  modelName: string | undefined,
+): object {
+  const page = pageUrl(`/sfx/${category.slug}/${sample.slug}`);
+  const file = siteUrl(`/sfx/${category.slug}/${sample.slug}.mp3`);
+  return {
+    "@context": "https://schema.org",
+    "@type": "AudioObject",
+    name: `${sample.title} sound effect`,
+    description: sample.prompt,
+    encodingFormat: "audio/mpeg",
+    isAccessibleForFree: true,
+    ...(file ? { contentUrl: file } : {}),
+    ...(page ? { url: page } : {}),
+    ...(facts
+      ? { duration: `PT${facts[0].toFixed(2)}S`, contentSize: formatSize(facts[1]) }
+      : {}),
+    ...(modelName ? { creditText: `Generated with ${modelName} in Soundbox` } : {}),
+  };
+}
 
 function SampleBody({
   category,
@@ -36,14 +82,37 @@ function SampleBody({
   const { manifest, failed } = useSampleManifest(category.slug);
   const meta = manifest?.[sample.slug];
   const others = category.content.samples.filter((s) => s.slug !== sample.slug);
+  // Bundled at build time, so these are in the prerendered HTML too; `meta`
+  // (with the waveform peaks) only arrives after the fetch.
+  const facts = sampleFacts[category.slug]?.[sample.slug];
+  const model = getModelByCatalogId(sample.model);
+  // The write-up's name where there is one; the raw catalog id otherwise.
+  const modelName = model?.name ?? sample.model;
+  const modelLink = model ? (
+    <Link
+      to={`/models/${model.slug}`}
+      className="text-foreground underline underline-offset-4 hover:no-underline"
+    >
+      {model.name}
+    </Link>
+  ) : (
+    sample.model
+  );
 
   return (
     <>
       <SeoHead
         title={`${sample.title} sound effect | Soundbox`}
-        description={`Listen to "${sample.title}", a ${category.name.toLowerCase()} sound effect, and see the exact prompt that made it. Generate your own variation locally.`}
+        description={`${sample.title} sound effect: "${excerpt(sample.prompt, 90)}"${modelName ? `. Generated with ${modelName}` : ""}. Download the MP3 or make a variation on your own machine.`}
         path={`/sfx/${category.slug}/${sample.slug}`}
+        {...(category.coverImage
+          ? {
+              image: coverCard(category.coverImage),
+              imageAlt: `Cover art for Soundbox's ${category.name.toLowerCase()} sound effects`,
+            }
+          : {})}
         jsonLd={[
+          audioJsonLd(category, sample, facts, modelName),
           breadcrumbJsonLd([
             { name: "Sound effects", path: "/sfx" },
             { name: category.name, path: `/sfx/${category.slug}` },
@@ -86,9 +155,27 @@ function SampleBody({
         </div>
         <p className="text-muted-foreground mt-3 max-w-2xl leading-relaxed">
           A {category.name.toLowerCase()} sound effect
-          {sample.model ? `, generated with ${sample.model}` : ""} from the prompt below. Copy
-          the prompt, change a word and generate your own version.
+          {modelName ? <>, generated with {modelLink}</> : ""} from the prompt below. Copy the
+          prompt, change a word and generate your own version.
         </p>
+        {facts && (
+          <dl className="text-muted-foreground mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+            <div className="flex gap-1.5">
+              <dt>Length</dt>
+              <dd className="text-foreground tabular-nums">{facts[0].toFixed(1)} s</dd>
+            </div>
+            <div className="flex gap-1.5">
+              <dt>File</dt>
+              <dd className="text-foreground tabular-nums">MP3, {formatSize(facts[1])}</dd>
+            </div>
+            {modelName && (
+              <div className="flex gap-1.5">
+                <dt>Model</dt>
+                <dd>{modelLink}</dd>
+              </div>
+            )}
+          </dl>
+        )}
       </header>
 
       {failed ? (
@@ -124,7 +211,7 @@ function SampleBody({
           </div>
         </div>
         <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-          Generated{sample.model ? ` with ${sample.model}` : ""}. These models respond to
+          Generated{modelName ? <> with {modelLink}</> : ""}. These models respond to
           material, action and space, so the most useful edit is usually swapping one concrete
           noun for another.
         </p>

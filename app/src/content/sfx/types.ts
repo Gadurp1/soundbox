@@ -79,10 +79,26 @@ export interface SfxCategory {
   /** Fully authored categories carry these. Stubs in the taxonomy do not, and
    *  the router refuses to render a page without them. */
   content?: SfxCategoryContent;
-  /** Abstract cover art for the hub thumbnail and the detail-page hero, under
-   *  `site/public/sfx/covers/`. Optional — categories without one just render
-   *  without an image rather than a broken thumbnail. */
+  /** Abstract cover art for the detail-page hero, under
+   *  `site/public/sfx/covers/`: a 1024x576 WebP written by
+   *  `scripts/compress-sfx-covers.py`, which also writes the hub thumbnail and
+   *  the share card next to it (see `coverThumb` / `coverCard`). Optional —
+   *  categories without one just render without an image rather than a broken
+   *  thumbnail. */
   coverImage?: string;
+}
+
+/** Pixel size of every `coverImage`, for the hero's width/height attributes. */
+export const COVER_SIZE = { width: 1024, height: 576 } as const;
+
+/** The 96x96 hub thumbnail written beside a cover: `x-cover.webp` -> `x-cover-thumb.webp`. */
+export function coverThumb(cover: string): string {
+  return cover.replace(/\.webp$/, "-thumb.webp");
+}
+
+/** The 1200x630 share card for a cover: `/sfx/covers/x-cover.webp` -> `/sfx/og/x-cover.jpg`. */
+export function coverCard(cover: string): string {
+  return cover.replace("/sfx/covers/", "/sfx/og/").replace(/\.webp$/, ".jpg");
 }
 
 export interface SfxCategoryContent {

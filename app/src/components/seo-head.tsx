@@ -17,7 +17,7 @@
 
 import { useEffect } from "react";
 
-import { siteUrl } from "@/lib/asset-url";
+import { pageUrl, siteUrl } from "@/lib/asset-url";
 
 const MARK = "data-seo-head";
 
@@ -36,6 +36,13 @@ export interface SeoHeadProps {
   path: string;
   /** schema.org objects, serialised into one or more JSON-LD script tags. */
   jsonLd?: object[];
+  /**
+   * Share-card image and its alt text. Only the site's override
+   * (site/src/seo-head.tsx) emits these; the app has no pages worth sharing,
+   * so here they are accepted and ignored.
+   */
+  image?: string;
+  imageAlt?: string;
 }
 
 function upsertMeta(attr: "name" | "property", key: string, content: string) {
@@ -60,7 +67,7 @@ export function SeoHead({ title, description, path, jsonLd }: SeoHeadProps) {
     upsertMeta("property", "og:type", "website");
     upsertMeta("name", "twitter:card", "summary_large_image");
 
-    const url = siteUrl(path);
+    const url = pageUrl(path);
     let canonical: HTMLLinkElement | null = null;
     if (url) {
       upsertMeta("property", "og:url", url);
@@ -117,7 +124,36 @@ export function breadcrumbJsonLd(
       "@type": "ListItem",
       position: i + 1,
       name: t.name,
-      ...(siteUrl(t.path) ? { item: siteUrl(t.path) } : {}),
+      ...(pageUrl(t.path) ? { item: pageUrl(t.path) } : {}),
     })),
+  };
+}
+
+/**
+ * `SoftwareApplication` for Soundbox itself, on the home page and /studio.
+ *
+ * No `aggregateRating`: there are no ratings to cite, and inventing one is the
+ * fastest way to get a rich result revoked. Without it Google will not show a
+ * software rich result, but the entity still ties the download, licence and
+ * repository together. `codeRepository` belongs to `SoftwareSourceCode`;
+ * unknown properties are ignored rather than rejected, so it is harmless here.
+ */
+export function softwareAppJsonLd(): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Soundbox",
+    applicationCategory: "MultimediaApplication",
+    operatingSystem: "Windows 10, Windows 11, macOS",
+    softwareVersion: "0.1.0",
+    license: "https://opensource.org/licenses/MIT",
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    downloadUrl: "https://github.com/Gadurp1/soundbox/releases/latest",
+    codeRepository: "https://github.com/Gadurp1/soundbox",
+    description:
+      "Generates sound effects, music and speech on your own machine from open-weight models, with an HTTP API and an MCP server for coding agents.",
+    ...(siteUrl("/product/studio.png") ? { screenshot: siteUrl("/product/studio.png") } : {}),
+    ...(pageUrl("/") ? { url: pageUrl("/") } : {}),
   };
 }

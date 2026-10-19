@@ -24,11 +24,12 @@ outside Soundbox, read the model licences yourself.
 
 | Path | What it is | How it was made | Terms that apply |
 | --- | --- | --- | --- |
-| `site/public/sfx/covers/*.png` | Category covers for `/sfx` | Local **Stable Diffusion 3.5 Medium** via `scripts/gen_sd35.py`. | Stability AI Community License. |
+| `site/public/sfx/covers/*.webp`, `site/public/sfx/og/*.jpg` | Category covers for `/sfx`, and their share-card crops | Local **Stable Diffusion 3.5 Medium** via `scripts/gen_sd35.py`, then cropped and re-encoded by `scripts/compress-sfx-covers.py`. | Stability AI Community License. |
 | `site/public/music/covers/*` | Track covers | Per `app/src/content/music/tracks.ts`: the first twelve with **Google's Nano Banana** (Gemini image model) via the Antigravity CLI; the other twenty-four with local **Stable Diffusion 3.5 Medium** (`scripts/gen_sd35.py`, prompts in `scripts/gen-music-covers.tsv`). The repo does not record which file is which beyond that split. | Nano Banana output: Google's Gemini API / generative AI terms (including Google's Generative AI Prohibited Use Policy). SD 3.5: Stability AI Community License. |
 | `site/public/music/artists/*.webp` | Artist covers | Per `app/src/content/music/artists.ts`: local **Stable Diffusion 3.5 Medium** via `scripts/gen_sd35.py`, prompts in `scripts/gen-artist-covers.json`. | Stability AI Community License. |
 | `site/public/blog/*.jpg` | Blog header plates | Generated, abstract images. **Which model made them is not recorded** in the repo. | Unknown. |
 | `site/public/product/*.png`, `site/public/blog/*.png` | Product screenshots | Screenshots of the real Soundbox app. | Covered with the project (MIT), like the code. |
+| `site/public/og/*.jpg` | Share cards (`og:image`) | Drawn by `scripts/gen-og-cards.py` from a product screenshot and the Geist font. | Covered with the project (MIT), like the code. Geist is under the SIL Open Font License. |
 | `app/public/favicon.svg` | Icon (served by both the app and the site) | Part of the source. | MIT. |
 
 All generated artwork was prompted to be abstract, with no text, logos or

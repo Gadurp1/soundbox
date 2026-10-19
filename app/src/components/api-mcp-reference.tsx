@@ -305,7 +305,7 @@ curl "${origin}/api/sounds/$SOUND_ID"`}
             intro="The quickstart above is the core loop. The API reference indexes the rest of the HTTP surface route by route: sounds, voices, stories, sessions, models, settings and the MCP log."
           >
             <p className="text-sm leading-relaxed">
-              <a className="underline underline-offset-2" href={assetUrl("/docs/api")}>
+              <a className="underline underline-offset-2" href={assetUrl("/docs/api/")}>
                 Read the full API reference
               </a>{" "}
               for every route with its method, purpose and key fields. It is kept in the repository as{" "}

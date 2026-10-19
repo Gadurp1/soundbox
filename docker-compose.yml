@@ -1,0 +1,46 @@
+# Soundbox, headless. See docs/INSTALL.md#docker.
+#
+#   docker compose up -d --build
+#
+# NVIDIA GPU (needs the NVIDIA Container Toolkit on the host):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d --build
+#
+# Then open http://localhost:17494 and download a model from the Models page,
+# or: docker compose exec soundbox soundbox pull audiocpp-stable-audio-3-sfx
+#
+# THERE IS NO AUTHENTICATION. Anyone who can reach port 17494 can generate
+# audio, read and delete your library, and drive the MCP tools. The port is
+# published on 127.0.0.1 only below; to reach it from other machines, put a
+# reverse proxy with auth in front (and add its hostname to
+# SOUNDBOX_ALLOWED_HOSTS) rather than changing that to 0.0.0.0.
+
+services:
+  soundbox:
+    image: soundbox:cpu
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:17494:17494"
+    environment:
+      # The MCP endpoint (/mcp) answers 403 to any Host header that is not
+      # loopback — protection against DNS rebinding from a browser. Behind a
+      # proxy, or from another machine, the Host header is whatever name the
+      # client used, so list every one, exactly as sent: with the port unless
+      # it is 80/443. Comma-separated. Not needed for http://localhost:17494.
+      SOUNDBOX_ALLOWED_HOSTS: "soundbox.example.lan"
+      # Needed only for gated Hugging Face models (docs/INSTALL.md, Step 3).
+      # HF_TOKEN: "hf_..."
+    volumes:
+      # Settings, library database, generated sounds — ~/.soundbox on a desktop.
+      - soundbox-data:/data
+      # Model weights, tens of gigabytes. Its own volume so it can live on a
+      # different disk. To use host folders instead, e.g. `./models:/data/models`,
+      # create them first and `chown 1000:1000` them: the container runs as
+      # uid 1000, and a folder Docker creates for you is owned by root.
+      - soundbox-models:/data/models
+
+volumes:
+  soundbox-data:
+  soundbox-models:

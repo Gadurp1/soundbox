@@ -44,6 +44,7 @@ import {
   WifiOffIcon,
 } from "lucide-react";
 
+import { SeoHead, softwareAppJsonLd } from "@/components/seo-head";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { TimelineBanner } from "@/components/timeline-banner";
@@ -1003,6 +1004,14 @@ function Footer() {
 export function WelcomePage() {
   return (
     <div className="bg-background text-foreground min-h-svh overflow-x-clip">
+      {/* "Soundbox" alone is a name several unrelated products share, so the
+          title carries what it is as well as what it is called. */}
+      <SeoHead
+        title="Soundbox: local AI sound effects, music and voice generator"
+        description="Open-source app that generates sound effects, music and speech on your own GPU from open-weight models. No account, works offline, with an MCP server for coding agents."
+        path="/"
+        jsonLd={[softwareAppJsonLd()]}
+      />
       <a
         href="#main"
         className="bg-card ring-ring sr-only rounded-lg px-3 py-2 text-sm font-medium focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:ring-2"

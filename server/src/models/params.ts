@@ -20,7 +20,7 @@
  *    temperature alone changes nothing. Hence `requires` below.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -79,10 +79,17 @@ interface RawParam {
   choices?: string[];
 }
 
-const here = dirname(fileURLToPath(import.meta.url));
-const RAW = JSON.parse(
-  readFileSync(join(here, "audiocpp_model_params.json"), "utf8"),
-) as Record<string, RawParam[]>;
+/** Beside this module under tsx; back in `src/` after a build, since `tsc`
+ *  copies no JSON into `dist/` — the same fallback as the catalog's
+ *  `catalogPath()` in audiocpp.ts. */
+function paramsPath(): string {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const local = join(here, "audiocpp_model_params.json");
+  if (existsSync(local)) return local;
+  return join(here, "..", "..", "src", "models", "audiocpp_model_params.json");
+}
+
+const RAW = JSON.parse(readFileSync(paramsPath(), "utf8")) as Record<string, RawParam[]>;
 
 /**
  * Which group each known param belongs to.

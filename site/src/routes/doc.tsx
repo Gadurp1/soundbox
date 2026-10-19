@@ -39,8 +39,8 @@ function DocBody({ page }: { page: DocPage }) {
   return (
     <>
       <SeoHead
-        title={`${page.title} | Soundbox docs`}
-        description={page.blurb}
+        title={`${page.metaTitle ?? page.title} | Soundbox docs`}
+        description={page.description ?? page.blurb}
         path={`/docs/${page.slug}`}
       />
 

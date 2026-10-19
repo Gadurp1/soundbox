@@ -1,0 +1,25 @@
+# Keep the build context to what the image actually needs: app/, server/ and
+# the root workspace manifests. Everything else is either build output the
+# Dockerfile regenerates, or large and irrelevant (the desktop shell, the site).
+**/node_modules
+**/dist
+server/web
+**/.turbo
+**/.vite
+**/*.log
+
+.git
+.claude
+.soundbox
+server/.run-data
+server/.scratch-data
+
+src-tauri
+site/*
+!site/package.json
+hoa-animatic
+docs
+scripts
+
+.env
+.env.*

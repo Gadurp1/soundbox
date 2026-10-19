@@ -2330,6 +2330,13 @@ export function getModel(slug: string | undefined): ModelContent | undefined {
   return MODELS.find((model) => model.slug === slug);
 }
 
+/** The write-up for a catalog id ("audiocpp-stable-audio-3-sfx"), which is
+ *  what generated content records as its model. */
+export function getModelByCatalogId(id: string | undefined): ModelContent | undefined {
+  if (!id) return undefined;
+  return MODELS.find((model) => model.catalogId === id);
+}
+
 /** Counts the hub quotes in its own header. Derived rather than written down,
  *  because a hand-maintained "46 models" line is a lie waiting to happen. */
 export const MODEL_STATS = {

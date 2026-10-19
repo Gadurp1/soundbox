@@ -83,7 +83,9 @@ function renderFeed(items: FeedItem[], root: string): string {
 
   const entries = items
     .map((item) => {
-      const url = `${root}/blog/${item.slug}`;
+      // Trailing slash: the page lives at blog/<slug>/index.html, and the
+      // slashless URL is a 301 on a static host.
+      const url = `${root}/blog/${item.slug}/`;
       return [
         "    <item>",
         `      <title>${escapeXml(item.title)}</title>`,
@@ -107,7 +109,7 @@ function renderFeed(items: FeedItem[], root: string): string {
     "    <title>Soundbox</title>",
     `    <link>${escapeXml(`${root}/`)}</link>`,
     "    <description>How Soundbox is built, how the models behave, and how to get better sound out of them.</description>",
-    "    <language>en</language>",
+    "    <language>en-gb</language>",
     `    <lastBuildDate>${built}</lastBuildDate>`,
     `    <atom:link href="${escapeXml(self)}" rel="self" type="application/rss+xml" />`,
     entries,

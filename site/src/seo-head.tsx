@@ -14,9 +14,18 @@
 
 import { Head } from "vite-react-ssg";
 
-import { siteUrl } from "@/lib/asset-url";
+import { pageUrl, siteUrl } from "@/lib/asset-url";
 
-export { faqJsonLd, breadcrumbJsonLd } from "@sfx-app/components/seo-head";
+export { faqJsonLd, breadcrumbJsonLd, softwareAppJsonLd } from "@sfx-app/components/seo-head";
+
+/**
+ * The card every page shares unless it names its own: the studio screenshot
+ * with the name and one line on it, 1200x630. Without an image the
+ * `summary_large_image` card renders as bare text, or not at all.
+ */
+export const DEFAULT_OG_IMAGE = "/og/default.jpg";
+const DEFAULT_OG_IMAGE_ALT =
+  "Soundbox: sound effects, music and voices, generated on your own machine";
 
 export interface SeoHeadProps {
   title: string;
@@ -30,9 +39,11 @@ export interface SeoHeadProps {
    * Emitted only when VITE_SITE_ORIGIN is set. Every scraper ignores a
    * relative og:image, so a half-configured build should ship no tag at all
    * rather than one that resolves to nothing — the same reason the canonical
-   * link below is conditional.
+   * link below is conditional. Defaults to `DEFAULT_OG_IMAGE`.
    */
   image?: string;
+  /** Alt text for the share card. Defaults to the site line when `image` is the default. */
+  imageAlt?: string;
   /** "website" unless this page is one article, which is to say a post. */
   type?: "website" | "article";
   /** Set on a blog post. Dates are YYYY-MM-DD. */
@@ -49,12 +60,16 @@ export function SeoHead({
   description,
   path,
   jsonLd,
-  image,
+  image = DEFAULT_OG_IMAGE,
+  imageAlt,
   type = "website",
   article,
 }: SeoHeadProps) {
-  // Origin + deploy base + path; empty without VITE_SITE_ORIGIN.
-  const url = siteUrl(path);
+  // Origin + deploy base + path, with the trailing slash the host serves the
+  // page at (a slashless canonical points at a 301); empty without
+  // VITE_SITE_ORIGIN.
+  const url = pageUrl(path);
+  const alt = imageAlt ?? (image === DEFAULT_OG_IMAGE ? DEFAULT_OG_IMAGE_ALT : undefined);
   return (
     <Head>
       <title>{title}</title>
@@ -62,11 +77,14 @@ export function SeoHead({
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content={type} />
+      <meta property="og:site_name" content="Soundbox" />
       <meta name="twitter:card" content="summary_large_image" />
       {url && <meta property="og:url" content={url} />}
       {url && <link rel="canonical" href={url} />}
       {url && image && <meta property="og:image" content={siteUrl(image)} />}
       {url && image && <meta name="twitter:image" content={siteUrl(image)} />}
+      {url && image && alt && <meta property="og:image:alt" content={alt} />}
+      {url && image && alt && <meta name="twitter:image:alt" content={alt} />}
       {article && <meta property="article:published_time" content={article.publishedTime} />}
       {article?.modifiedTime && (
         <meta property="article:modified_time" content={article.modifiedTime} />

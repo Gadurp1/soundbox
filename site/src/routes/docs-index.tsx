@@ -18,7 +18,7 @@ export function DocsIndexPage() {
   return (
     <div className="bg-background text-foreground min-h-svh">
       <SeoHead
-        title="Documentation | Soundbox"
+        title="Documentation: install, studio, HTTP API and MCP | Soundbox"
         description="How Soundbox works: installing it, generating sound, arranging in the studio, the local HTTP API, and the MCP tools an agent gets."
         path="/docs"
       />

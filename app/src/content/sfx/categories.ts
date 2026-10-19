@@ -112,7 +112,7 @@ export const CATEGORY_GROUPS: Record<string, SfxGroup> = {
 const EIGHT_BIT: SfxCategory = {
   slug: "8bit",
   name: "8-bit",
-  coverImage: "/sfx/covers/8bit-cover.png",
+  coverImage: "/sfx/covers/8bit-cover.webp",
   targetQuery: "8bit sound effects",
   intent:
     "Solo/indie game devs building a retro-styled game who need coins, jumps, " +
@@ -550,7 +550,7 @@ const EIGHT_BIT_MUSIC: SfxCategory = {
 const WHOOSH: SfxCategory = {
   slug: "whoosh",
   name: "Whoosh",
-  coverImage: "/sfx/covers/whoosh-cover.png",
+  coverImage: "/sfx/covers/whoosh-cover.webp",
   targetQuery: "whoosh sound effect",
   intent:
     "Video editors and motion designers who need a swipe, swing or transition sound that " +
@@ -648,7 +648,7 @@ const WHOOSH: SfxCategory = {
 const FOOTSTEPS: SfxCategory = {
   slug: "footsteps",
   name: "Footsteps",
-  coverImage: "/sfx/covers/footsteps-cover.png",
+  coverImage: "/sfx/covers/footsteps-cover.webp",
   targetQuery: "footsteps sound effect",
   intent:
     "Game devs and sound designers who need a set of footstep variations per surface — " +
@@ -750,7 +750,7 @@ const FOOTSTEPS: SfxCategory = {
 const RETRO_GAME: SfxCategory = {
   slug: "retro-game",
   name: "Retro game",
-  coverImage: "/sfx/covers/retro-game-cover.png",
+  coverImage: "/sfx/covers/retro-game-cover.webp",
   targetQuery: "retro game sound effects",
   intent:
     "Broader than 8-bit: 16-bit, arcade and early-CD-era game audio.",
@@ -832,7 +832,7 @@ const RETRO_GAME: SfxCategory = {
 const VIDEO_GAME: SfxCategory = {
   slug: "video-game",
   name: "Video game",
-  coverImage: "/sfx/covers/video-game-cover.png",
+  coverImage: "/sfx/covers/video-game-cover.webp",
   targetQuery: "video game sound effects",
   intent:
     "Highest-volume head term; searcher wants a starting point and a tool.",
@@ -914,7 +914,7 @@ const VIDEO_GAME: SfxCategory = {
 const COIN_PICKUP: SfxCategory = {
   slug: "coin-pickup",
   name: "Coin pickup",
-  coverImage: "/sfx/covers/coin-pickup-cover.png",
+  coverImage: "/sfx/covers/coin-pickup-cover.webp",
   targetQuery: "coin pickup sound effect",
   intent:
     "Very specific single-asset search; wants one good clip immediately.",
@@ -996,7 +996,7 @@ const COIN_PICKUP: SfxCategory = {
 const POWER_UP: SfxCategory = {
   slug: "power-up",
   name: "Power-up",
-  coverImage: "/sfx/covers/power-up-cover.png",
+  coverImage: "/sfx/covers/power-up-cover.webp",
   targetQuery: "power up sound effect",
   intent:
     "Single-asset search, usually alongside coin and jump.",
@@ -1092,7 +1092,7 @@ const POWER_UP: SfxCategory = {
 const GAME_OVER: SfxCategory = {
   slug: "game-over",
   name: "Game over",
-  coverImage: "/sfx/covers/game-over-cover.png",
+  coverImage: "/sfx/covers/game-over-cover.webp",
   targetQuery: "game over sound effect",
   intent:
     "Single-asset search; often needs a matching win jingle too.",
@@ -1200,7 +1200,7 @@ const GAME_OVER: SfxCategory = {
 const LASER: SfxCategory = {
   slug: "laser",
   name: "Laser",
-  coverImage: "/sfx/covers/laser-cover.png",
+  coverImage: "/sfx/covers/laser-cover.webp",
   targetQuery: "laser sound effect",
   intent:
     "Spans retro arcade zaps and modern sci-fi weapon fire; two sub-intents.",
@@ -1282,7 +1282,7 @@ const LASER: SfxCategory = {
 const MAGIC: SfxCategory = {
   slug: "magic",
   name: "Magic",
-  coverImage: "/sfx/covers/magic-cover.png",
+  coverImage: "/sfx/covers/magic-cover.webp",
   targetQuery: "magic sound effect",
   intent:
     "RPG and fantasy game devs; spells, casts, shimmer.",
@@ -1377,7 +1377,7 @@ const MAGIC: SfxCategory = {
 const WEAPON: SfxCategory = {
   slug: "weapon",
   name: "Weapon",
-  coverImage: "/sfx/covers/weapon-cover.png",
+  coverImage: "/sfx/covers/weapon-cover.webp",
   targetQuery: "weapon sound effects",
   intent:
     "Game audio; melee and ranged, needs impact plus tail.",
@@ -1459,7 +1459,7 @@ const WEAPON: SfxCategory = {
 const EXPLOSION: SfxCategory = {
   slug: "explosion",
   name: "Explosion",
-  coverImage: "/sfx/covers/explosion-cover.png",
+  coverImage: "/sfx/covers/explosion-cover.webp",
   targetQuery: "explosion sound effect",
   intent:
     "Film, trailer and game use; wants weight and a long tail.",
@@ -1541,7 +1541,7 @@ const EXPLOSION: SfxCategory = {
 const IMPACT: SfxCategory = {
   slug: "impact",
   name: "Impact",
-  coverImage: "/sfx/covers/impact-cover.png",
+  coverImage: "/sfx/covers/impact-cover.webp",
   targetQuery: "impact sound effect",
   intent:
     "Editors and game devs; the generic hit/thud family.",
@@ -1623,7 +1623,7 @@ const IMPACT: SfxCategory = {
 const HORROR: SfxCategory = {
   slug: "horror",
   name: "Horror",
-  coverImage: "/sfx/covers/horror-cover.png",
+  coverImage: "/sfx/covers/horror-cover.webp",
   targetQuery: "horror sound effects",
   intent:
     "Film, game and short-form video; wants dread, not jump scares alone.",
@@ -1719,7 +1719,7 @@ const HORROR: SfxCategory = {
 const SCI_FI: SfxCategory = {
   slug: "sci-fi",
   name: "Sci-fi",
-  coverImage: "/sfx/covers/sci-fi-cover.png",
+  coverImage: "/sfx/covers/sci-fi-cover.webp",
   targetQuery: "sci fi sound effects",
   intent:
     "Film and game; UI bleeps, engines, energy.",
@@ -1823,7 +1823,7 @@ const SCI_FI: SfxCategory = {
 const CINEMATIC: SfxCategory = {
   slug: "cinematic",
   name: "Cinematic",
-  coverImage: "/sfx/covers/cinematic-cover.png",
+  coverImage: "/sfx/covers/cinematic-cover.webp",
   targetQuery: "cinematic sound effects",
   intent:
     "Trailer editors; risers, braams, whooshes, hits.",
@@ -1927,7 +1927,7 @@ const CINEMATIC: SfxCategory = {
 const GLITCH: SfxCategory = {
   slug: "glitch",
   name: "Glitch",
-  coverImage: "/sfx/covers/glitch-cover.png",
+  coverImage: "/sfx/covers/glitch-cover.webp",
   targetQuery: "glitch sound effect",
   intent:
     "Motion designers and editors; digital artefacts and stutters.",
@@ -2009,7 +2009,7 @@ const GLITCH: SfxCategory = {
 const CROWD: SfxCategory = {
   slug: "crowd",
   name: "Crowd",
-  coverImage: "/sfx/covers/crowd-cover.png",
+  coverImage: "/sfx/covers/crowd-cover.webp",
   targetQuery: "crowd sound effects",
   intent:
     "Film and game ambience; reaction beds and walla.",
@@ -2091,7 +2091,7 @@ const CROWD: SfxCategory = {
 const RAIN: SfxCategory = {
   slug: "rain",
   name: "Rain",
-  coverImage: "/sfx/covers/rain-cover.png",
+  coverImage: "/sfx/covers/rain-cover.webp",
   targetQuery: "rain sound effect",
   intent:
     "Ambience for film, games and video; also sleep/focus audio.",
@@ -2173,7 +2173,7 @@ const RAIN: SfxCategory = {
 const THUNDER: SfxCategory = {
   slug: "thunder",
   name: "Thunder",
-  coverImage: "/sfx/covers/thunder-cover.png",
+  coverImage: "/sfx/covers/thunder-cover.webp",
   targetQuery: "thunder sound effect",
   intent:
     "Storm ambience and single-strike stingers; two intents.",
@@ -2255,7 +2255,7 @@ const THUNDER: SfxCategory = {
 const WIND: SfxCategory = {
   slug: "wind",
   name: "Wind",
-  coverImage: "/sfx/covers/wind-cover.png",
+  coverImage: "/sfx/covers/wind-cover.webp",
   targetQuery: "wind sound effect",
   intent:
     "Ambience; also motion/whoosh adjacency.",
@@ -2337,7 +2337,7 @@ const WIND: SfxCategory = {
 const WATER: SfxCategory = {
   slug: "water",
   name: "Water",
-  coverImage: "/sfx/covers/water-cover.png",
+  coverImage: "/sfx/covers/water-cover.webp",
   targetQuery: "water sound effects",
   intent:
     "Broad ambience and foley; streams, splashes, pours.",
@@ -2419,7 +2419,7 @@ const WATER: SfxCategory = {
 const FIRE: SfxCategory = {
   slug: "fire",
   name: "Fire",
-  coverImage: "/sfx/covers/fire-cover.png",
+  coverImage: "/sfx/covers/fire-cover.webp",
   targetQuery: "fire sound effect",
   intent:
     "Ambience and game loops; campfires through infernos.",
@@ -2501,7 +2501,7 @@ const FIRE: SfxCategory = {
 const ANIMAL: SfxCategory = {
   slug: "animal",
   name: "Animal",
-  coverImage: "/sfx/covers/animal-cover.png",
+  coverImage: "/sfx/covers/animal-cover.webp",
   targetQuery: "animal sound effects",
   intent:
     "Games and video; specific creatures and generic beasts.",
@@ -2583,7 +2583,7 @@ const ANIMAL: SfxCategory = {
 const AMBIENCE: SfxCategory = {
   slug: "ambience",
   name: "Ambience",
-  coverImage: "/sfx/covers/ambience-cover.png",
+  coverImage: "/sfx/covers/ambience-cover.webp",
   targetQuery: "ambience sound effects",
   intent:
     "Long background beds for games and film; the loop question dominates.",
@@ -2680,7 +2680,7 @@ const AMBIENCE: SfxCategory = {
 const DOOR: SfxCategory = {
   slug: "door",
   name: "Door",
-  coverImage: "/sfx/covers/door-cover.png",
+  coverImage: "/sfx/covers/door-cover.webp",
   targetQuery: "door sound effect",
   intent:
     "Foley staple; open, close, slam, creak, in a named space.",
@@ -2762,7 +2762,7 @@ const DOOR: SfxCategory = {
 const UI: SfxCategory = {
   slug: "ui",
   name: "UI",
-  coverImage: "/sfx/covers/ui-cover.png",
+  coverImage: "/sfx/covers/ui-cover.webp",
   targetQuery: "ui sound effects",
   intent:
     "App and game UI designers; clicks, toggles, confirms.",
@@ -2844,7 +2844,7 @@ const UI: SfxCategory = {
 const NOTIFICATION: SfxCategory = {
   slug: "notification",
   name: "Notification",
-  coverImage: "/sfx/covers/notification-cover.png",
+  coverImage: "/sfx/covers/notification-cover.webp",
   targetQuery: "notification sound effect",
   intent:
     "Product and app designers; a short branded alert.",
@@ -2926,7 +2926,7 @@ const NOTIFICATION: SfxCategory = {
 const TRANSITION: SfxCategory = {
   slug: "transition",
   name: "Transition",
-  coverImage: "/sfx/covers/transition-cover.png",
+  coverImage: "/sfx/covers/transition-cover.webp",
   targetQuery: "transition sound effects",
   intent:
     "Video editors; short-form content and cuts.",
@@ -3008,7 +3008,7 @@ const TRANSITION: SfxCategory = {
 const MACHINERY: SfxCategory = {
   slug: "machinery",
   name: "Machinery",
-  coverImage: "/sfx/covers/machinery-cover.png",
+  coverImage: "/sfx/covers/machinery-cover.webp",
   targetQuery: "machinery sound effects",
   intent:
     "Industrial ambience and mechanical foley for games and film.",

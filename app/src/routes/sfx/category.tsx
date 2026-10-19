@@ -30,7 +30,7 @@ import { SampleGrid } from "@/components/sfx/sample-grid";
 import { MarketingLink } from "@/components/marketing-link";
 import { SeoHead, breadcrumbJsonLd, faqJsonLd } from "@/components/seo-head";
 import { getCategory } from "@/content/sfx/categories";
-import { isPublished } from "@/content/sfx/types";
+import { COVER_SIZE, coverCard, isPublished } from "@/content/sfx/types";
 import type { PublishedCategory } from "@/content/sfx/types";
 import { GENERATOR_HREF, REPO_URL, WELCOME_HREF } from "@/lib/marketing-links";
 import { cn } from "@/lib/utils";
@@ -100,6 +100,12 @@ function CategoryBody({ category }: { category: PublishedCategory }) {
         title={category.metaTitle}
         description={category.metaDescription}
         path={`/sfx/${category.slug}`}
+        {...(category.coverImage
+          ? {
+              image: coverCard(category.coverImage),
+              imageAlt: `Cover art for Soundbox's ${category.name.toLowerCase()} sound effects`,
+            }
+          : {})}
         jsonLd={[
           faqJsonLd(content.faqs),
           breadcrumbJsonLd([
@@ -122,7 +128,13 @@ function CategoryBody({ category }: { category: PublishedCategory }) {
           <img
             src={assetUrl(category.coverImage)}
             alt=""
-            className="ring-border/70 mb-6 aspect-video w-full rounded-2xl object-cover ring-1"
+            width={COVER_SIZE.width}
+            height={COVER_SIZE.height}
+            // The largest thing on the page and the first thing painted, so
+            // the browser should fetch it before anything below the fold.
+            fetchPriority="high"
+            decoding="async"
+            className="ring-border/70 mb-6 aspect-video h-auto w-full rounded-2xl object-cover ring-1"
           />
         )}
         <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance sm:text-4xl">

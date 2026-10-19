@@ -88,6 +88,21 @@ function withBase(base: string, url: string): string {
   return base + url.slice(1);
 }
 
+/**
+ * A root-relative link to a *page* gets the trailing slash the host serves it
+ * at (`/docs/mcp` -> `/docs/mcp/`, `/docs/mcp#tools` -> `/docs/mcp/#tools`),
+ * so a crawler following it is not 301'd. Files (`/blog/rss.xml`) and
+ * anything not root-relative are left alone. The same rule as `pagePath` in
+ * app/src/lib/asset-url.ts, which this Node-side plugin cannot import.
+ */
+function withSlash(url: string): string {
+  const match = /^([^?#]*)(.*)$/.exec(url);
+  const [pathname, rest] = [match?.[1] ?? url, match?.[2] ?? ""];
+  if (!pathname.startsWith("/") || pathname.startsWith("//") || pathname.endsWith("/")) return url;
+  if (/\.[a-z0-9]+$/i.test(pathname.slice(pathname.lastIndexOf("/")))) return url;
+  return `${pathname}/${rest}`;
+}
+
 function escapeAttr(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 }
@@ -162,7 +177,10 @@ export function markdownDocs(): Plugin {
       renderer.link = ({ href, title: linkTitle, text: label }) => {
         const text = marked.parseInline(label) as string;
         const local = /^\.?\/?([A-Z0-9_-]+)\.md(#.*)?$/i.exec(href ?? "");
-        const to = withBase(base, local ? `/docs/${local[1].toLowerCase()}${local[2] ?? ""}` : href);
+        const to = withBase(
+          base,
+          withSlash(local ? `/docs/${local[1].toLowerCase()}${local[2] ?? ""}` : href),
+        );
         const external = /^https?:/i.test(to ?? "");
         const attrs = external ? ' target="_blank" rel="noreferrer"' : "";
         return `<a href="${to}"${linkTitle ? ` title="${linkTitle}"` : ""}${attrs}>${text}</a>`;

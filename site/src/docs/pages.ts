@@ -18,6 +18,7 @@ import * as desktop from "../../../docs/DESKTOP.md?doc";
 import * as api from "../../../docs/API.md?doc";
 import * as mcp from "../../../docs/MCP.md?doc";
 import type { DocHeading } from "../../plugins/markdown";
+import { MCP_TOOLS } from "@/content/mcp/tools";
 
 export interface DocPage {
   slug: string;
@@ -27,8 +28,12 @@ export interface DocPage {
   title: string;
   html: string;
   headings: DocHeading[];
-  /** One line under the title, and the page's meta description. */
+  /** One line under the title, and the page's meta description unless `description` is set. */
   blurb: string;
+  /** `<title>` when the document's own `# Title` is not what anyone searches for. */
+  metaTitle?: string;
+  /** Meta description, when the on-page blurb is too short to be one. */
+  description?: string;
 }
 
 export const DOC_PAGES: DocPage[] = [
@@ -37,6 +42,9 @@ export const DOC_PAGES: DocPage[] = [
     label: "Install",
     section: "Start here",
     blurb: "Get Soundbox running, with models, on your own machine.",
+    metaTitle: "Install and run Soundbox from source on Windows, macOS or Linux",
+    description:
+      "Run Soundbox from a clone with Node 22: the audio.cpp runtime and its GPU backends, downloading models, gated models, where files live, and Windows notes.",
     ...install,
   },
   {
@@ -107,6 +115,8 @@ export const DOC_PAGES: DocPage[] = [
     label: "MCP tools",
     section: "Reference",
     blurb: "The tools an agent gets when it connects to Soundbox over MCP.",
+    metaTitle: "MCP server reference: tools and connecting a client",
+    description: `The ${MCP_TOOLS.length} tools an agent gets over MCP, and how to connect Claude Code or any HTTP or stdio MCP client to Soundbox running on your own machine.`,
     ...mcp,
   },
 ];

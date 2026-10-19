@@ -206,6 +206,105 @@ or backed-up disk while the weights stay put. **Browse** opens a folder picker
 over the filesystem of the machine running the server. If the folder does not
 exist yet, it is created on save.
 
+## Docker
+
+For a server or NAS: the server and web UI in one container, no desktop app.
+Build from a checkout:
+
+```bash
+docker compose up -d --build
+```
+
+and open <http://localhost:17494>. The audio.cpp runtime is already in the
+image, so skip Step 1: download a model from the Models page, or
+
+```bash
+docker compose exec soundbox soundbox pull audiocpp-stable-audio-3-sfx
+```
+
+Without Compose:
+
+```bash
+docker build -t soundbox .
+docker run -d --name soundbox -p 127.0.0.1:17494:17494 \
+  -v soundbox-data:/data -v soundbox-models:/data/models soundbox
+```
+
+**No authentication.** The server has no login of any kind. Anyone who can
+reach the port can generate audio, read and delete your library, change
+settings (including the stored Hugging Face token) and drive every MCP tool.
+The examples publish the port on `127.0.0.1` only. To use it from other
+machines, put it behind a reverse proxy that does authentication — Caddy or
+nginx with basic auth, Authelia, Authentik, a Tailscale/WireGuard-only
+listener — and do not publish `0.0.0.0:17494` on a network you do not
+control.
+
+**Volumes.** The container's `/data` is the whole of `~/.soundbox` (see
+[Where things go](#where-things-go)); `/data/models` is the weights, mounted
+separately so tens of gigabytes can live on another disk. The container runs
+as uid 1000. Named volumes just work; with host folders, create them first and
+`chown 1000:1000` them, since a folder Docker creates for you is owned by root
+and the server cannot write to it.
+
+**Binding.** Inside the container the server listens on `0.0.0.0` (`--host
+0.0.0.0`, the image default) — loopback inside a container is unreachable
+from the published port. It logs a warning about binding beyond loopback on
+every start; that is expected here, and is the reason for the paragraph above.
+
+**`SOUNDBOX_ALLOWED_HOSTS` and the MCP endpoint.** `/mcp` checks the `Host`
+header (and `Origin`, when a browser sends one) against loopback and answers
+**403** to anything else, so a web page cannot reach your server through DNS
+rebinding. `http://localhost:17494/mcp` from the Docker host passes as is.
+Reach it by any other name — a LAN IP, a proxy hostname — and that name has
+to be listed, exactly as the client sends it in `Host`, with the port unless it
+is 80/443:
+
+```bash
+-e SOUNDBOX_ALLOWED_HOSTS=soundbox.example.lan,192.168.1.20:17494
+```
+
+A reverse proxy that rewrites `Host` to `127.0.0.1` also passes, but forwarding
+the original host and listing it is the clearer setup. The web UI and
+`/api/*` are not behind this check; only `/mcp` is.
+
+**NVIDIA GPUs.** The default image is CPU-only and runs anywhere (amd64 and
+arm64). For CUDA, install the
+[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+on the host, check that `docker run --rm --gpus all ubuntu nvidia-smi` lists
+your GPU, then:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d --build
+```
+
+or by hand:
+
+```bash
+docker build -t soundbox:cuda \
+  --build-arg AUDIOCPP_TAG=full-cuda12 --build-arg AUDIOCPP_BACKEND=cuda .
+docker run -d --gpus all -p 127.0.0.1:17494:17494 \
+  -v soundbox-data:/data -v soundbox-models:/data/models soundbox:cuda
+```
+
+`full-cuda12` is built on CUDA 12.9 and needs a driver that supports it
+(575 or newer on GeForce cards); `full-cuda13` is the alternative for newer
+drivers. Expect the CUDA image to take about 10 GB of disk, most of it the
+CUDA runtime; the CPU image is about 3.5 GB. `full-vulkan` with
+`AUDIOCPP_BACKEND=vulkan` covers AMD and Intel GPUs, run with
+`--device /dev/dri` and the host's `render`/`video` groups added.
+
+**How the image is built.** It starts from
+[audio.cpp's own published images](https://github.com/0xShug0/audio.cpp/blob/main/docs/docker.md)
+(`ghcr.io/0xshug0/audio.cpp:full-<backend>`), which carry `audiocpp_cli`, its
+backend libraries and ffmpeg, and adds Node and Soundbox on top.
+`SOUNDBOX_AUDIOCPP_BIN` points at that binary, so `soundbox model install
+audiocpp` is never needed — and `SOUNDBOX_AUDIOCPP_BACKEND` is set from the
+build arg rather than detected, so a CPU image given `--gpus` does not ask its
+binary for a CUDA backend it lacks. Upstream's tags move daily; pass a dated
+one (`--build-arg AUDIOCPP_TAG=full-cuda12-<date>-<sha>`) for a reproducible
+build. The prompt assistant's managed `llama-server` is not in the image —
+point the assistant at an external OpenAI-compatible endpoint instead.
+
 ## Windows notes
 
 **Keep the data directory path short.** The Hugging Face cache layout adds
