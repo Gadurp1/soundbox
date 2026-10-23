@@ -2,11 +2,12 @@
 
 # Soundbox
 
-**Sound effects, music and voices, generated on your own machine.**
+**The free, open-source, local alternative to ElevenLabs and Suno.**
 
+AI sound effects, music, text-to-speech and voice cloning, generated on your own GPU.
 Describe a sound and get a WAV. Write lyrics and get a song. Clone a voice from a
-short clip. Arrange it all on a timeline, or let your coding agent do it over MCP.
-Open-weight models, no account, works offline.
+short clip. Arrange it all on a timeline, or let Claude Code, Cursor or any MCP agent
+do it for you. Open-weight models, no account, no credits, works offline. MIT licensed.
 
 [![Latest release](https://img.shields.io/github/v/release/Gadurp1/soundbox?label=release)](https://github.com/Gadurp1/soundbox/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Gadurp1/soundbox/total?label=downloads)](https://github.com/Gadurp1/soundbox/releases)

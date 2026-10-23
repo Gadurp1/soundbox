@@ -25,7 +25,7 @@ export { faqJsonLd, breadcrumbJsonLd, softwareAppJsonLd } from "@sfx-app/compone
  */
 export const DEFAULT_OG_IMAGE = "/og/default.jpg";
 const DEFAULT_OG_IMAGE_ALT =
-  "Soundbox: sound effects, music and voices, generated on your own machine";
+  "Soundbox: the free local alternative to ElevenLabs and Suno, for sound effects, music and voices";
 
 export interface SeoHeadProps {
   title: string;

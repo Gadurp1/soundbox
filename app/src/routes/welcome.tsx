@@ -387,7 +387,7 @@ function Hero() {
           id="hero-heading"
           className="font-heading mt-5 text-4xl font-semibold tracking-tight text-balance sm:text-5xl"
         >
-          Sound effects, music and voices, generated on your own machine
+          The local alternative to ElevenLabs and Suno
         </h1>
 
         <p className="text-muted-foreground mx-auto mt-5 max-w-xl text-base leading-relaxed text-pretty sm:text-lg">
@@ -1007,8 +1007,8 @@ export function WelcomePage() {
       {/* "Soundbox" alone is a name several unrelated products share, so the
           title carries what it is as well as what it is called. */}
       <SeoHead
-        title="Soundbox: local AI sound effects, music and voice generator"
-        description="Open-source app that generates sound effects, music and speech on your own GPU from open-weight models. No account, works offline, with an MCP server for coding agents."
+        title="Soundbox: free local ElevenLabs and Suno alternative for AI sound effects, music and voices"
+        description="Free, open-source alternative to ElevenLabs and Suno that runs on your own GPU: AI sound effects, music with lyrics, text-to-speech and voice cloning. No account, no credits, works offline, with an MCP server for Claude Code and Cursor."
         path="/"
         jsonLd={[softwareAppJsonLd()]}
       />
