@@ -22,7 +22,7 @@ import { DocsShell } from "../docs/shell";
 import { DOC_PAGES, docBySlug, type DocPage } from "../docs/pages";
 import { SignalChain } from "../docs/islands/signal-chain";
 
-const GITHUB_EDIT = "https://github.com/Gadurp1/soundbox/blob/main/docs";
+const GITHUB_EDIT = "https://github.com/HamSanders/soundbox/blob/main/docs";
 
 /** Which live component sits under which page, and the file it is spliced
  *  into. Keyed by slug so the markdown never has to know it is on a website. */

@@ -14,7 +14,7 @@ import { sfxSampleFacts } from "./plugins/sfx-sample-facts";
  * Where the site is served from, for hosts that put it under a path.
  *
  * `SITE_BASE=/soundbox/` builds for a GitHub Pages project site
- * (`https://gadurp1.github.io/soundbox/`); unset, the site is built for a
+ * (`https://hamsanders.github.io/soundbox/`); unset, the site is built for a
  * domain root, which is also what `npm run site:dev` serves. The router's
  * `basename` (src/main.tsx) and every raw URL (`@/lib/asset-url`) follow
  * `import.meta.env.BASE_URL`, which Vite derives from this.
@@ -22,7 +22,7 @@ import { sfxSampleFacts } from "./plugins/sfx-sample-facts";
 const SITE_BASE = normalizeBase(process.env.SITE_BASE);
 
 /**
- * `SITE_ORIGIN=https://gadurp1.github.io` is the short spelling of
+ * `SITE_ORIGIN=https://hamsanders.github.io` is the short spelling of
  * `VITE_SITE_ORIGIN`, the origin canonical/og:url/RSS links are built from.
  * Copied across before Vite loads its env so `import.meta.env` and the plugins
  * reading `config.env` (blog-feed) both see it.

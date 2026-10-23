@@ -27,7 +27,7 @@
  * to keep that prefix to reach the browser at all.
  */
 export const REPO_URL: string =
-  import.meta.env.VITE_REPO_URL || "https://github.com/Gadurp1/soundbox";
+  import.meta.env.VITE_REPO_URL || "https://github.com/HamSanders/soundbox";
 
 /** A path inside the repo, on the default branch. Saves every caller
  *  re-spelling `/blob/main/`. */

@@ -72,7 +72,7 @@ async function collect(): Promise<FeedItem[]> {
 
 /**
  * `root` is origin + the build's base without its trailing slash, e.g.
- * "https://gadurp1.github.io/soundbox" — or just the base path when no origin
+ * "https://hamsanders.github.io/soundbox" — or just the base path when no origin
  * is configured.
  */
 function renderFeed(items: FeedItem[], root: string): string {

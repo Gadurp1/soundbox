@@ -37,7 +37,7 @@ function pageDirs(dir: string, rel = ""): string[] {
 }
 
 /**
- * Write `<dir>/sitemap.xml`. `origin` is e.g. "https://gadurp1.github.io" and
+ * Write `<dir>/sitemap.xml`. `origin` is e.g. "https://hamsanders.github.io" and
  * `base` the build's base ("/" or "/soundbox/"). Without an origin it writes
  * nothing — a sitemap of relative URLs is invalid.
  */

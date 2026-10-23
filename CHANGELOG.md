@@ -99,6 +99,6 @@ Initial public release, MIT-licensed. Everything below is new.
   `SOUNDBOX_ALLOWED_HOSTS`), and requires JSON or an `X-Soundbox` header on
   mutating API requests.
 
-[Unreleased]: https://github.com/Gadurp1/soundbox/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/Gadurp1/soundbox/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/Gadurp1/soundbox/releases/tag/v0.1.0
+[Unreleased]: https://github.com/HamSanders/soundbox/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/HamSanders/soundbox/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/HamSanders/soundbox/releases/tag/v0.1.0

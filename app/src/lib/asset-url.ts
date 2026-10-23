@@ -14,7 +14,7 @@
 
 const BASE: string = import.meta.env.BASE_URL || "/";
 
-/** Absolute origin for canonical/og URLs, e.g. "https://gadurp1.github.io". Empty when unset. */
+/** Absolute origin for canonical/og URLs, e.g. "https://hamsanders.github.io". Empty when unset. */
 export const SITE_ORIGIN: string = (import.meta.env.VITE_SITE_ORIGIN ?? "").replace(/\/+$/, "");
 
 /**

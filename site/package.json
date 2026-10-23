@@ -3,13 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "license": "MIT",
-  "homepage": "https://github.com/Gadurp1/soundbox#readme",
+  "homepage": "https://github.com/HamSanders/soundbox#readme",
   "bugs": {
-    "url": "https://github.com/Gadurp1/soundbox/issues"
+    "url": "https://github.com/HamSanders/soundbox/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Gadurp1/soundbox.git",
+    "url": "https://github.com/HamSanders/soundbox.git",
     "directory": "site"
   },
   "type": "module",

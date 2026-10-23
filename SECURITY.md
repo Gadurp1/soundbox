@@ -15,7 +15,7 @@ release, that means the current `main` branch.
 Please report vulnerabilities **privately** through GitHub's private
 vulnerability reporting: open the repository's **Security** tab and click
 **Report a vulnerability**, or go straight to
-<https://github.com/Gadurp1/soundbox/security/advisories/new>.
+<https://github.com/HamSanders/soundbox/security/advisories/new>.
 Do not open a public issue, pull request or discussion for a suspected
 vulnerability.
 

@@ -389,7 +389,7 @@ Server-side variables are read by the process running `soundbox` (or
 | `SOUNDBOX_LLAMA_SERVER_BACKEND` | server | Same, for the `llama-server` download. |
 | `SOUNDBOX_SD_SERVER_BACKEND` | server | Same, for the `sd-server` download. |
 | `SOUNDBOX_ALLOW_UNVERIFIED_BINARIES` | server | `1` installs an engine archive that no published SHA-256 covers. Off by default; a checksum *mismatch* is refused regardless. |
-| `SOUNDBOX_ALLOWED_HOSTS` | server | Comma-separated `host` or `host:port`. Adds trusted browser origins (CORS and the MCP `Origin` check) and exact `Host` values the MCP endpoint accepts. See [SECURITY.md](https://github.com/Gadurp1/soundbox/blob/main/SECURITY.md). |
+| `SOUNDBOX_ALLOWED_HOSTS` | server | Comma-separated `host` or `host:port`. Adds trusted browser origins (CORS and the MCP `Origin` check) and exact `Host` values the MCP endpoint accepts. See [SECURITY.md](https://github.com/HamSanders/soundbox/blob/main/SECURITY.md). |
 | `PORT` | server, Vite | The Vite dev server's port (default 5174); the server also trusts it as a dev origin. |
 | `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` | server | Hugging Face token for gated models, used when none is saved in Settings. |
 | `HF_HOME` | server | Hugging Face cache location. Left alone if set; otherwise Soundbox points it at `<data dir>/models`. |
@@ -399,7 +399,7 @@ Server-side variables are read by the process running `soundbox` (or
 | `SOUNDBOX_NODE` | desktop shell | Node interpreter to run the built server with, if `node` is not on `PATH`. |
 | `SOUNDBOX_PROJECT_ROOT` | desktop shell | Path to the checkout, if the shell cannot find it from its own location. |
 | `VITE_MOCK` | app build | `1` runs the UI against the in-browser fake backend (`npm run dev:mock` sets it). |
-| `VITE_REPO_URL` | app build | Repository URL used in the app's links. Default `https://github.com/Gadurp1/soundbox`. |
+| `VITE_REPO_URL` | app build | Repository URL used in the app's links. Default `https://github.com/HamSanders/soundbox`. |
 | `VITE_SITE_ORIGIN` | app and site builds | Absolute origin for canonical URLs and the site's RSS feed. |
 
 The server sets `SOUNDBOX_LOG_FILE` for its own use; you do not need to.

@@ -4,13 +4,13 @@
   "private": true,
   "description": "Open-source AI sound effects, music and text-to-speech that run on your own machine, with an MCP server for coding agents",
   "license": "MIT",
-  "homepage": "https://github.com/Gadurp1/soundbox#readme",
+  "homepage": "https://github.com/HamSanders/soundbox#readme",
   "bugs": {
-    "url": "https://github.com/Gadurp1/soundbox/issues"
+    "url": "https://github.com/HamSanders/soundbox/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Gadurp1/soundbox.git"
+    "url": "https://github.com/HamSanders/soundbox.git"
   },
   "keywords": [
     "text-to-audio",

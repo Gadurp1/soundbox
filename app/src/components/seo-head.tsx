@@ -149,8 +149,8 @@ export function softwareAppJsonLd(): object {
     license: "https://opensource.org/licenses/MIT",
     isAccessibleForFree: true,
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    downloadUrl: "https://github.com/Gadurp1/soundbox/releases/latest",
-    codeRepository: "https://github.com/Gadurp1/soundbox",
+    downloadUrl: "https://github.com/HamSanders/soundbox/releases/latest",
+    codeRepository: "https://github.com/HamSanders/soundbox",
     description:
       "Generates sound effects, music and speech on your own machine from open-weight models, with an HTTP API and an MCP server for coding agents.",
     ...(siteUrl("/product/studio.png") ? { screenshot: siteUrl("/product/studio.png") } : {}),

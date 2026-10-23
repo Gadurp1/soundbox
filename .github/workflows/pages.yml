@@ -1,7 +1,7 @@
 name: Pages
 
 # Publishes the marketing/docs site (site/) to GitHub Pages as a project site,
-# served at https://gadurp1.github.io/soundbox/. SITE_BASE sets Vite's `base`
+# served at https://hamsanders.github.io/soundbox/. SITE_BASE sets Vite's `base`
 # and the router's basename; SITE_ORIGIN is the origin canonical, og:url and
 # RSS links are built from. See site/vite.config.ts.
 
@@ -42,7 +42,7 @@ jobs:
         run: npm run site:build
         env:
           SITE_BASE: /soundbox/
-          SITE_ORIGIN: https://gadurp1.github.io
+          SITE_ORIGIN: https://hamsanders.github.io
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

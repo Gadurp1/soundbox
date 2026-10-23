@@ -88,7 +88,7 @@ def card(screenshot: str | None, eyebrow: str, title: str, line: str, command: s
             fill=MUTED,
         )
 
-    draw.text((left, H - 64), "gadurp1.github.io/soundbox", font=geist(22, "Medium"), fill=MUTED)
+    draw.text((left, H - 64), "hamsanders.github.io/soundbox", font=geist(22, "Medium"), fill=MUTED)
     return im
 
 

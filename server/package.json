@@ -5,13 +5,13 @@
   "type": "module",
   "description": "Soundbox backend: HTTP API + MCP server driving audio.cpp",
   "license": "MIT",
-  "homepage": "https://github.com/Gadurp1/soundbox#readme",
+  "homepage": "https://github.com/HamSanders/soundbox#readme",
   "bugs": {
-    "url": "https://github.com/Gadurp1/soundbox/issues"
+    "url": "https://github.com/HamSanders/soundbox/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Gadurp1/soundbox.git",
+    "url": "https://github.com/HamSanders/soundbox.git",
     "directory": "server"
   },
   "bin": {
