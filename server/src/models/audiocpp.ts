@@ -253,6 +253,18 @@ export interface ModelSpec {
    */
   lyrics_required: boolean;
   /**
+   * The family's own request-option name for the target length, for a `gen`
+   * family that does not accept the generic `duration_seconds` field.
+   *
+   * audio.cpp 0.9.x rejects any request option a family does not declare
+   * ("unknown MiDashengLM-Gen request option: duration_seconds"), and only
+   * some families map the generic field onto their own `duration_sec`. Null
+   * (the default) sends the generic field, which every verified family takes.
+   * Likewise a `gen` family with `supports.steps` / `supports.cfg` false is
+   * sent no step count / guidance scale at all, rather than one it rejects.
+   */
+  duration_option: string | null;
+  /**
    * audio.cpp `--task-route` names for the audio-to-audio edits this family
    * offers, keyed by the `EditKind` the API exposes. A family with no entry
    * for a kind must also not declare `supports.<kind>` — `command()` refuses
@@ -312,6 +324,7 @@ interface RawEntry {
   voice_ids?: string[];
   requires_voice_reference?: boolean;
   lyrics_required?: boolean;
+  duration_option?: string;
   edit_routes?: Partial<Record<EditKind, string>>;
   speaker_tagged_prompt?: boolean;
   verified?: boolean;
@@ -411,6 +424,7 @@ function specReader(raw: RawCatalog, source: "builtin" | "custom") {
     voice_ids: [...(entry.voice_ids ?? [])],
     requires_voice_reference: entry.requires_voice_reference ?? false,
     lyrics_required: entry.lyrics_required ?? false,
+    duration_option: entry.duration_option ?? null,
     edit_routes: entry.edit_routes ?? {},
     speaker_tagged_prompt: entry.speaker_tagged_prompt ?? false,
     // A user cannot mark their own entry verified: "verified" means someone
@@ -784,6 +798,9 @@ export interface PackageInstaller {
     backend: string | null,
     progress?: { handle?: { cancelled: boolean } },
   ): Promise<TaskResult | null>;
+  /** Whether `id` is loaded in the server process running now. False once
+   *  the process it was loaded into has exited or been replaced. */
+  isResident?(id: string): boolean;
 }
 
 export class AudioCppModel {
@@ -1154,31 +1171,38 @@ export class AudioCppModel {
 
     if (this.installer?.loadModel) {
       progress?.(0.5, `Loading ${this.spec.name}`);
-      try {
-        const resident = await this.installer.loadModel(
-          {
-            id: this.spec.id,
-            path: weights,
-            family: this.spec.family,
-            task: this.cliTask,
-          },
-          this.audiocppRoot,
-          backend(),
-        );
-        if (resident) this.residentId = this.spec.id;
-      } catch (exc) {
-        // A model that will not load into the server is not necessarily a
-        // model that will not run: the CLI path allocates differently and may
-        // still manage it. Fall back rather than fail the load outright.
-        process.stderr.write(
-          `${this.spec.id}: audio.cpp could not hold it resident, using the CLI — ${String(exc)}
-`,
-        );
-      }
+      await this.makeResident(weights);
     }
 
     this.model = weights;
     progress?.(1.0, "Ready");
+  }
+
+  /** Load `weights` into the runtime; leaves `residentId` null if it can't. */
+  private async makeResident(weights: string): Promise<void> {
+    this.residentId = null;
+    if (!this.installer?.loadModel) return;
+    try {
+      const resident = await this.installer.loadModel(
+        {
+          id: this.spec.id,
+          path: weights,
+          family: this.spec.family,
+          task: this.cliTask,
+        },
+        this.audiocppRoot,
+        backend(),
+      );
+      if (resident) this.residentId = this.spec.id;
+    } catch (exc) {
+      // A model that will not load into the server is not necessarily a
+      // model that will not run: the CLI path allocates differently and may
+      // still manage it. Fall back rather than fail the load outright.
+      process.stderr.write(
+        `${this.spec.id}: audio.cpp could not hold it resident, using the CLI — ${String(exc)}
+`,
+      );
+    }
   }
 
   async unload(): Promise<void> {
@@ -1206,14 +1230,48 @@ export class AudioCppModel {
     body: Record<string, unknown>,
     progress?: ProgressFn,
   ): Promise<TaskResult | null> {
-    if (!this.residentId || !this.installer?.runTask) return null;
+    if (!this.residentId || !this.installer?.runTask || this.model === null) return null;
+    const installer = this.installer;
+    const runTask = installer.runTask!.bind(installer);
+
+    // The server process this model was loaded into can be gone by now —
+    // cancelled, idle-stopped, or replaced because the models folder changed —
+    // and a fresh one knows nothing of it. Load again rather than send a
+    // request that can only come back "unknown model id".
+    if (installer.isResident && !installer.isResident(this.residentId)) {
+      progress?.(0.02, `Reloading ${this.spec.name}`);
+      await this.makeResident(this.model);
+      if (!this.residentId) return null;
+    }
+
+    const run = () =>
+      runTask(
+        { ...body, model: this.residentId, family: this.spec.family },
+        this.audiocppRoot,
+        backend(),
+        progress,
+      );
+
     progress?.(0.05, `Running ${this.spec.name}`);
-    const result = await this.installer.runTask(
-      { ...body, model: this.residentId, family: this.spec.family },
-      this.audiocppRoot,
-      backend(),
-      progress,
-    );
+    let result: TaskResult | null;
+    try {
+      result = await run();
+    } catch (exc) {
+      // One retry, only for a model the runtime has lost: the process died
+      // under the request (a settings change restarted it), or a server we did
+      // not start fresh answers that it never heard of this id. A cancel kills
+      // the process too, but that is the user's answer, not a fault.
+      if (exc instanceof CancelledJob) throw exc;
+      const lost =
+        /unknown model id/i.test(String(exc)) ||
+        (installer.isResident !== undefined && !installer.isResident(this.residentId));
+      if (!lost) throw exc;
+      process.stderr.write(`${this.spec.id}: audio.cpp lost the model, reloading — ${String(exc)}
+`);
+      await this.makeResident(this.model);
+      if (!this.residentId) return null;
+      result = await run();
+    }
     if (result === null) return null;
     progress?.(0.97, "Decoding");
     return result;
@@ -1253,15 +1311,16 @@ export class AudioCppModel {
     const negKey = s.request_options["negative_prompt"];
     if (options.negativePrompt && negKey) requestOptions[negKey] = options.negativePrompt;
 
-    const body: Record<string, unknown> = {
-      task: "gen",
-      text: prompt,
-      num_inference_steps: Math.trunc(options.steps || s.defaults["steps"]!),
-      guidance_scale: options.cfg ?? s.defaults["cfg"]!,
-    };
+    const body: Record<string, unknown> = { task: "gen", text: prompt };
+    if (s.supports.steps !== false) {
+      body["num_inference_steps"] = Math.trunc(options.steps || s.defaults["steps"]!);
+    }
+    if (s.supports.cfg !== false) body["guidance_scale"] = options.cfg ?? s.defaults["cfg"]!;
     // A cover keeps the source's length, so a target duration would mislead.
     if (edit?.kind !== "cover") {
-      body["duration_seconds"] = Math.min(durationS, s.max_duration_s);
+      const length = Math.min(durationS, s.max_duration_s);
+      if (s.duration_option) requestOptions[s.duration_option] = length.toFixed(3);
+      else body["duration_seconds"] = length;
     }
     if (options.seed !== null && options.seed !== undefined) body["seed"] = options.seed;
 
@@ -1348,13 +1407,16 @@ export class AudioCppModel {
       // Wall time / audio duration / RTF, which is exactly the number this
       // path has to justify itself on. Cheap, so always on.
       "--metrics",
-      "--num-inference-steps", String(Math.trunc(steps || s.defaults["steps"]!)),
-      "--guidance-scale", (cfg ?? s.defaults["cfg"]!).toFixed(3),
     ];
-    cmd.push(
-      "--duration-seconds",
-      Math.min(coverDurationS ?? durationS, s.max_duration_s).toFixed(3),
-    );
+    if (s.supports.steps !== false) {
+      cmd.push("--num-inference-steps", String(Math.trunc(steps || s.defaults["steps"]!)));
+    }
+    if (s.supports.cfg !== false) {
+      cmd.push("--guidance-scale", (cfg ?? s.defaults["cfg"]!).toFixed(3));
+    }
+    const length = Math.min(coverDurationS ?? durationS, s.max_duration_s).toFixed(3);
+    if (s.duration_option) cmd.push("--request-option", `${s.duration_option}=${length}`);
+    else cmd.push("--duration-seconds", length);
     if (seed !== null && seed !== undefined) cmd.push("--seed", String(seed));
     if (edit && route) {
       // Same flag as separate(): `--audio` is the source clip for edit routes,

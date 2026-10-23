@@ -35,6 +35,7 @@ import type {
   TrackPatch,
   TagCount,
   Voice,
+  VoiceSample,
   EditKind,
   EditOptions,
 } from "./schemas.js";
@@ -132,6 +133,19 @@ CREATE TABLE IF NOT EXISTS voices (
     notes      TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_voices_created ON voices(created_at DESC);
+
+-- The clips a clone voice is made from. voices.filename stays the one file a
+-- model is handed as --voice-ref: a voice's only clip, or all of its clips
+-- joined (see audio/reference.ts). Kept as rows rather than a JSON column so
+-- one clip can be removed without rewriting the others.
+CREATE TABLE IF NOT EXISTS voice_samples (
+    id         TEXT PRIMARY KEY,
+    voice_id   TEXT NOT NULL REFERENCES voices(id) ON DELETE CASCADE,
+    filename   TEXT NOT NULL,
+    duration_s REAL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_voice_samples_voice ON voice_samples(voice_id, created_at);
 
 -- A story is a script that stays: ordered lines that each know both their
 -- place in the reading order and their place in time. A session is a log of
@@ -366,7 +380,16 @@ interface VoiceRow {
    *  Stored as a filename, not a URL, for the same reason `filename` is: the
    *  route prefix is the API's business, not the database's. */
   artwork: string | null;
+  /** Computed, not stored: how many library sounds were read in this voice.
+   *  See VOICE_SELECT. */
+  read_count?: number;
 }
+
+/** Every voice read carries its library count along — the Voice Lab shows it
+ *  on each card, and a correlated COUNT on an indexed column is cheaper than
+ *  a second round trip per voice. */
+const VOICE_SELECT =
+  "SELECT v.*, (SELECT COUNT(*) FROM sounds s WHERE s.voice_id = v.id) AS read_count FROM voices v";
 
 interface McpCallRow {
   id: string;
@@ -402,6 +425,10 @@ export interface ListSoundsOptions {
   /** Sounds derived from a given parent (edits, stems) — the sibling group
    *  a stem-view or an edit-history panel wants, not a recursive tree. */
   parent_id?: string | null;
+  /** Sounds read in one saved voice — the Voice Lab's per-voice history.
+   *  Only single-voice reads carry a voice (see `Sound.voice_id`), so a
+   *  mixed dialogue never shows up under any one of its speakers. */
+  voice_id?: string | null;
 }
 
 export interface ListMcpCallsOptions {
@@ -529,6 +556,21 @@ export class Database {
         WHERE voice_id IS NULL AND EXISTS (
          SELECT 1 FROM story_segments ss
           WHERE ss.sound_id = sounds.id AND ss.voice_id IS NOT NULL)`,
+    );
+    // After the ALTER above, since on an old library the column only exists
+    // from there on. Backs the per-voice history filter in listSounds.
+    this.conn.exec("CREATE INDEX IF NOT EXISTS idx_sounds_voice ON sounds(voice_id)");
+
+    // A clone saved before voices held several clips has one file and no
+    // sample row; give it one, pointing at that same file, so every clone has
+    // at least one. The sample id reuses the voice id — there is exactly one
+    // such sample per voice. Duration is left null; nothing reads it back
+    // except the Voice Lab's label, which copes.
+    this.conn.exec(
+      `INSERT INTO voice_samples (id, voice_id, filename, duration_s, created_at)
+       SELECT v.id, v.id, v.filename, NULL, v.created_at FROM voices v
+        WHERE v.kind = 'clone' AND v.filename IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM voice_samples vs WHERE vs.voice_id = v.id)`,
     );
   }
 
@@ -1395,16 +1437,73 @@ export class Database {
 
   listVoices(): Voice[] {
     const rows = this.prep(
-      "SELECT * FROM voices ORDER BY created_at DESC",
+      `${VOICE_SELECT} ORDER BY v.created_at DESC`,
     ).all() as VoiceRow[];
-    return rows.map(rowToVoice);
+    const samples = new Map<string, VoiceSample[]>();
+    const all = this.prep(
+      "SELECT * FROM voice_samples ORDER BY created_at, id",
+    ).all() as VoiceSampleRow[];
+    for (const row of all) {
+      const list = samples.get(row.voice_id) ?? [];
+      list.push(rowToSample(row));
+      samples.set(row.voice_id, list);
+    }
+    return rows.map((r) => rowToVoice(r, samples.get(r.id) ?? []));
   }
 
   getVoice(voiceId: string): Voice | null {
-    const row = this.prep("SELECT * FROM voices WHERE id=?").get(voiceId) as
+    const row = this.prep(`${VOICE_SELECT} WHERE v.id=?`).get(voiceId) as
       | VoiceRow
       | undefined;
-    return row ? rowToVoice(row) : null;
+    return row ? rowToVoice(row, this.listVoiceSamples(voiceId)) : null;
+  }
+
+  /** A clone voice's clips, oldest first — the order they are joined in. */
+  listVoiceSamples(voiceId: string): VoiceSample[] {
+    const rows = this.prep(
+      "SELECT * FROM voice_samples WHERE voice_id=? ORDER BY created_at, id",
+    ).all(voiceId) as VoiceSampleRow[];
+    return rows.map(rowToSample);
+  }
+
+  /** Bare filenames of a voice's clips, in join order. */
+  voiceSampleFilenames(voiceId: string): string[] {
+    const rows = this.prep(
+      "SELECT filename FROM voice_samples WHERE voice_id=? ORDER BY created_at, id",
+    ).all(voiceId) as { filename: string }[];
+    return rows.map((r) => r.filename);
+  }
+
+  addVoiceSample(sample: {
+    id: string;
+    voice_id: string;
+    filename: string;
+    duration_s: number;
+    created_at: string;
+  }): void {
+    this.prep(
+      `INSERT INTO voice_samples (id, voice_id, filename, duration_s, created_at)
+       VALUES (?,?,?,?,?)`,
+    ).run(sample.id, sample.voice_id, sample.filename, sample.duration_s, sample.created_at);
+  }
+
+  /** Removes one clip's row and returns its filename for the caller to
+   *  delete, or null if no such clip belongs to that voice. */
+  deleteVoiceSample(voiceId: string, sampleId: string): string | null {
+    const row = this.prep(
+      "SELECT filename FROM voice_samples WHERE id=? AND voice_id=?",
+    ).get(sampleId, voiceId) as { filename: string } | undefined;
+    if (row === undefined) return null;
+    this.prep("DELETE FROM voice_samples WHERE id=?").run(sampleId);
+    return row.filename;
+  }
+
+  /** Point a voice's `--voice-ref` at a different file, returning the one it
+   *  replaced. */
+  setVoiceFilename(voiceId: string, filename: string): string | null {
+    const previous = this.voiceFilename(voiceId);
+    this.prep("UPDATE voices SET filename=? WHERE id=?").run(filename, voiceId);
+    return previous;
   }
 
   /** The on-disk filename of a clone voice's reference clip, or null for a
@@ -1429,7 +1528,9 @@ export class Database {
     const rows = this.prep(
       `SELECT filename FROM sounds
        UNION
-       SELECT filename FROM voices WHERE filename IS NOT NULL`,
+       SELECT filename FROM voices WHERE filename IS NOT NULL
+       UNION
+       SELECT filename FROM voice_samples`,
     ).all() as { filename: string }[];
     return rows.map((r) => r.filename);
   }
@@ -1492,6 +1593,9 @@ export class Database {
   }
 
   deleteVoice(voiceId: string): boolean {
+    // Explicit rather than trusting ON DELETE CASCADE, which only fires when
+    // the connection has foreign_keys switched on.
+    this.prep("DELETE FROM voice_samples WHERE voice_id=?").run(voiceId);
     return this.prep("DELETE FROM voices WHERE id=?").run(voiceId).changes > 0;
   }
 
@@ -1615,6 +1719,10 @@ export class Database {
     if (options.parent_id) {
       where.push("s.parent_id = ?");
       params.push(options.parent_id);
+    }
+    if (options.voice_id) {
+      where.push("s.voice_id = ?");
+      params.push(options.voice_id);
     }
     if (options.project_id) {
       // Effective project: the sound's own project_id if it has one (an
@@ -1947,7 +2055,24 @@ function rowToTrack(row: TrackRow): StoryTrack {
   };
 }
 
-function rowToVoice(row: VoiceRow): Voice {
+interface VoiceSampleRow {
+  id: string;
+  voice_id: string;
+  filename: string;
+  duration_s: number | null;
+  created_at: string;
+}
+
+function rowToSample(row: VoiceSampleRow): VoiceSample {
+  return {
+    id: row.id,
+    file: `/files/${row.filename}`,
+    duration_s: row.duration_s,
+    created_at: row.created_at,
+  };
+}
+
+function rowToVoice(row: VoiceRow, samples: VoiceSample[] = []): Voice {
   return {
     id: row.id,
     name: row.name,
@@ -1960,6 +2085,8 @@ function rowToVoice(row: VoiceRow): Voice {
     model_id: row.model_id,
     notes: row.notes,
     artwork: row.artwork ? `/artwork/${row.artwork}` : null,
+    read_count: row.read_count ?? 0,
+    samples: row.kind === "builtin" ? [] : samples,
   };
 }
 

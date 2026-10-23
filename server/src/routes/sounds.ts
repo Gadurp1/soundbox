@@ -64,6 +64,7 @@ export function registerSounds(app: FastifyInstance, svc: SoundboxService): void
       session_id: strQuery(q.session_id),
       project_id: strQuery(q.project_id),
       parent_id: strQuery(q.parent_id),
+      voice_id: strQuery(q.voice_id),
       source: enumQuery(q.source, "source", SOURCES),
     });
   });

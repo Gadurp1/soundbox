@@ -832,6 +832,28 @@ const voices: Voice[] = [
   },
 ];
 
+/** A voice as the server returns it: with its library count, which the
+ *  server computes rather than stores. */
+function withVoiceCounts(voice: Voice): Voice {
+  return {
+    ...voice,
+    samples: voice.kind === "clone" ? [...(voice.samples ?? [])] : [],
+    read_count: sounds.filter((s) => s.voice_id === voice.id).length,
+  };
+}
+
+/** A clip's length for the mock's clip list, read the way the browser reads
+ *  it. Null when it cannot be decoded, which the list renders as no length. */
+async function mockDuration(file: Blob): Promise<number | null> {
+  try {
+    const ctx = new OfflineAudioContext(1, 1, 44100);
+    const buffer = await ctx.decodeAudioData(await file.arrayBuffer());
+    return buffer.duration;
+  } catch {
+    return null;
+  }
+}
+
 /** Stable ids so the mock log reads like one coherent run. */
 const mockJobId = "3f4c0470-deb7-4310-82a1-4fca49dfd9b1";
 const mockOtherJobId = "b1ab888b-7160-45f7-b15a-2c9bc2fa9a42";
@@ -2149,6 +2171,7 @@ export const mockApi: SoundboxApi = {
     if (query.project_id)
       items = items.filter((s) => s.effective_project_id === query.project_id);
     if (query.parent_id) items = items.filter((s) => s.parent_id === query.parent_id);
+    if (query.voice_id) items = items.filter((s) => s.voice_id === query.voice_id);
     if (query.q) {
       const q = query.q.toLowerCase();
       items = items.filter(
@@ -2776,7 +2799,7 @@ export const mockApi: SoundboxApi = {
 
   async listVoices(): Promise<Voice[]> {
     await wait(60);
-    return voices.map((v) => ({ ...v }));
+    return voices.map(withVoiceCounts);
   },
 
   async createVoice(req): Promise<Voice> {
@@ -2822,19 +2845,108 @@ export const mockApi: SoundboxApi = {
 
   async uploadVoice(name, file, notes, modelId): Promise<Voice> {
     await wait(140);
+    // Real uploaded bytes, so playback works exactly as it would live.
+    const url = URL.createObjectURL(file);
+    const created = new Date().toISOString();
     const voice: Voice = {
       id: nextId("voice"),
       name,
       kind: "clone",
-      created_at: new Date().toISOString(),
-      // Real uploaded bytes, so playback works exactly as it would live.
-      reference_file: URL.createObjectURL(file),
+      created_at: created,
+      reference_file: url,
       voice_id: null,
       model_id: modelId ?? null,
       notes: notes ?? null,
+      samples: [{ id: nextId("sample"), file: url, duration_s: await mockDuration(file), created_at: created }],
     };
     voices.unshift(voice);
-    return { ...voice };
+    return withVoiceCounts(voice);
+  },
+
+  async addVoiceSample(voiceId, source): Promise<Voice> {
+    await wait(140);
+    const voice = voices.find((v) => v.id === voiceId);
+    if (!voice) throw new Error(`Unknown voice ${voiceId}`);
+    if (voice.kind !== "clone") throw new Error(`'${voice.name}' is a built-in voice.`);
+    const samples = voice.samples ?? [];
+    if (samples.length >= 5) {
+      throw new Error(`'${voice.name}' already has 5 clips. Remove one before adding another.`);
+    }
+    let file: string;
+    let duration: number | null;
+    if ("file" in source) {
+      file = URL.createObjectURL(source.file);
+      duration = await mockDuration(source.file);
+    } else {
+      const sound = sounds.find((s) => s.id === source.sourceSoundId);
+      if (!sound) throw new Error(`Unknown sound ${source.sourceSoundId}`);
+      file = sound.file;
+      duration = sound.duration_s;
+    }
+    samples.push({ id: nextId("sample"), file, duration_s: duration, created_at: new Date().toISOString() });
+    voice.samples = samples;
+    // The mock cannot join WAVs; the first clip stands in for the joined
+    // reference so the card still has something to play.
+    voice.reference_file = samples[0]!.file;
+    return withVoiceCounts(voice);
+  },
+
+  async deleteVoiceSample(voiceId, sampleId): Promise<Voice> {
+    await wait(100);
+    const voice = voices.find((v) => v.id === voiceId);
+    if (!voice) throw new Error(`Unknown voice ${voiceId}`);
+    const samples = voice.samples ?? [];
+    if (!samples.some((s) => s.id === sampleId)) throw new Error("Unknown clip");
+    if (samples.length <= 1) {
+      throw new Error(`That is the only clip '${voice.name}' has. Add another first, or delete the voice.`);
+    }
+    voice.samples = samples.filter((s) => s.id !== sampleId);
+    voice.reference_file = voice.samples[0]!.file;
+    return withVoiceCounts(voice);
+  },
+
+  async exportVoice(id) {
+    await wait(80);
+    const voice = voices.find((v) => v.id === id);
+    if (!voice) throw new Error(`Unknown voice ${id}`);
+    // No clip bytes in the mock — the file is the right shape, minus audio.
+    return {
+      format: "soundbox-voice" as const,
+      version: 1,
+      exported_at: new Date().toISOString(),
+      voice: {
+        name: voice.name,
+        kind: voice.kind,
+        voice_id: voice.voice_id ?? null,
+        model_id: voice.model_id ?? null,
+        notes: voice.notes ?? null,
+      },
+      samples: [],
+    };
+  },
+
+  async importVoice(file): Promise<Voice> {
+    await wait(120);
+    const f = file as { format?: string; voice?: Partial<Voice> };
+    if (f?.format !== "soundbox-voice" || !f.voice?.name) {
+      throw new Error("That isn't a Soundbox voice file.");
+    }
+    const names = new Set(voices.map((v) => v.name));
+    let name = f.voice.name;
+    for (let n = 2; names.has(name); n++) name = `${f.voice.name} (${n})`;
+    const voice: Voice = {
+      id: nextId("voice"),
+      name,
+      kind: f.voice.kind === "builtin" ? "builtin" : "clone",
+      created_at: new Date().toISOString(),
+      reference_file: null,
+      voice_id: f.voice.voice_id ?? null,
+      model_id: f.voice.model_id ?? null,
+      notes: f.voice.notes ?? null,
+      samples: [],
+    };
+    voices.unshift(voice);
+    return withVoiceCounts(voice);
   },
 
   async updateVoice(id, patch): Promise<Voice> {

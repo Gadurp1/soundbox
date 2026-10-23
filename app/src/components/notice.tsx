@@ -18,8 +18,8 @@ export function Notice({
       className={cn(
         "flex items-start gap-2 rounded-lg px-3 py-2 text-xs ring-1 ring-inset",
         tone === "amber"
-          ? "bg-amber-500/10 ring-amber-600/25 dark:ring-amber-400/25"
-          : "bg-red-500/10 ring-red-600/25 dark:ring-red-400/25",
+          ? "bg-warn/10 ring-warn/30"
+          : "bg-danger/10 ring-danger/30",
         className,
       )}
     >

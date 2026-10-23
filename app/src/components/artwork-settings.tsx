@@ -367,12 +367,12 @@ function ImageModelRow({ spec, active }: { spec: ImageModelEntry; active: boolea
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="truncate text-sm font-medium">{spec.name}</span>
           {spec.source === "custom" && (
-            <span className="text-muted-foreground shrink-0 text-[10px] font-medium tracking-wide uppercase">
+            <span className="text-muted-foreground shrink-0 label-caps">
               Custom
             </span>
           )}
           {spec.recommended && (
-            <span className="text-muted-foreground shrink-0 text-[10px] font-medium tracking-wide uppercase">
+            <span className="text-muted-foreground shrink-0 label-caps">
               Recommended
             </span>
           )}

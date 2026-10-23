@@ -271,6 +271,54 @@ export function detectBackend(): string {
   return result;
 }
 
+let _driverCudaCache: number | null | undefined;
+
+/**
+ * The newest CUDA version the installed NVIDIA driver supports, as
+ * major + minor/100 (12.4 → 12.04), or null when it can't be read.
+ *
+ * Upstream publishes one CUDA build per toolkit (0.9.x: cuda12.4 and
+ * cuda13.3), and a build newer than the driver fails to load its backend. The
+ * header line is "CUDA Version: 12.4" on older drivers and "CUDA UMD Version:
+ * 13.4" on newer ones.
+ */
+export function driverCudaVersion(): number | null {
+  if (_driverCudaCache !== undefined) return _driverCudaCache;
+  let result: number | null = null;
+  try {
+    const probe = spawnSync("nvidia-smi", [], { timeout: 5_000, windowsHide: true, encoding: "utf-8" });
+    if (probe.status === 0) result = parseCudaVersion(probe.stdout ?? "");
+  } catch {
+    result = null;
+  }
+  _driverCudaCache = result;
+  return result;
+}
+
+export function parseCudaVersion(nvidiaSmiOutput: string): number | null {
+  const m = /CUDA (?:UMD )?Version:\s*(\d+)\.(\d+)/.exec(nvidiaSmiOutput);
+  return m ? Number(m[1]) + Number(m[2]) / 100 : null;
+}
+
+/** The CUDA toolkit an asset was built against ("cuda12.4" → 12.04), or null
+ *  for an asset whose name carries no version (0.6.x's "cuda-balance"). */
+function assetCudaVersion(assetName: string): number | null {
+  const m = /cuda(\d+)(?:\.(\d+))?/.exec(assetName.toLowerCase());
+  return m ? Number(m[1]) + Number(m[2] ?? 0) / 100 : null;
+}
+
+/**
+ * A tie-break in [0, 1) between CUDA builds that otherwise score the same:
+ * the newest one the driver can run, or the oldest when the driver's version
+ * is unknown (the most likely to load). A build newer than the driver gets 0.
+ */
+export function cudaPreference(assetName: string, driverCuda: number | null): number {
+  const v = assetCudaVersion(assetName);
+  if (v === null) return 0;
+  if (driverCuda === null) return 0.5 - v / 1000;
+  return v <= driverCuda ? 0.5 + v / 1000 : 0;
+}
+
 function archTag(): string {
   const machine = process.arch.toLowerCase();
   if (machine === "x64" || machine === "amd64" || machine === "x86_64") return "x64";
@@ -291,16 +339,15 @@ export function assetScore(
   arch: string,
 ): number {
   const name = assetName.toLowerCase();
-  if (
-    !name.includes(platform) &&
-    !(platform === "windows" && (name.includes(".exe") || name.includes("win")))
-  ) {
-    return 0;
-  }
+  if (!matchesPlatform(name, platform)) return 0;
   // The CUDA runtime package is DLLs only — it ships no audiocpp_cli at all,
   // so picking it as the primary asset fails with "contains no audiocpp_cli".
   // It's fetched separately as a companion; see companionAsset().
   if (isRuntimeOnlyAsset(name)) return 0;
+  // 0.9.x also publishes packages with no CLI in them: the C API libraries
+  // (`-lib-`), server config examples, and a Linux CUDA build made for Colab
+  // that ships audiocpp_server alone.
+  if (/-lib-|server-config|colab/.test(name)) return 0;
   let score = 1;
   if (backend !== "cpu" && name.includes(backend)) score += 3;
   if (backend === "cpu" && name.includes("cpu")) score += 1;
@@ -314,11 +361,20 @@ export function assetScore(
   return score;
 }
 
-/** A package that carries shared libraries but no executable. Currently just
- *  audio.cpp's split-out CUDA runtime, which every CUDA profile package needs
- *  alongside it. */
+/** Upstream names its Linux assets after the distribution ("ubuntu-x64")
+ *  rather than the OS. */
+function matchesPlatform(name: string, platform: string): boolean {
+  if (name.includes(platform)) return true;
+  if (platform === "windows") return name.includes(".exe") || name.includes("win");
+  if (platform === "linux") return name.includes("ubuntu");
+  return false;
+}
+
+/** A package that carries shared libraries but no executable: audio.cpp's
+ *  split-out CUDA runtime, which every CUDA profile package needs alongside
+ *  it. 0.6.x called it `cuda-runtime`, 0.9.x calls it `cudart`. */
 function isRuntimeOnlyAsset(assetName: string): boolean {
-  return /runtime/.test(assetName.toLowerCase());
+  return /runtime|cudart/.test(assetName.toLowerCase());
 }
 
 /**
@@ -333,9 +389,17 @@ function isRuntimeOnlyAsset(assetName: string): boolean {
 export function companionAsset(release: Release, primary: ReleaseAsset): ReleaseAsset | null {
   if (!primary.name.toLowerCase().includes("cuda")) return null;
   const platform = platformTag();
+  // The runtime has to match the toolkit the binary was built with: a
+  // cuda13.3 binary beside cuda12.4 DLLs fails to load its backend.
+  const wanted = assetCudaVersion(primary.name);
   for (const asset of release.assets ?? []) {
     const name = asset.name.toLowerCase();
-    if (name.includes(platform) && name.includes("cuda") && isRuntimeOnlyAsset(name)) {
+    if (
+      matchesPlatform(name, platform) &&
+      name.includes("cuda") &&
+      isRuntimeOnlyAsset(name) &&
+      (wanted === null || assetCudaVersion(name) === wanted)
+    ) {
       return asset;
     }
   }
@@ -383,9 +447,14 @@ function pickAsset(release: Release, backend: string | null): ReleaseAsset {
   const arch = archTag();
   const resolved = backend || detectBackend();
   const assets = release.assets ?? [];
+  const driverCuda = resolved === "cuda" ? driverCudaVersion() : null;
   const scored = assets
     .map((a) => ({ score: assetScore(a.name, platform, resolved, arch), asset: a }))
-    .filter((pair) => pair.score > 0);
+    .filter((pair) => pair.score > 0)
+    .map((pair) => ({
+      ...pair,
+      score: pair.score + (resolved === "cuda" ? cudaPreference(pair.asset.name, driverCuda) : 0),
+    }));
   if (scored.length === 0) {
     const names = assets.map((a) => a.name).join(", ") || "(no assets published)";
     throw new InstallError(

@@ -148,17 +148,23 @@ default:
 | **ACE-Step 1.5 Turbo** | Songs with lyrics; extend, cover, repaint | MIT | ✅ Yes |
 | **MiniMax Music 3** | Songs with lyrics, about 10 GB VRAM | MiniMax-Music3 Community | ⚠️ Conditional |
 
-42 more are in the catalog and can be switched on from the Models page:
+61 more are in the catalog and can be switched on from the Models page:
 
-- **Text-to-speech (33):** Chatterbox, Fish Audio S2 Pro, IndexTTS 2 and 2.5,
-  VibeVoice, Higgs Audio v3, Qwen3-TTS, MOSS TTS, VoxCPM 2, Supertonic 3,
+- **Text-to-speech (45):** Chatterbox and Chatterbox Turbo, Fish Audio S2 Pro,
+  IndexTTS 2 and 2.5, VibeVoice, Higgs Audio v3, Qwen3-TTS, MOSS TTS, VoxCPM 1
+  and 2, CosyVoice 3, FireRedTTS3, Maya1, Kokoro, MagpieTTS, Supertonic 3,
   Pocket TTS and more. Several clone from a reference clip.
-- **Music:** ACE-Step 1.5 Base, Stable Audio 3.0 Medium, HeartMuLa, MiniMax H3.
-- **Stem separation:** HTDemucs, BS-RoFormer, Mel-Band RoFormer.
-- **Voice conversion:** RVC, Seed-VC, MioCodec.
+- **Music (6):** ACE-Step 1.5 Base, XL Turbo and XL SFT, Stable Audio 3.0
+  Medium, HeartMuLa, MiniMax H3.
+- **Sound effects (2):** MiDashengLM-Gen, ControlFoley.
+- **Stem separation (4):** HTDemucs (4- and 6-stem), BS-RoFormer, Mel-Band
+  RoFormer.
+- **Voice conversion (4):** RVC, Seed-VC, MioCodec, MeanVC2.
 
-Of these, VibeVoice 1.5B has also been run end to end; the others are marked
-unverified until someone reports. Several are non-commercial, and any model
+Of these, VibeVoice 1.5B, MiDashengLM-Gen, HTDemucs 6-stem and Chatterbox Turbo
+have also been run end to end; the others are marked unverified until someone
+reports. The 19 added in October 2026 need audio.cpp 0.9.2 or newer
+(`soundbox model install audiocpp` fetches the latest). Several are non-commercial, and any model
 whose licence could not be established is treated as non-commercial. The
 table is a summary, not legal advice: read each licence before you ship what a
 model made.

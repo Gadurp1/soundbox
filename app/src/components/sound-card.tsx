@@ -46,6 +46,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { StemPickerDialog } from "@/components/stem-picker";
 import { useVoice } from "@/components/voice-avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PeakGlyph } from "@/components/peak-glyph";
 import { WaveformPlayer } from "@/components/waveform-player";
 import { downloadSound, formatBytes, formatRelative } from "@/lib/format";
 import {
@@ -85,6 +86,10 @@ interface SoundCardProps {
   style?: CSSProperties;
 }
 
+/** How recent a sound has to be, when its row first mounts, to count as one
+ *  that has just arrived rather than one the page is merely listing. */
+const FRESH_MS = 20_000;
+
 export function SoundCard({
   sound,
   modelName,
@@ -95,6 +100,10 @@ export function SoundCard({
   style,
 }: SoundCardProps) {
   const [editing, setEditing] = useState(false);
+  // Made in the last few seconds: this row is a generation landing, and gets
+  // the arrival treatment once (see `.sb-arrive` in index.css). Read at mount
+  // only, so a re-render later never replays it.
+  const [fresh] = useState(() => Date.now() - Date.parse(sound.created_at) < FRESH_MS);
   const [draftName, setDraftName] = useState(sound.name);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -307,7 +316,7 @@ export function SoundCard({
   );
 
   const stats = (
-    <span className="flex items-center gap-2 tabular-nums">
+    <span className="readout flex items-center gap-2">
       {sound.seed !== null && sound.seed !== undefined && (
         <span title="Seed">seed {sound.seed}</span>
       )}
@@ -348,7 +357,7 @@ export function SoundCard({
         {dense ? (
           <div
             aria-hidden="true"
-            className="order-1 flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-primary/25 via-muted to-accent"
+            className="order-1 flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-foreground/55 ring-1 ring-inset ring-border"
           >
             <SoundTileArt sound={sound} />
           </div>
@@ -357,7 +366,7 @@ export function SoundCard({
             type="button"
             onClick={playInBar}
             aria-label={`Play ${sound.name}`}
-            className="focus-visible:ring-ring/50 order-1 flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-primary/25 via-muted to-accent outline-none focus-visible:ring-3"
+            className="focus-visible:ring-ring/50 order-1 flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-foreground/55 ring-1 ring-inset ring-border outline-none focus-visible:ring-3"
           >
             <SoundTileArt sound={sound} />
           </button>
@@ -602,6 +611,7 @@ export function SoundCard({
       <div
         className={cn(
           "border-border/60 flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-2 py-2.5 transition-colors last:border-b-0 hover:bg-muted/40",
+          fresh && "sb-arrive",
           className,
         )}
         style={style}
@@ -618,7 +628,8 @@ export function SoundCard({
   return (
     <Card
       className={cn(
-        "flex-row flex-wrap items-center gap-x-4 gap-y-2 rounded-lg p-2.5 ring-foreground/[0.06] transition-colors hover:bg-muted/30 hover:ring-foreground/10",
+        "flex-row flex-wrap items-center gap-x-4 gap-y-2 rounded-lg p-2.5 transition-[background-color,box-shadow] duration-(--duration-fast) hover:bg-muted/30 hover:ring-border-strong/40",
+        fresh && "sb-arrive",
         className,
       )}
       style={style}
@@ -670,6 +681,7 @@ function SoundTileArt({ sound }: { sound: Sound }) {
     const { Icon } = stem;
     return <Icon className="text-foreground/70 size-5" aria-hidden="true" />;
   }
+  if (sound.peaks?.length) return <PeakGlyph peaks={sound.peaks} />;
   return <AudioLinesIcon className="text-foreground/70 size-5" aria-hidden="true" />;
 }
 

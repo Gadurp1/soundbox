@@ -108,6 +108,9 @@ interface RunningServer {
   binaryPath: string;
   modelsRoot: string;
   stderrTail: string[];
+  /** Model ids loaded into *this* process. A replacement process starts with
+   *  none, however many were resident in the one it replaced. */
+  resident: Set<string>;
 }
 
 interface Health {
@@ -238,9 +241,16 @@ export class AudioCppRuntime {
    * every caller has a legacy path to fall back to.
    */
   async ensureRunning(modelsRoot: string, backend: string | null): Promise<string | null> {
+    return (await this.ensureServer(modelsRoot, backend))?.baseUrl ?? null;
+  }
+
+  private async ensureServer(
+    modelsRoot: string,
+    backend: string | null,
+  ): Promise<RunningServer | null> {
     if (this.running && this.running.modelsRoot === modelsRoot) {
       this.lastUsed = Date.now();
-      return this.running.baseUrl;
+      return this.running;
     }
     // Pointed somewhere else since it started — the models root is set once,
     // at startup, so a new root means a new process.
@@ -249,7 +259,7 @@ export class AudioCppRuntime {
     if (this.starting) {
       const r = await this.starting;
       this.lastUsed = Date.now();
-      return r.baseUrl;
+      return r;
     }
 
     const cap = await this.capability();
@@ -263,7 +273,7 @@ export class AudioCppRuntime {
       const r = await this.starting;
       this.running = r;
       this.lastUsed = Date.now();
-      return r.baseUrl;
+      return r;
     } catch (exc) {
       // A server that won't start is indistinguishable, from here, from one
       // built without management. Remember it so we stop retrying, and let
@@ -339,7 +349,7 @@ export class AudioCppRuntime {
       throw exc;
     }
 
-    return { proc, baseUrl, binaryPath, modelsRoot, stderrTail };
+    return { proc, baseUrl, binaryPath, modelsRoot, stderrTail, resident: new Set() };
   }
 
   private async waitForHealth(
@@ -402,11 +412,18 @@ export class AudioCppRuntime {
     path: string,
     init?: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number },
   ): Promise<T | null> {
-    const baseUrl = await this.ensureRunning(modelsRoot, backend);
-    if (baseUrl === null) return null;
-    this.lastUsed = Date.now();
+    const server = await this.ensureServer(modelsRoot, backend);
+    if (server === null) return null;
+    return await this.send<T>(server, path, init);
+  }
 
-    const resp = await fetch(`${baseUrl}${path}`, {
+  private async send<T>(
+    server: RunningServer,
+    path: string,
+    init?: { method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number },
+  ): Promise<T | null> {
+    this.lastUsed = Date.now();
+    const resp = await fetch(`${server.baseUrl}${path}`, {
       method: init?.method ?? "GET",
       headers: init?.body === undefined ? undefined : { "content-type": "application/json" },
       body: init?.body === undefined ? undefined : JSON.stringify(init.body),
@@ -553,19 +570,38 @@ export class AudioCppRuntime {
     modelsRoot: string,
     backend: string | null,
   ): Promise<boolean> {
-    const done = await this.request<{ loaded?: boolean }>(
-      modelsRoot,
-      backend,
-      "/v1/models/load",
-      { method: "POST", body: { ...req, load_options: req.loadOptions }, timeoutMs: LOAD_TIMEOUT_MS },
-    );
-    return done !== null;
+    const server = await this.ensureServer(modelsRoot, backend);
+    if (server === null) return false;
+    await this.send<{ loaded?: boolean }>(server, "/v1/models/load", {
+      method: "POST",
+      body: { ...req, load_options: req.loadOptions },
+      timeoutMs: LOAD_TIMEOUT_MS,
+    });
+    // Recorded against the process that answered, not whichever is current
+    // now: if this one was replaced while the load was in flight, the new one
+    // must not be credited with a model it never saw.
+    server.resident.add(req.id);
+    return true;
   }
 
   async unloadModel(id: string, modelsRoot: string, backend: string | null): Promise<void> {
+    this.running?.resident.delete(id);
     await this
       .request(modelsRoot, backend, "/v1/models/unload", { method: "POST", body: { id } })
       .catch(() => undefined);
+  }
+
+  /**
+   * Whether `id` is loaded in the server process running right now.
+   *
+   * A model's own record of "I am resident" outlives the process it was
+   * loaded into: a cancel, the idle stop, or a settings change pointing at a
+   * different models folder all replace or end the process, and the next
+   * request then reaches a server that answers "unknown model id". This is
+   * how a model notices and loads itself again.
+   */
+  isResident(id: string): boolean {
+    return this.running?.resident.has(id) ?? false;
   }
 
   /**

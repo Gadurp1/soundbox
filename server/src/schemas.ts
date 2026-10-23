@@ -221,6 +221,23 @@ export interface Voice {
   notes?: string | null;
   /** Served URL of a generated avatar (`/artwork/<file>.png`), or null. */
   artwork?: string | null;
+  /** How many library sounds were read in this voice — single-voice reads and
+   *  conversions, the same set `GET /api/sounds?voice_id=` returns. */
+  read_count?: number;
+  /** `clone`: the clips this voice is made from, oldest first. With one,
+   *  `reference_file` is that clip; with several, it is all of them joined.
+   *  Always empty for `builtin`. */
+  samples?: VoiceSample[];
+}
+
+/** One clip a clone voice was made from. */
+export interface VoiceSample {
+  id: string;
+  /** Served path, `/files/<name>`. */
+  file: string;
+  /** Null for the clip of a voice saved before voices held several. */
+  duration_s: number | null;
+  created_at: string;
 }
 
 export interface AudioCppCatalogEntry {
@@ -612,6 +629,10 @@ export const scriptLineSchema = z.object({
   /** Display name for the speaker in the UI ("Narrator", "Ada"). Carried so a
    *  dialogue reads back the way it was written; not sent to the model. */
   speaker: z.string().max(80).nullish(),
+  /** The TTS model this line is read on, when it differs from the request's
+   *  — a dialogue between voices made on different families. Null or absent
+   *  reads it on the request's `model`. */
+  model: z.string().nullish(),
 });
 
 export type ScriptLine = z.infer<typeof scriptLineSchema>;
@@ -674,9 +695,47 @@ export const voiceCreateSchema = z.object({
   /** clone only: id of a library sound to use as the reference clip, as an
    *  alternative to uploading one. Lets a generated read become a voice. */
   source_sound_id: z.string().nullish(),
+  /** clone only: clean the clip up before saving — DC offset out, silence cut
+   *  off both ends, an over-full-scale peak pulled back. Never boosts or
+   *  re-tones it. Off by default so an API caller gets their bytes verbatim. */
+  tidy: z.boolean().default(false),
 });
 
-export type VoiceCreate = z.infer<typeof voiceCreateSchema>;
+export type VoiceCreate = z.input<typeof voiceCreateSchema>;
+
+/** Add a clip to an existing clone voice from a library sound. (An upload
+ *  from disk is a raw WAV body on the same route instead.) */
+export const voiceSampleCreateSchema = z.object({
+  source_sound_id: z.string(),
+  tidy: z.boolean().default(false),
+});
+
+/**
+ * A voice as a file you can carry to another machine: `.soundbox-voice.json`.
+ *
+ * JSON with the clips inlined as base64 WAV rather than a zip, because the
+ * server has no zip dependency and a voice is at most a few megabytes of
+ * clips. The joined reference is not carried — it is rebuilt from the clips
+ * on import — and nor is the avatar, which is redrawn from the notes.
+ */
+export const voiceExportSchema = z.object({
+  format: z.literal("soundbox-voice"),
+  version: z.literal(1),
+  exported_at: z.string().nullish(),
+  voice: z.object({
+    name: z.string().min(1).max(120),
+    kind: z.enum(["clone", "builtin"]),
+    voice_id: z.string().max(120).nullish(),
+    model_id: z.string().nullish(),
+    notes: z.string().max(2000).nullish(),
+  }),
+  samples: z
+    .array(z.object({ wav_base64: z.string().min(1), duration_s: z.number().nullish() }))
+    .max(5)
+    .default([]),
+});
+
+export type VoiceExport = z.infer<typeof voiceExportSchema>;
 
 export const voicePatchSchema = z.object({
   name: z.string().min(1).max(120).optional(),

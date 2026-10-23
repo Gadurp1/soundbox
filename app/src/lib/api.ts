@@ -216,6 +216,32 @@ export interface Voice {
   /** Served URL of a generated avatar (`/artwork/…png`), or null/absent when
    *  none has been drawn. Optional so a server predating artwork still fits. */
   artwork?: string | null;
+  /** How many library sounds were read in this voice — what
+   *  `listSounds({ voice_id })` returns. Absent on an older server. */
+  read_count?: number;
+  /** clone: the clips this voice is made from, oldest first. With one, it is
+   *  `reference_file`; with several, `reference_file` is them joined. */
+  samples?: VoiceSample[];
+}
+
+/** One clip a clone voice is made from. */
+export interface VoiceSample {
+  id: string;
+  /** Served URL, playable directly. */
+  file: string;
+  /** Null for the clip of a voice saved before voices held several. */
+  duration_s: number | null;
+  created_at: string;
+}
+
+/** A voice as a portable file (`.soundbox-voice.json`): its fields plus its
+ *  clips as base64 WAV. Opaque to the app — it is downloaded and uploaded
+ *  whole, never edited. */
+export interface VoiceExportFile {
+  format: "soundbox-voice";
+  version: number;
+  voice: { name: string; kind: "clone" | "builtin" };
+  [key: string]: unknown;
 }
 
 export interface VoiceCreate {
@@ -226,6 +252,9 @@ export interface VoiceCreate {
   notes?: string | null;
   /** clone: turn an existing library sound into a voice. */
   source_sound_id?: string | null;
+  /** clone: trim silence off the ends, take out DC offset and pull a hot peak
+   *  back. Never boosts or re-tones the clip. */
+  tidy?: boolean;
 }
 
 export interface VoicePatch {
@@ -1153,6 +1182,8 @@ export interface SoundQuery {
   /** Sibling group derived from one source (edits, stems) — not a recursive
    *  tree, just the direct children sharing this parent. */
   parent_id?: string;
+  /** Sounds read in one saved voice — the Voice Lab's per-voice history. */
+  voice_id?: string;
   source?: SoundSource;
 }
 
@@ -1461,7 +1492,21 @@ export interface SoundboxApi {
     file: Blob,
     notes?: string | null,
     modelId?: string | null,
+    tidy?: boolean,
   ): Promise<Voice>;
+  /** Add a clip to a clone voice: a WAV from disk or the mic, or a library
+   *  sound by id. Returns the voice with its new clip list. */
+  addVoiceSample(
+    voiceId: string,
+    source: { file: Blob } | { sourceSoundId: string },
+    tidy?: boolean,
+  ): Promise<Voice>;
+  /** Remove one clip. The server refuses to remove a voice's last one. */
+  deleteVoiceSample(voiceId: string, sampleId: string): Promise<Voice>;
+  /** The voice as a portable file, for the app to save to disk. */
+  exportVoice(id: string): Promise<VoiceExportFile>;
+  /** Recreate a voice from an exported file, under a new id. */
+  importVoice(file: unknown): Promise<Voice>;
 
   /** Take a WAV recorded in the browser into the library, so a take can be
    *  arranged on the timeline and read off disk by the export. */
@@ -1904,12 +1949,13 @@ export const httpApi: SoundboxApi = {
 
   // The WAV is the whole body, so the name/notes ride as query params and the
   // Content-Type override stops `request` from labelling the bytes as JSON.
-  uploadVoice: (name, file, notes, modelId) =>
+  uploadVoice: (name, file, notes, modelId, tidy) =>
     request<Voice>(
       `/api/voices/upload${qs({
         name,
         notes: notes ?? undefined,
         model_id: modelId ?? undefined,
+        tidy: tidy ? "true" : undefined,
       })}`,
       {
         method: "POST",
@@ -1936,6 +1982,34 @@ export const httpApi: SoundboxApi = {
 
   deleteVoice: (id) =>
     request<void>(`/api/voices/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  // One route, two bodies: raw WAV like uploadVoice, or JSON naming a sound.
+  addVoiceSample: (voiceId, source, tidy) => {
+    const path = `/api/voices/${encodeURIComponent(voiceId)}/samples`;
+    if ("file" in source) {
+      return request<Voice>(`${path}${qs({ tidy: tidy ? "true" : undefined })}`, {
+        method: "POST",
+        body: source.file,
+        headers: { "Content-Type": "audio/wav" },
+      });
+    }
+    return request<Voice>(path, {
+      method: "POST",
+      body: JSON.stringify({ source_sound_id: source.sourceSoundId, tidy: tidy ?? false }),
+    });
+  },
+
+  deleteVoiceSample: (voiceId, sampleId) =>
+    request<Voice>(
+      `/api/voices/${encodeURIComponent(voiceId)}/samples/${encodeURIComponent(sampleId)}`,
+      { method: "DELETE" },
+    ),
+
+  exportVoice: (id) =>
+    request<VoiceExportFile>(`/api/voices/${encodeURIComponent(id)}/export`),
+
+  importVoice: (file) =>
+    request<Voice>("/api/voices/import", { method: "POST", body: JSON.stringify(file) }),
 
   speak: (req) =>
     request<JobRef>("/api/speak", { method: "POST", body: JSON.stringify(req) }),

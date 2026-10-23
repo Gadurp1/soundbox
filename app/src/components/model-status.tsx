@@ -14,13 +14,16 @@ const LABEL: Record<ModelStatus, string> = {
   error: "Error",
 };
 
+/** LED colours, from the shared signal set: green is ready, amber needs
+ *  something, red failed, and teal — the brand's own signal — is the one
+ *  model actually resident and live. An unlit lens for "not here". */
 const DOT: Record<ModelStatus, string> = {
-  not_installed: "bg-muted-foreground/50",
-  needs_runtime: "bg-amber-500",
-  installed: "bg-sky-500",
-  downloading: "bg-amber-500 animate-pulse",
-  loaded: "bg-emerald-500",
-  error: "bg-red-500",
+  not_installed: "",
+  needs_runtime: "text-warn",
+  installed: "text-ok",
+  downloading: "text-warn",
+  loaded: "text-signal",
+  error: "text-danger",
 };
 
 export function ModelStatusPill({
@@ -37,7 +40,12 @@ export function ModelStatusPill({
         className,
       )}
     >
-      <span className={cn("size-1.5 shrink-0 rounded-full", DOT[status])} aria-hidden="true" />
+      <span
+        className={cn("sb-led size-1.5", DOT[status])}
+        data-off={status === "not_installed" || undefined}
+        data-live={status === "downloading" || status === "loaded" || undefined}
+        aria-hidden="true"
+      />
       {LABEL[status]}
     </span>
   );

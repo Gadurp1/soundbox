@@ -13,6 +13,9 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useSound } from "@/lib/queries";
 
 const TITLES: Record<string, string> = {
+  "/dashboard": "Home",
+  "/agents": "Agents",
+  "/console": "Console",
   "/chat": "Generate",
   "/library": "Library",
   "/library/sfx": "SFX",

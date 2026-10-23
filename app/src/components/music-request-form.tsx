@@ -291,7 +291,7 @@ export function MusicRequestForm({
           onValueChange={(id) => patch({ modelId: id })}
           disabled={!models.length}
         >
-          <SelectTrigger id="music-model" className="w-full rounded-full">
+          <SelectTrigger id="music-model" className="w-full">
             <span className="text-muted-foreground mr-1 text-xs">Model</span>
             <SelectValue placeholder={modelsLoading ? "Loading…" : "No model"} />
           </SelectTrigger>
@@ -315,7 +315,7 @@ export function MusicRequestForm({
         <div className="border-primary/40 bg-primary/5 rounded-2xl border p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-xs font-medium tracking-wide uppercase opacity-70">
+              <p className="label-caps opacity-70">
                 {EDIT_GERUND[edit]}
               </p>
               <p className="truncate text-sm font-medium" title={source.name}>
@@ -475,7 +475,6 @@ export function MusicRequestForm({
           <Button
             variant="outline"
             size="icon-sm"
-            className="rounded-full"
             aria-label="Deal five different styles"
             onClick={() => setStyles(dealStyles())}
           >
@@ -486,7 +485,7 @@ export function MusicRequestForm({
               key={style}
               variant="outline"
               size="sm"
-              className="rounded-full px-2.5"
+              className="px-2.5"
               onClick={() => addStyle(style)}
             >
               <PlusIcon />
@@ -598,7 +597,6 @@ export function MusicRequestForm({
             value={settings.trackName}
             onChange={(e) => patch({ trackName: e.target.value })}
             placeholder="Song name (optional)"
-            className="rounded-xl"
           />
         </div>
       )}
@@ -787,7 +785,7 @@ export function MusicRequestForm({
 
       {/* ---------------------------------------------------------- create */}
       <div className="flex items-center gap-2">
-        <div className="border-border/60 flex shrink-0 items-center gap-1 rounded-full border px-2 py-1">
+        <div className="border-border/60 flex shrink-0 items-center gap-1 rounded-md border px-2 py-1">
           <span className="text-muted-foreground text-xs">Quantity:</span>
           <Button
             variant="ghost"
@@ -816,7 +814,7 @@ export function MusicRequestForm({
             the first. Stop is its own control beside it rather than a state
             the primary button transposes into — one button that becomes its
             own opposite is how you cancel a render you meant to add to. */}
-        <Button className="flex-1 rounded-full" disabled={!canSubmit} onClick={submit}>
+        <Button className="flex-1" disabled={!canSubmit} onClick={submit}>
           {running ? (
             <>
               <PlusIcon />

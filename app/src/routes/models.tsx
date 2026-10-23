@@ -32,6 +32,7 @@ import {
   ZapIcon,
 } from "lucide-react";
 
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -656,7 +657,7 @@ function AudioCppCatalogRow({
           <span className="truncate text-sm font-medium">{entry.name}</span>
           {!entry.verified && (
             <span
-              className="shrink-0 rounded-full bg-amber-500/12 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-700 uppercase ring-1 ring-amber-600/30 ring-inset dark:text-amber-300 dark:ring-amber-400/30"
+              className="label-caps bg-warn/10 text-warn ring-warn/35 shrink-0 rounded-sm px-1.5 py-0.5 ring-1 ring-inset"
               title="Nobody has generated a sound with this model through Soundbox yet — defaults and even the licence may be unconfirmed."
             >
               Unverified
@@ -774,12 +775,12 @@ function LlmModelRow({ spec, active }: { spec: LlmModelEntry; active: boolean })
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="truncate text-sm font-medium">{spec.name}</span>
           {spec.recommended && (
-            <span className="text-muted-foreground shrink-0 text-[10px] font-medium tracking-wide uppercase">
+            <span className="text-muted-foreground shrink-0 label-caps">
               Recommended
             </span>
           )}
           {active && (
-            <span className="bg-primary/10 text-primary shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+            <span className="bg-primary/10 text-primary shrink-0 rounded-sm px-1.5 py-0.5 label-caps">
               Active
             </span>
           )}
@@ -933,16 +934,11 @@ export function ModelsPage() {
           ))}
         </div>
       ) : isError ? (
-        <div className="border-border rounded-xl border border-dashed px-6 py-10 text-center">
-          <p className="text-sm font-medium">Could not load models</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {error instanceof Error ? error.message : "Unknown error"}
-          </p>
-        </div>
+        <EmptyState tone="error" title="Could not load models">
+          {error instanceof Error ? error.message : "Unknown error"}
+        </EmptyState>
       ) : !models?.length ? (
-        <div className="border-border text-muted-foreground rounded-xl border border-dashed px-6 py-12 text-center text-sm">
-          The backend reported no models.
-        </div>
+        <EmptyState>The backend reported no models.</EmptyState>
       ) : (
         <>
           <SearchFilterBar
@@ -954,13 +950,11 @@ export function ModelsPage() {
             placeholder="Search models…"
           />
           {filtered.length === 0 ? (
-            <div className="border-border text-muted-foreground rounded-xl border border-dashed px-6 py-12 text-center text-sm">
-              No models match.
-            </div>
+            <EmptyState>No models match.</EmptyState>
           ) : (
             <div className="border-border bg-card @container overflow-hidden rounded-xl border">
               <div
-                className="text-muted-foreground border-border hidden items-center gap-3 border-b px-3 py-1.5 text-[11px] font-medium tracking-wide uppercase @sm:flex @sm:px-4"
+                className="text-muted-foreground border-border hidden items-center gap-3 border-b px-3 py-1.5 label-caps @sm:flex @sm:px-4"
                 aria-hidden="true"
               >
                 <div className="min-w-0 flex-1">Model</div>

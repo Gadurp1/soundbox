@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FolderIcon, FolderPlusIcon, Trash2Icon } from "lucide-react";
 
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -101,26 +102,18 @@ export function ProjectsPage() {
           ))}
         </div>
       ) : isError ? (
-        <div className="border-border rounded-xl border border-dashed px-6 py-10 text-center">
-          <p className="text-sm font-medium">Could not load projects</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {error instanceof Error ? error.message : "Unknown error"}
-          </p>
-        </div>
+        <EmptyState tone="error" title="Could not load projects">
+          {error instanceof Error ? error.message : "Unknown error"}
+        </EmptyState>
       ) : !shown.length ? (
-        <div className="border-border/70 text-muted-foreground animate-in fade-in-0 flex flex-col items-center gap-2 rounded-2xl border border-dashed px-6 py-16 text-center duration-300">
-          <div className="bg-muted flex size-11 items-center justify-center rounded-full">
-            <FolderIcon className="text-muted-foreground/70 size-5" aria-hidden="true" />
-          </div>
-          <p className="text-foreground text-sm font-medium">
-            {needle ? "No projects match that" : "No projects yet"}
-          </p>
-          <p className="max-w-xs text-sm">
-            {needle
-              ? "Try a different name, or clear the search."
-              : "Projects group sounds and sessions together — create one to get started."}
-          </p>
-        </div>
+        <EmptyState
+          icon={FolderIcon}
+          title={needle ? "No projects match that" : "No projects yet"}
+        >
+          {needle
+            ? "Try a different name, or clear the search."
+            : "Projects group sounds and sessions together — create one to get started."}
+        </EmptyState>
       ) : (
         <div className="grid gap-3">
           {shown.map((p, i) => (

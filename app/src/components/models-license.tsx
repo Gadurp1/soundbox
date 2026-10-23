@@ -27,20 +27,20 @@ const TONE: Record<CommercialUse, Tone> = {
   yes: {
     label: "Commercial use permitted",
     short: "Commercial OK",
-    chip: "bg-emerald-500/12 text-emerald-700 ring-emerald-600/30 dark:text-emerald-300 dark:ring-emerald-400/30",
-    panel: "bg-emerald-500/6 ring-emerald-600/20 dark:ring-emerald-400/20",
+    chip: "bg-ok/10 text-ok ring-ok/30",
+    panel: "bg-ok/5 ring-ok/20",
   },
   conditional: {
     label: "Commercial use: conditions apply",
     short: "Conditional",
-    chip: "bg-amber-500/12 text-amber-700 ring-amber-600/35 dark:text-amber-300 dark:ring-amber-400/35",
-    panel: "bg-amber-500/6 ring-amber-600/20 dark:ring-amber-400/20",
+    chip: "bg-warn/10 text-warn ring-warn/35",
+    panel: "bg-warn/5 ring-warn/20",
   },
   no: {
     label: "Non-commercial only",
     short: "Non-commercial",
-    chip: "bg-red-500/12 text-red-700 ring-red-600/30 dark:text-red-300 dark:ring-red-400/35",
-    panel: "bg-red-500/6 ring-red-600/20 dark:ring-red-400/20",
+    chip: "bg-danger/10 text-danger ring-danger/35",
+    panel: "bg-danger/5 ring-danger/20",
   },
   unknown: {
     label: "Terms unconfirmed",
@@ -70,15 +70,27 @@ export function ModelsLicenseChip({
 }) {
   const tone = TONE[license.commercial];
   const Icon = ICON[license.commercial];
+  // The short form is a rack label (mono caps, an LED), the same object as
+  // the app's licence badge; the long form is a sentence, so it stays one.
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset",
+        "inline-flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 whitespace-nowrap ring-1 ring-inset",
+        short ? "label-caps" : "text-xs font-medium",
         tone.chip,
         className,
       )}
+      title={short ? tone.label : undefined}
     >
-      <Icon className="size-3 shrink-0" aria-hidden="true" />
+      {short ? (
+        <span
+          className="sb-led size-1.5"
+          data-off={license.commercial === "unknown" || undefined}
+          aria-hidden="true"
+        />
+      ) : (
+        <Icon className="size-3 shrink-0" aria-hidden="true" />
+      )}
       {short ? tone.short : tone.label}
     </span>
   );

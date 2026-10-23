@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { PlusIcon, SearchIcon } from "lucide-react";
 
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { StoryShape } from "@/components/story-shape";
 import { Input } from "@/components/ui/input";
@@ -156,21 +157,22 @@ export function StudioIndexPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="border-border rounded-xl border border-dashed px-4 py-14 text-center">
-          <p className="text-muted-foreground text-sm">
-            {search
-              ? "Nothing matches that."
-              : filter !== "all"
-                ? `Nothing in the ${BUILDER_LABEL[filter]} Builder yet.`
-                : "Nothing started yet. Pick a builder and give it its first line."}
-          </p>
-          {!search && (
-            <Button className="mt-3" variant="outline" onClick={picker.open}>
-              <PlusIcon />
-              New
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          action={
+            !search && (
+              <Button variant="outline" onClick={picker.open}>
+                <PlusIcon />
+                New
+              </Button>
+            )
+          }
+        >
+          {search
+            ? "Nothing matches that."
+            : filter !== "all"
+              ? `Nothing in the ${BUILDER_LABEL[filter]} Builder yet.`
+              : "Nothing started yet. Pick a builder and give it its first line."}
+        </EmptyState>
       ) : (
         // Rows rather than a grid of cards: a story is a document, and this
         // is a list of documents — the same shape Projects uses, and the one

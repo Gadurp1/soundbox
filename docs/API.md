@@ -68,7 +68,7 @@ route answers `202 { "job_id": "..." }` and the work is followed through
 
 | Method | Path | What it does |
 |---|---|---|
-| GET | `/api/sounds` | Search the library (`?q, tag, favorite, model, models, session_id, project_id, parent_id, source, limit, offset`) |
+| GET | `/api/sounds` | Search the library (`?q, tag, favorite, model, models, session_id, project_id, parent_id, voice_id, source, limit, offset`). `voice_id` lists what one saved voice has read: single-voice reads and conversions, not multi-voice dialogues |
 | GET | `/api/sounds/{id}` | One sound |
 | PATCH | `/api/sounds/{id}` | Body `{ name?, favorite?, tags? }` |
 | DELETE | `/api/sounds/{id}` | Delete the row and the file |
@@ -94,12 +94,36 @@ route answers `202 { "job_id": "..." }` and the work is followed through
 
 | Method | Path | What it does |
 |---|---|---|
-| GET | `/api/voices` | Saved voices |
+| GET | `/api/voices` | Saved voices. Each carries `read_count` and, for a clone, `samples: [{ id, file, duration_s, created_at }]` |
 | GET | `/api/voices/{id}` | One voice |
-| POST | `/api/voices` | Body `{ name, kind: "clone" \| "builtin", voice_id?, model_id?, notes?, source_sound_id? }` |
-| POST | `/api/voices/upload` | Clone from a WAV. Body is the file; `?name, notes, model_id` |
+| POST | `/api/voices` | Body `{ name, kind: "clone" \| "builtin", voice_id?, model_id?, notes?, source_sound_id?, tidy? }` |
+| POST | `/api/voices/upload` | Clone from a WAV. Body is the file; `?name, notes, model_id, tidy` |
 | PATCH | `/api/voices/{id}` | Body `{ name?, notes? }` |
-| DELETE | `/api/voices/{id}` | Delete the voice |
+| DELETE | `/api/voices/{id}` | Delete the voice and every clip file |
+| POST | `/api/voices/{id}/samples` | Add a clip to a clone. Body is a WAV (`?tidy`), or JSON `{ source_sound_id, tidy? }` |
+| DELETE | `/api/voices/{id}/samples/{sample_id}` | Remove a clip. Refused for a voice's last one |
+| GET | `/api/voices/{id}/export` | The voice as a `.soundbox-voice.json` download |
+| POST | `/api/voices/import` | Body is an exported file. Makes a copy under a new id |
+
+A clone voice holds one to five clips of the same speaker. audio.cpp takes a
+single `--voice-ref`, so with more than one the server joins them: each made
+mono, levelled to the median loudness of the set, with 0.3 s between them.
+`reference_file` is that joined file, or the only clip. A clip is refused if it
+is under 1 s, over 60 s or almost silent, and a voice's clips together stay
+under 90 s — past that, models read the start of the reference and ignore the
+rest.
+
+`tidy` (off by default over the API, on by default in the app) takes out DC
+offset, cuts near-silence off both ends with a little padding left on, and pulls
+a peak above full scale back under it. It never makes a clip louder or changes
+its tone, because that is the voice.
+
+An export is JSON: `{ format: "soundbox-voice", version: 1, voice: { name, kind,
+voice_id, model_id, notes }, samples: [{ wav_base64, duration_s }] }`. The clips
+travel and the joined file does not; import rebuilds it. The avatar is not
+included and can be redrawn from the notes. On import, a name already in the
+library gets " (2)", and a `model_id` this Soundbox does not know is dropped
+rather than failing the import.
 
 **Stories: scripts and studio timelines** (`routes/stories.ts`)
 

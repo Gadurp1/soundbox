@@ -714,6 +714,15 @@ export function StudioEditor({
     const voice = voiceId ? usableVoices.find((v) => v.id === voiceId) : undefined;
     return voice?.model_id ?? ttsModels[0]?.id ?? "";
   };
+  const modelLabel = (id: string): string =>
+    models.data?.find((m) => m.id === id)?.name ?? id;
+  /** A take's caption: its name, and for a spoken one the model that read it,
+   *  since which family a voice came out of is the first thing to check when a
+   *  clone does not sound like itself. */
+  const readOn = (sound: Sound): string =>
+    models.data?.find((m) => m.id === sound.model)?.task === "tts"
+      ? `${sound.name} · ${modelLabel(sound.model)}`
+      : sound.name;
 
 
 
@@ -1416,10 +1425,21 @@ export function StudioEditor({
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
   const generateSegment = useGenerateSegment(storyId);
   const speakLine = (id: string): void => {
-    const model = modelForVoice(lines.find((l) => l.id === id)?.voice_id);
+    const voiceId = lines.find((l) => l.id === id)?.voice_id;
+    const model = modelForVoice(voiceId);
     if (!model) {
       toast.error("No text-to-speech model is installed.");
       return;
+    }
+    // A voice is read on the model it was made on; when that model is gone the
+    // line still gets read, on another, and the clone may not sound like
+    // itself. Say so rather than let the take be quietly wrong.
+    const cast = voiceId ? voices.data?.find((v) => v.id === voiceId) : undefined;
+    if (cast?.model_id && cast.model_id !== model) {
+      toast.warning(
+        `${cast.name} was made on ${modelLabel(cast.model_id)}, which is not installed — ` +
+          `reading on ${modelLabel(model)} instead.`,
+      );
     }
     setGeneratingIds((prev) => new Set(prev).add(id));
     const done = (): void =>
@@ -2640,7 +2660,7 @@ export function StudioEditor({
                       playing
                         ? <TransportClock />
                         : selected?.sound
-                          ? selected.sound.name
+                          ? readOn(selected.sound)
                           : "Play the whole arrangement"
                     }
                     playing={playing || (selected !== null && auditionId === selected.id)}

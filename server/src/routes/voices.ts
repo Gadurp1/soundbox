@@ -18,11 +18,41 @@ import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
 
 import * as dsp from "../audio/dsp.js";
-import { voiceCreateSchema, voicePatchSchema } from "../schemas.js";
+import {
+  voiceCreateSchema,
+  voiceExportSchema,
+  voicePatchSchema,
+  voiceSampleCreateSchema,
+} from "../schemas.js";
 import type { SoundboxService } from "../service.js";
-import { HttpError, MAX_UPLOAD_BYTES, strQuery } from "./helpers.js";
+import { HttpError, MAX_UPLOAD_BYTES, boolQuery, strQuery } from "./helpers.js";
 
 type IdParams = { Params: { voice_id: string } };
+type SampleParams = { Params: { voice_id: string; sample_id: string } };
+
+/** Decode an uploaded WAV body, or fail as a 400 at the boundary — a corrupt
+ *  upload should not surface later as a confusing generation error. readWav
+ *  takes a path, so the bytes land in a temp file first. */
+async function decodeUpload(body: unknown): Promise<{ audio: dsp.Audio; sampleRate: number }> {
+  if (!Buffer.isBuffer(body) || body.length === 0) {
+    throw new HttpError(400, "Expected a WAV file as the request body");
+  }
+  if (body.length > MAX_UPLOAD_BYTES) {
+    throw new HttpError(413, "Reference clip is too large");
+  }
+  const tmp = await mkdtemp(join(tmpdir(), "soundbox-voice-"));
+  try {
+    const path = join(tmp, "upload.wav");
+    await writeFile(path, body);
+    try {
+      return dsp.readWav(path);
+    } catch {
+      throw new HttpError(400, "That file isn't readable as a WAV.");
+    }
+  } finally {
+    await rm(tmp, { recursive: true, force: true }).catch(() => {});
+  }
+}
 
 export function registerVoices(app: FastifyInstance, svc: SoundboxService): void {
   // Buffer raw audio bodies for the upload route below. Registered here rather
@@ -59,44 +89,76 @@ export function registerVoices(app: FastifyInstance, svc: SoundboxService): void
    * generation error.
    */
   app.post("/api/voices/upload", async (request, reply) => {
-    const body = request.body;
-    if (!Buffer.isBuffer(body) || body.length === 0) {
-      throw new HttpError(400, "Expected a WAV file as the request body");
-    }
-    if (body.length > MAX_UPLOAD_BYTES) {
-      throw new HttpError(413, "Reference clip is too large");
-    }
     const query = request.query as Record<string, string | string[] | undefined>;
     const name = strQuery(query.name);
     if (!name) throw new HttpError(422, "A voice needs a name (?name=...)");
+    const decoded = await decodeUpload(request.body);
+    const voice = svc.createVoice(
+      {
+        name,
+        kind: "clone",
+        notes: strQuery(query.notes) ?? null,
+        voice_id: null,
+        model_id: strQuery(query.model_id) ?? null,
+        source_sound_id: null,
+        tidy: boolQuery(query.tidy, "tidy") ?? false,
+      },
+      decoded,
+    );
+    return reply.code(201).send(voice);
+  });
 
-    // readWav takes a path, so the bytes land in a temp file first. Written
-    // into the sounds directory only once it has decoded cleanly.
-    const tmp = await mkdtemp(join(tmpdir(), "soundbox-voice-"));
-    try {
-      const path = join(tmp, "upload.wav");
-      await writeFile(path, body);
-      let decoded;
-      try {
-        decoded = dsp.readWav(path);
-      } catch {
-        throw new HttpError(400, "That file isn't readable as a WAV.");
-      }
-      const voice = svc.createVoice(
-        {
-          name,
-          kind: "clone",
-          notes: strQuery(query.notes) ?? null,
-          voice_id: null,
-          model_id: strQuery(query.model_id) ?? null,
-          source_sound_id: null,
-        },
-        decoded,
-      );
-      return reply.code(201).send(voice);
-    } finally {
-      await rm(tmp, { recursive: true, force: true }).catch(() => {});
+  /**
+   * Add a clip to a clone voice. Either a raw WAV body (`?tidy=true` to clean
+   * it up) or JSON `{ source_sound_id, tidy? }` for a sound already in the
+   * library — the same two doors a new voice has.
+   */
+  app.post<IdParams>("/api/voices/:voice_id/samples", async (request, reply) => {
+    if (svc.getVoice(request.params.voice_id) === null) {
+      throw new HttpError(404, "Voice not found");
     }
+    let voice;
+    if (Buffer.isBuffer(request.body)) {
+      const query = request.query as Record<string, string | string[] | undefined>;
+      const decoded = await decodeUpload(request.body);
+      voice = svc.addVoiceSample(
+        request.params.voice_id,
+        decoded,
+        boolQuery(query.tidy, "tidy") ?? false,
+      );
+    } else {
+      const req = voiceSampleCreateSchema.parse(request.body);
+      voice = svc.addVoiceSample(
+        request.params.voice_id,
+        { source_sound_id: req.source_sound_id },
+        req.tidy,
+      );
+    }
+    return reply.code(201).send(voice);
+  });
+
+  app.delete<SampleParams>("/api/voices/:voice_id/samples/:sample_id", async (request) => {
+    const voice = await svc.deleteVoiceSample(request.params.voice_id, request.params.sample_id);
+    if (voice === null) throw new HttpError(404, "Voice or clip not found");
+    return voice;
+  });
+
+  /** The voice as a `.soundbox-voice.json` download — see `voiceExportSchema`. */
+  app.get<IdParams>("/api/voices/:voice_id/export", async (request, reply) => {
+    const file = svc.exportVoice(request.params.voice_id);
+    if (file === null) throw new HttpError(404, "Voice not found");
+    // ASCII-only filename: a header can't carry the rest, and the voice's
+    // real name is inside the file anyway.
+    const stem = file.voice.name.replace(/[^A-Za-z0-9 _-]+/g, "").trim() || "voice";
+    return reply
+      .header("Content-Disposition", `attachment; filename="${stem}.soundbox-voice.json"`)
+      .send(file);
+  });
+
+  /** Recreate a voice from an exported file, under a new id. */
+  app.post("/api/voices/import", async (request, reply) => {
+    const file = voiceExportSchema.parse(request.body);
+    return reply.code(201).send(await svc.importVoice(file));
   });
 
   app.patch<IdParams>("/api/voices/:voice_id", async (request) => {

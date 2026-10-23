@@ -79,7 +79,7 @@ export function StepModels({
             <div key={rec.intent} className="border-border rounded-xl border p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
-                  <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                  <p className="text-muted-foreground label-caps">
                     {INTENT_LABEL[rec.intent]}
                   </p>
                   <p className="truncate text-sm font-medium">{current.name}</p>

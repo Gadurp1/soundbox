@@ -217,6 +217,144 @@ describe("generate", () => {
       }),
     ).rejects.toThrow(/cannot cover/);
   });
+
+  it("sends a family's own duration option, and no step count it would reject", async () => {
+    // audio.cpp 0.9.x rejects undeclared request options outright; measured
+    // against MiDashengLM-Gen: "unknown request option: duration_seconds".
+    const host = stubHost(true);
+    const m = model("audiocpp-midashenglm-gen", host);
+    await m.load();
+
+    await m.generate("a door slams", 6, { seed: 7, steps: 30, cfg: 2 });
+
+    const body = host.runs[0]!;
+    expect(body).not.toHaveProperty("duration_seconds");
+    expect(body).not.toHaveProperty("num_inference_steps");
+    expect(body).toMatchObject({ guidance_scale: 2, seed: 7 });
+    expect(body["request_options"]).toEqual({ duration_sec: "6.000" });
+  });
+});
+
+describe("catalog", () => {
+  const specs = [...catalogById().values()];
+
+  it("gives every entry a licence with a commercial verdict", () => {
+    for (const s of specs) {
+      expect(["yes", "conditional", "no"], s.id).toContain(s.license.commercial);
+      expect(s.license.name, s.id).toBeTruthy();
+    }
+  });
+
+  it("names an audio.cpp package for every shipped entry", () => {
+    for (const s of specs.filter((x) => x.source === "builtin")) {
+      expect(s.audiocpp_package_id, s.id).toBeTruthy();
+      expect(s.audiocpp_target_dir, s.id).toBeTruthy();
+    }
+  });
+
+  it("names duration_option as a bare request-option key", () => {
+    for (const s of specs.filter((x) => x.task === "gen" && x.duration_option)) {
+      expect(s.duration_option, s.id).toMatch(/^[a-z_]+$/);
+    }
+  });
+});
+
+/**
+ * A stub host that behaves like one server process at a time: what it holds
+ * resident is per process, `restart()` swaps in a fresh one, and a run against
+ * an id the current process never loaded fails the way audiocpp_server does.
+ * `track: false` hides `isResident`, like a host that can't say.
+ */
+function processHost(track = true) {
+  const host = stubHost(true);
+  let resident = new Set<string>();
+  const loadModel = host.loadModel!.bind(host);
+  const runTask = host.runTask!.bind(host);
+  let dieOnNextRun = false;
+  Object.assign(host, {
+    async loadModel(req: Parameters<NonNullable<PackageInstaller["loadModel"]>>[0], ...rest: [string, string | null]) {
+      const ok = await loadModel(req, ...rest);
+      resident.add(req.id);
+      return ok;
+    },
+    async runTask(body: Record<string, unknown>, ...rest: [string, string | null]) {
+      if (dieOnNextRun) {
+        // The settings change lands mid-request: the process is replaced and
+        // the in-flight fetch dies with it.
+        dieOnNextRun = false;
+        resident = new Set();
+        throw new TypeError("fetch failed");
+      }
+      if (!resident.has(String(body["model"]))) {
+        throw new Error(
+          `audio.cpp could not run this request (HTTP 500): unknown model id: ${String(body["model"])}`,
+        );
+      }
+      return runTask(body, ...rest);
+    },
+  });
+  if (track) Object.assign(host, { isResident: (id: string) => resident.has(id) });
+  return Object.assign(host, {
+    restart() {
+      resident = new Set();
+    },
+    dieDuringNextRun() {
+      dieOnNextRun = true;
+    },
+  });
+}
+
+describe("a server process that went away", () => {
+  it("reloads before running when the process it was loaded into is gone", async () => {
+    const host = processHost();
+    const m = model("audiocpp-stable-audio-3-sfx", host);
+    await m.load();
+
+    host.restart(); // idle stop, cancel, or a new models folder
+    const out = await m.generate("x", 1, {});
+
+    expect(out.sampleRate).toBe(44100);
+    expect(host.loads).toHaveLength(2);
+    expect(host.runs).toHaveLength(1);
+  });
+
+  it("reloads and retries once when the process dies under the request", async () => {
+    const host = processHost();
+    const m = model("audiocpp-stable-audio-3-sfx", host);
+    await m.load();
+
+    host.dieDuringNextRun();
+    await m.generate("x", 1, {});
+    // And it stays healed: the next one needs no reload.
+    await m.generate("x", 1, {});
+
+    expect(host.loads).toHaveLength(2);
+    expect(host.runs).toHaveLength(2);
+  });
+
+  it("recovers from 'unknown model id' even when the host can't say what's resident", async () => {
+    const host = processHost(false);
+    const m = model("audiocpp-stable-audio-3-sfx", host);
+    await m.load();
+
+    host.restart();
+    await m.generate("x", 1, {});
+
+    expect(host.loads).toHaveLength(2);
+    expect(host.runs).toHaveLength(1);
+  });
+
+  it("does not retry other failures", async () => {
+    const host = processHost();
+    const m = model("audiocpp-stable-audio-3-sfx", host);
+    await m.load();
+    host.runTask = async () => {
+      throw new Error("audio.cpp could not run this request (HTTP 400): bad steps");
+    };
+
+    await expect(m.generate("x", 1, {})).rejects.toThrow(/bad steps/);
+    expect(host.loads).toHaveLength(1);
+  });
 });
 
 describe("separate", () => {

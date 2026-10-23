@@ -27,8 +27,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AudioLinesIcon, ListMusicIcon, SearchIcon } from "lucide-react";
+import { ListMusicIcon, SearchIcon } from "lucide-react";
 
+import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -187,31 +188,17 @@ export function MusicStudioPage() {
           ))}
         </div>
       ) : isError ? (
-        <div className="border-border rounded-xl border border-dashed px-6 py-10 text-center">
-          <p className="text-sm font-medium">Could not load your tracks</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {error instanceof Error ? error.message : "Unknown error"}
-          </p>
-        </div>
+        <EmptyState tone="error" title="Could not load your tracks">
+          {error instanceof Error ? error.message : "Unknown error"}
+        </EmptyState>
       ) : !items.length ? (
-        <div className="border-border/70 text-muted-foreground flex flex-col items-center gap-2 rounded-2xl border border-dashed px-6 py-16 text-center">
-          <div className="bg-muted flex size-11 items-center justify-center rounded-full">
-            <AudioLinesIcon
-              className="text-muted-foreground/70 size-5"
-              aria-hidden="true"
-            />
-          </div>
-          <p className="text-foreground text-sm font-medium">
-            {value === "collection" ? "Nothing saved yet" : "Nothing here yet"}
-          </p>
-          <p className="max-w-xs text-sm">
+        <EmptyState title={value === "collection" ? "Nothing saved yet" : "Nothing here yet"}>
             {value === "collection"
               ? "Star a track and it joins your collection."
               : q
                 ? "No tracks match that search."
                 : "Describe a track on the left and press Create — every take is saved automatically."}
-          </p>
-        </div>
+        </EmptyState>
       ) : (
         <div className="grid gap-2">
           {items.map((sound, i) => (

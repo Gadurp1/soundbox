@@ -55,19 +55,20 @@ function toolShortName(tool: string): string {
 }
 
 const STATUS_ICON: Record<McpCall["status"], React.ReactNode> = {
-  ok: <CheckCircle2Icon className="size-3.5 text-emerald-500" aria-hidden="true" />,
-  error: <XCircleIcon className="size-3.5 text-red-500" aria-hidden="true" />,
-  running: <Loader2Icon className="size-3.5 animate-spin text-amber-500" aria-hidden="true" />,
+  ok: <CheckCircle2Icon className="text-ok size-3.5" aria-hidden="true" />,
+  error: <XCircleIcon className="text-danger size-3.5" aria-hidden="true" />,
+  running: <Loader2Icon className="text-warn size-3.5 animate-spin" aria-hidden="true" />,
 };
 
 /* ------------------------------------------------------------ stat tiles */
 
 function StatTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-lg border px-3 py-2.5">
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="font-heading mt-0.5 text-xl font-semibold tabular-nums">{value}</p>
-      {hint && <p className="text-muted-foreground/70 mt-0.5 text-[0.7rem]">{hint}</p>}
+    // A meter, not a KPI card: caps label, a mono readout, the context under it.
+    <div className="bg-card rounded-lg border px-3 py-2.5">
+      <p className="text-muted-foreground label-caps">{label}</p>
+      <p className="mt-1 font-mono text-2xl font-medium tabular-nums">{value}</p>
+      {hint && <p className="text-muted-foreground mt-0.5 text-xs">{hint}</p>}
     </div>
   );
 }
@@ -204,11 +205,12 @@ function ClientCard({ client }: { client: McpClient }) {
   return (
     <div className="rounded-lg border px-3 py-2.5">
       <div className="flex items-center gap-2">
+        {/* Breathes while the agent is connected: the page is a monitor,
+            and a lit, moving LED is how a monitor says "this is live". */}
         <span
-          className={cn(
-            "size-2 shrink-0 rounded-full",
-            client.active ? "bg-emerald-500" : "bg-muted-foreground/30",
-          )}
+          className={cn("sb-led", client.active && "text-ok")}
+          data-live={client.active || undefined}
+          data-off={!client.active || undefined}
           aria-hidden="true"
         />
         <BotIcon className="text-muted-foreground size-3.5 shrink-0" aria-hidden="true" />
@@ -236,7 +238,7 @@ function ClientCard({ client }: { client: McpClient }) {
           session{client.sessions === 1 ? "" : "s"}
         </span>
         {client.errors > 0 && (
-          <span className="text-amber-600 dark:text-amber-500">
+          <span className="text-warn">
             {client.errors} error{client.errors === 1 ? "" : "s"} ({errorRate}%)
           </span>
         )}
@@ -249,6 +251,9 @@ function ClientCard({ client }: { client: McpClient }) {
 
 function CallRow({ call }: { call: McpCall }) {
   const [open, setOpen] = useState(false);
+  // A call that landed while the page was open washes in; the backlog on
+  // first load does not, or the whole list would flash at once.
+  const [fresh] = useState(() => Date.now() - Date.parse(call.ts) < 8_000);
   const argSummary = useMemo(() => {
     const { prompt, sound_id, q, ...rest } = call.args as Record<string, unknown>;
     const text = typeof prompt === "string" ? prompt : typeof q === "string" ? q : sound_id;
@@ -258,14 +263,14 @@ function CallRow({ call }: { call: McpCall }) {
   }, [call.args]);
 
   return (
-    <li className="px-3 py-2">
+    <li className={cn("px-3 py-2", fresh && "sb-feed-in")}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="flex w-full min-w-0 items-center gap-3 text-left"
       >
         {STATUS_ICON[call.status]}
-        <span className="text-muted-foreground w-14 shrink-0 text-xs tabular-nums">
+        <span className="text-muted-foreground readout w-14 shrink-0">
           {formatRelative(call.ts)}
         </span>
         <Badge variant="outline" className="shrink-0 font-mono text-[0.65rem]">
@@ -464,6 +469,12 @@ export function AgentsPage() {
               <CardTitle className="flex items-center gap-2 text-base">
                 <TerminalIcon className="size-4" aria-hidden="true" />
                 Recent calls
+                {status?.clients.some((c) => c.active) && (
+                  <span className="label-caps text-ok ml-1 inline-flex items-center gap-1.5">
+                    <span className="sb-led size-1.5" data-live aria-hidden="true" />
+                    Live
+                  </span>
+                )}
               </CardTitle>
               {/* The log is the one thing on this page that gets long enough
                   to lose something in — "did that agent ever call speak?" is

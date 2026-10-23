@@ -29,9 +29,10 @@ import { z } from "zod";
 
 import { DEFAULT_HOST, DEFAULT_PORT, VERSION } from "../config.js";
 import { isTrustedOrigin } from "../origins.js";
-import type { ModelInfo, McpToolInfo, Origin, Sound, StorySegment } from "../schemas.js";
+import type { Job, ModelInfo, McpToolInfo, Origin, Sound, StorySegment } from "../schemas.js";
 import type { SoundboxService } from "../service.js";
 import type { CallRecord, TrackOptions } from "../telemetry.js";
+import { ProgressReporter } from "./progress.js";
 
 export const MCP_INSTRUCTIONS = `Soundbox makes audio locally from open-weight models: sound effects, music, and speech.
 
@@ -69,6 +70,14 @@ soundbox.speak_story, soundbox.export_story — because a story persists, each
 line can be re-read on its own, and the lines carry a place in time. Cast lines
 to real voices with soundbox.list_voices first; a line with no voice_id falls
 back to the model's default, and some families have none.
+
+Leave \`model\` off soundbox.speak and soundbox.speak_story unless you mean to
+override the cast: each line is then read on its own voice's \`model_id\` (a
+voice is made on a model, and a clone read on another family does not sound
+like it), lines with voices on different models are each read on their own, and
+a line with no voice, or a voice with no model, gets a ready one. The result
+reports the models used, and \`notes\` says when a voice's model was not
+installed and the line was read on something else; pass that on to the user.
 
 How a line is *performed* is a separate lever from what it says, and it lives
 in flags rather than in the text: writing "(whispering)" into a line makes the
@@ -320,7 +329,8 @@ export const MCP_TOOLS: McpToolInfo[] = [
     title: "Search the sound library",
     description:
       "Search previously generated sounds. Use this before generating — " +
-      "the sound you want may already exist.",
+      "the sound you want may already exist. Pass `voice_id` for what one " +
+      "saved voice has already said.",
     calls: 0,
   },
   {
@@ -348,7 +358,8 @@ export const MCP_TOOLS: McpToolInfo[] = [
     title: "Speak a line or a dialogue",
     description:
       "Read text aloud in a saved voice and save it to the library. One line " +
-      "or several with different voices. Blocks until the audio is on disk. " +
+      "or several with different voices, each on its own voice's model " +
+      "unless `model` overrides it. Blocks until the audio is on disk. " +
       "`delivery` shapes the performance — never write stage directions into " +
       "the text, they get read aloud. For anything you want to keep and " +
       "arrange, build a story instead.",
@@ -401,7 +412,8 @@ export const MCP_TOOLS: McpToolInfo[] = [
     title: "Voice a story",
     description:
       "Read every line of a story that has no audio yet, in its assigned " +
-      "voice. Blocks until they are all recorded. This is the slow one.",
+      "voice and on that voice's own model unless `model` overrides it. " +
+      "Blocks until they are all recorded. This is the slow one.",
     calls: 0,
   },
   {
@@ -571,6 +583,13 @@ const ENHANCE_INPUT = {
 const LIST_SOUNDS_INPUT = {
   q: z.string().optional().describe("Text to match in prompt or name."),
   tag: z.string().optional().describe("Filter by tag."),
+  voice_id: z
+    .string()
+    .optional()
+    .describe(
+      "Only sounds read in this saved voice (an id from soundbox.list_voices). " +
+        "Multi-voice dialogues are not filed under any one speaker.",
+    ),
   limit: z.number().int().min(1).max(100).default(20),
 };
 
@@ -611,12 +630,19 @@ function clientOf(
 }
 
 /** Poll the in-process job until it settles. Polling rather than subscribing
- *  keeps this independent of the SSE plumbing. */
-async function awaitJob(svc: SoundboxService, jobId: string, timeoutS = 900.0) {
+ *  keeps this independent of the SSE plumbing. `onTick` sees every poll — it
+ *  is how a caller's ProgressReporter hears about the job. */
+async function awaitJob(
+  svc: SoundboxService,
+  jobId: string,
+  onTick?: (job: Job) => void,
+  timeoutS = 900.0,
+) {
   let waited = 0.0;
   while (waited < timeoutS) {
     const job = svc.jobs.get(jobId);
     if (job === null) throw new Error(`Job ${jobId} disappeared`);
+    onTick?.(job);
     if (job.status === "done" || job.status === "error" || job.status === "cancelled") {
       return job;
     }
@@ -735,7 +761,14 @@ const SPEAK_INPUT = {
     .min(1)
     .max(200)
     .describe("The script. Several lines with different voice_ids is a dialogue."),
-  model: z.string().optional().describe("A text-to-speech model id. Defaults to a ready one."),
+  model: z
+    .string()
+    .optional()
+    .describe(
+      "A text-to-speech model id for every line. Omit it and each line is " +
+        "read on its voice's own model (list_voices' `model_id`), or a ready " +
+        "one for a line with no voice or a voice with no model.",
+    ),
   gap_s: z.number().min(0).max(5).optional().describe("Silence between lines. Default 0.4."),
   name: z.string().max(200).optional(),
   delivery: DELIVERY_INPUT.optional(),
@@ -831,15 +864,39 @@ function lineView(seg: StorySegment) {
 }
 
 /**
- * Resolve which model reads a script.
+ * Which model reads one line, and why — when the reason is worth saying.
+ *
+ * `note` is set only when the model is not the one the line's voice asked
+ * for, so a caller can tell the user their clone was read on something else
+ * rather than leave them wondering why it does not sound like the voice.
+ */
+interface TtsChoice {
+  model: string;
+  note?: string;
+}
+
+/**
+ * Resolve which model reads each line of a script.
  *
  * Speaking needs a "tts" model specifically, and the resident one is usually a
  * sound-effects model — so unlike soundbox.generate this cannot just fall back
- * to whatever is loaded. It picks a ready TTS model and says so plainly when
- * there is not one, since "model not found" would send the caller hunting in
- * the wrong place.
+ * to whatever is loaded. The order, per line:
+ *
+ *   1. an explicit `model` — the caller asked, every line uses it;
+ *   2. the line's voice's `model_id`, when that model is installed — a voice
+ *      is made on a model, and a clone read on another family does not sound
+ *      like the voice (Chatterbox's "guy" read on Vevo2 is a stranger);
+ *   3. a ready TTS model, preferring the loaded one to save a cold start.
+ *
+ * Returns a per-line resolver rather than one id because a story is a cast:
+ * two characters can be voices on two families, and each is read on its own.
+ * The model list is read once, up front; the default is only demanded (and
+ * its absence only reported) when a line actually needs it.
  */
-async function pickTtsModel(svc: SoundboxService, requested?: string): Promise<string> {
+async function ttsResolver(
+  svc: SoundboxService,
+  requested?: string,
+): Promise<(voiceId: string | null | undefined) => TtsChoice> {
   const models = await svc.listModels();
   const tts = models.filter((m) => m.task === "tts");
   if (requested) {
@@ -850,17 +907,43 @@ async function pickTtsModel(svc: SoundboxService, requested?: string): Promise<s
           (tts.map((m) => m.id).join(", ") || "none installed"),
       );
     }
-    return chosen.id;
+    return () => ({ model: chosen.id });
   }
   const ready = tts.filter((m) => m.status === "loaded" || m.status === "installed");
-  if (!ready.length) {
-    throw new Error(
-      "No text-to-speech model is installed. Open the Soundbox app and download " +
-        "one from the Models tab.",
-    );
-  }
-  // A loaded model saves a cold start, so prefer it.
-  return (ready.find((m) => m.status === "loaded") ?? ready[0]).id;
+  const fallback = (): string => {
+    if (!ready.length) {
+      throw new Error(
+        "No text-to-speech model is installed. Open the Soundbox app and download " +
+          "one from the Models tab.",
+      );
+    }
+    return (ready.find((m) => m.status === "loaded") ?? ready[0]!).id;
+  };
+  return (voiceId) => {
+    const voice = voiceId ? svc.getVoice(voiceId) : null;
+    const wanted = voice?.model_id ?? null;
+    if (wanted === null) return { model: fallback() };
+    if (ready.some((m) => m.id === wanted)) return { model: wanted };
+    const model = fallback();
+    return {
+      model,
+      note:
+        `${voice!.name} was made on ${wanted}, which is not installed, so it ` +
+        `was read on ${model} instead and may not sound like the voice.`,
+    };
+  };
+}
+
+/** What a multi-line read used, in a shape worth handing back: a count per
+ *  model, and each fallback note once rather than once per line. */
+function modelsUsed(choices: TtsChoice[]): {
+  models: Record<string, number>;
+  notes?: string[];
+} {
+  const models: Record<string, number> = {};
+  for (const c of choices) models[c.model] = (models[c.model] ?? 0) + 1;
+  const notes = [...new Set(choices.flatMap((c) => (c.note ? [c.note] : [])))];
+  return { models, notes: notes.length ? notes : undefined };
 }
 
 /**
@@ -954,7 +1037,8 @@ export function buildMcp(
             origin: originOf(extra),
           });
           rec.setJob(job.id);
-          const finished = await awaitJob(svc, job.id);
+          const progress = new ProgressReporter(extra);
+          const finished = await awaitJob(svc, job.id, (j) => progress.job(j));
           if (finished.status === "error") throw new Error(finished.error || "Generation failed");
           if (finished.status === "cancelled") throw new Error("Generation was cancelled");
 
@@ -1011,10 +1095,15 @@ export function buildMcp(
       description: meta["soundbox.list_sounds"].description,
       inputSchema: LIST_SOUNDS_INPUT,
     },
-    async ({ q, tag, limit }, extra) =>
-      await track(extra, "soundbox.list_sounds", { q, tag, limit }, async (rec) => {
+    async ({ q, tag, voice_id, limit }, extra) =>
+      await track(extra, "soundbox.list_sounds", { q, tag, voice_id, limit }, async (rec) => {
         const svc = getService();
-        const page = svc.listSounds({ limit, q: q ?? null, tag: tag ?? null });
+        const page = svc.listSounds({
+          limit,
+          q: q ?? null,
+          tag: tag ?? null,
+          voice_id: voice_id ?? null,
+        });
         rec.setSounds(page.items.map((s) => s.id));
         const separators = await separatorIds(svc);
         return json(page.items.map((s) => toResult(svc, s, separators)));
@@ -1091,16 +1180,22 @@ export function buildMcp(
     async ({ lines, model, gap_s, name, delivery }, extra) =>
       await track(extra, "soundbox.speak", { lines, model, gap_s, name, delivery }, async (rec) => {
         const svc = getService();
-        const modelId = await pickTtsModel(svc, model);
+        const resolve = await ttsResolver(svc, model);
+        const choices = lines.map((l) => resolve(l.voice_id));
+        // The job's own model is the first line's: it is what a one-voice read
+        // is stamped with, and each line still carries the one it is read on.
+        const modelId = choices[0]!.model;
         rec.setModel(modelId);
+        const progress = new ProgressReporter(extra);
         const job = await awaitJob(
           svc,
           svc.submitSpeak({
             model: modelId,
-            lines: lines.map((l) => ({
+            lines: lines.map((l, i) => ({
               text: l.text,
               voice_id: l.voice_id ?? null,
               speaker: l.speaker ?? null,
+              model: choices[i]!.model,
             })),
             gap_s: gap_s ?? 0.4,
             load_options: {},
@@ -1109,11 +1204,20 @@ export function buildMcp(
             name: name ?? null,
             origin: { source: "mcp" },
           }).id,
+          (j) => progress.job(j),
         );
         if (job.status !== "done") throw new Error(job.error ?? "The read " + job.status);
         const ids = (job.result?.sounds as string[]) ?? [];
         rec.setSounds(ids);
-        return json(ids.map((id) => toResult(svc, svc.getSound(id)!)));
+        const { models, notes } = modelsUsed(choices);
+        return json(
+          ids.map((id) => ({
+            ...toResult(svc, svc.getSound(id)!),
+            // `model` alone cannot say a dialogue was read on two families.
+            models: Object.keys(models).length > 1 ? models : undefined,
+            notes,
+          })),
+        );
       }),
   );
 
@@ -1240,7 +1344,11 @@ export function buildMcp(
         model: z
           .string()
           .optional()
-          .describe("A text-to-speech model id. Defaults to a ready one."),
+          .describe(
+            "A text-to-speech model id for every line. Omit it and each line " +
+              "is read on its voice's own model (list_voices' `model_id`), or " +
+              "a ready one for a line with no voice or a voice with no model.",
+          ),
         regenerate: z
           .boolean()
           .default(false)
@@ -1251,26 +1359,34 @@ export function buildMcp(
       await track(extra, "soundbox.speak_story", { story_id, model, regenerate }, async (rec) => {
         const svc = getService();
         if (svc.getStory(story_id) === null) throw new Error("No story with id " + story_id);
-        const modelId = await pickTtsModel(svc, model);
-        rec.setModel(modelId);
+        const resolve = await ttsResolver(svc, model);
+        const todo = svc
+          .listSegments(story_id)
+          .filter((l) => l.kind === "line" && l.text.trim() && (!l.sound_id || regenerate));
+        // Resolved before reading anything, so a script with no usable model
+        // fails now rather than after the first few lines have been read.
+        const choices = todo.map((l) => resolve(l.voice_id));
+        if (choices[0]) rec.setModel(choices[0].model);
 
         return claiming(svc, story_id, "reading the script", async () => {
         // One at a time, not in parallel: each read is an audio.cpp subprocess
         // against one loaded model, so racing them would fight over the same
-        // GPU rather than finish sooner.
+        // GPU rather than finish sooner. Each line on its own voice's model —
+        // a cast can span families, and the manager swaps between them.
         const done: string[] = [];
-        for (const line of svc.listSegments(story_id)) {
-          if (line.kind !== "line" || !line.text.trim()) continue;
-          if (line.sound_id && !regenerate) continue;
+        // The whole script is one bar: each line's read fills its own share.
+        const progress = new ProgressReporter(extra);
+        for (const [i, line] of todo.entries()) {
           const job = await awaitJob(
             svc,
-            svc.submitSegmentGenerate(line.id, { model: modelId, load_options: {} }).id,
+            svc.submitSegmentGenerate(line.id, { model: choices[i]!.model, load_options: {} }).id,
+            progress.step(i, todo.length, `line ${i + 1} of ${todo.length}`),
           );
           if (job.status !== "done") throw new Error(job.error ?? "A read " + job.status);
           done.push(...((job.result?.sounds as string[]) ?? []));
         }
         rec.setSounds(done);
-        return json({ read: done.length, ...storySummary(svc, story_id) });
+        return json({ read: done.length, ...modelsUsed(choices), ...storySummary(svc, story_id) });
         });
       }),
   );
@@ -1286,7 +1402,8 @@ export function buildMcp(
       await track(extra, "soundbox.export_story", { story_id }, async (rec) => {
         const svc = getService();
         return claiming(svc, story_id, "mixing it down", async () => {
-        const job = await awaitJob(svc, svc.submitStoryExport(story_id).id);
+        const progress = new ProgressReporter(extra);
+        const job = await awaitJob(svc, svc.submitStoryExport(story_id).id, (j) => progress.job(j));
         if (job.status !== "done") throw new Error(job.error ?? "The export " + job.status);
         const ids = (job.result?.sounds as string[]) ?? [];
         rec.setSounds(ids);
@@ -1337,6 +1454,7 @@ export function buildMcp(
         const modelId = model ?? (await defaultSeparator(svc));
         rec.setModel(modelId);
         const started = performance.now();
+        const progress = new ProgressReporter(extra);
         const job = await awaitJob(
           svc,
           svc.submitSeparate({
@@ -1344,6 +1462,7 @@ export function buildMcp(
             source_sound_id: sound_id,
             stems: stems?.length ? { keep: stems, rest } : null,
           }).id,
+          (j) => progress.job(j),
         );
         if (job.status === "error") throw new Error(job.error || "Separation failed");
         if (job.status === "cancelled") throw new Error("Separation was cancelled");
@@ -1400,12 +1519,14 @@ export function buildMcp(
         const svc = getService();
         // Separation can take a while, and the story only exists once it is
         // done — there is nothing useful to hand back before then.
+        const progress = new ProgressReporter(extra);
         const job = await awaitJob(
           svc,
           svc.submitStoryFromSound(sound_id, {
             separate,
             stems: stems?.length ? { keep: stems, rest } : null,
           }).id,
+          (j) => progress.job(j),
         );
         if (job.status !== "done") throw new Error(job.error ?? "Opening " + job.status);
         const storyId = job.result?.story_id as string | undefined;

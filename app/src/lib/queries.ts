@@ -620,10 +620,16 @@ export function useUploadVoice() {
   return useMutation<
     Voice,
     Error,
-    { name: string; file: Blob; notes?: string | null; modelId?: string | null }
+    {
+      name: string;
+      file: Blob;
+      notes?: string | null;
+      modelId?: string | null;
+      tidy?: boolean;
+    }
   >({
-    mutationFn: ({ name, file, notes, modelId }) =>
-      api.uploadVoice(name, file, notes, modelId),
+    mutationFn: ({ name, file, notes, modelId, tidy }) =>
+      api.uploadVoice(name, file, notes, modelId, tidy),
     onError: fail("Could not upload the reference clip"),
     onSuccess: (voice) => {
       toast.success(`Saved “${voice.name}”`);
@@ -650,6 +656,76 @@ export function useDeleteVoice() {
     onError: fail("Could not delete the voice"),
     onSuccess: () => {
       toast.success("Voice deleted");
+      void qc.invalidateQueries({ queryKey: qk.voices });
+    },
+  });
+}
+
+export function useAddVoiceSample() {
+  const qc = useQueryClient();
+  return useMutation<
+    Voice,
+    Error,
+    {
+      voiceId: string;
+      source: { file: Blob } | { sourceSoundId: string };
+      tidy?: boolean;
+    }
+  >({
+    mutationFn: ({ voiceId, source, tidy }) => api.addVoiceSample(voiceId, source, tidy),
+    onError: fail("Could not add the clip"),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.voices }),
+  });
+}
+
+export function useDeleteVoiceSample() {
+  const qc = useQueryClient();
+  return useMutation<Voice, Error, { voiceId: string; sampleId: string }>({
+    mutationFn: ({ voiceId, sampleId }) => api.deleteVoiceSample(voiceId, sampleId),
+    onError: fail("Could not remove the clip"),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.voices }),
+  });
+}
+
+/** Fetches the export and hands it to the browser as a file download — the
+ *  same anchor trick `downloadSound` uses, since the JSON has to come through
+ *  `request` (and the mock) rather than a bare link. */
+export function useExportVoice() {
+  return useMutation<void, Error, Voice>({
+    mutationFn: async (voice) => {
+      const file = await api.exportVoice(voice.id);
+      const blob = new Blob([JSON.stringify(file)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      try {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${voice.name.replace(/[\\/:*?"<>|]+/g, "").trim() || "voice"}.soundbox-voice.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    },
+    onError: fail("Could not export the voice"),
+  });
+}
+
+export function useImportVoice() {
+  const qc = useQueryClient();
+  return useMutation<Voice, Error, File>({
+    mutationFn: async (file) => {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(await file.text());
+      } catch {
+        throw new Error("That file isn't a Soundbox voice file.");
+      }
+      return api.importVoice(parsed);
+    },
+    onError: fail("Could not import the voice"),
+    onSuccess: (voice) => {
+      toast.success(`Imported “${voice.name}”`);
       void qc.invalidateQueries({ queryKey: qk.voices });
     },
   });

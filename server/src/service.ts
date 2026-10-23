@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 
 import * as dsp from "./audio/dsp.js";
+import * as reference from "./audio/reference.js";
 import {
   VERSION,
   type AudioCppMode,
@@ -102,6 +103,7 @@ import type {
   TrackPatch,
   Voice,
   VoiceCreate,
+  VoiceExport,
   VoicePatch,
 } from "./schemas.js";
 import { originLabel } from "./schemas.js";
@@ -2010,28 +2012,12 @@ export class SoundboxService {
       );
     }
 
-    let audio: { audio: dsp.Audio; sampleRate: number };
-    if (uploadedWav) {
-      audio = uploadedWav;
-    } else if (req.source_sound_id) {
-      const path = this.absolutePath(req.source_sound_id);
-      if (path === null) throw new ModelError(`Sound '${req.source_sound_id}' not found.`);
-      audio = dsp.readWav(path);
-    } else {
-      throw new ModelError("A clone voice needs either an uploaded clip or a source_sound_id.");
-    }
-
-    const filename = `voice-${id}.wav`;
-    // Written verbatim rather than through processAndWrite: a reference clip
-    // is an input to the model, not a deliverable, and trimming or loudness-
-    // normalising it would change the voice we're trying to capture.
-    dsp.writeWav(join(this.config.paths.sounds, filename), audio.audio, audio.sampleRate);
-
     // A clone is tied to a model too. The clip itself is portable — any
     // family that takes a --voice-ref could read it — but a voice is the
     // thing the UI picks, and letting it name its own model is what lets
-    // every surface offer voices instead of models. Validated here so a
-    // typo'd or non-tts id fails at save time rather than at speak time.
+    // every surface offer voices instead of models. Validated before the clip
+    // is written so a typo'd or non-tts id fails at save time rather than at
+    // speak time, and leaves no orphaned file behind.
     if (req.model_id) {
       const info = this.models.get(req.model_id).describe();
       if (info.task !== "tts") {
@@ -2042,7 +2028,21 @@ export class SoundboxService {
       }
     }
 
-    return this.db.createVoice(
+    const clip = this.prepareReferenceClip(
+      uploadedWav ?? this.sourceSoundAudio(req.source_sound_id),
+      req.tidy ?? false,
+    );
+
+    // The first clip takes the voice's own id, so its file keeps the
+    // `voice-<id>.wav` name every clone has always had, and a one-clip voice
+    // is laid out exactly as it was before voices could hold several.
+    const filename = `voice-${id}.wav`;
+    // Written as-is (or as tidied) rather than through processAndWrite: a
+    // reference clip is an input to the model, not a deliverable, and
+    // loudness-normalising it would change the voice we're trying to capture.
+    dsp.writeWav(join(this.config.paths.sounds, filename), clip.audio, clip.sampleRate);
+
+    this.db.createVoice(
       {
         id,
         name: req.name,
@@ -2054,6 +2054,241 @@ export class SoundboxService {
       },
       filename,
     );
+    this.db.addVoiceSample({
+      id,
+      voice_id: id,
+      filename,
+      duration_s: dsp.frameCount(clip.audio) / clip.sampleRate,
+      created_at: created,
+    });
+    return this.db.getVoice(id)!;
+  }
+
+  /** A library sound's audio, for a clip taken from the library rather than
+   *  uploaded. */
+  private sourceSoundAudio(soundId: string | null | undefined): {
+    audio: dsp.Audio;
+    sampleRate: number;
+  } {
+    if (!soundId) {
+      throw new ModelError("A clone voice needs either an uploaded clip or a source_sound_id.");
+    }
+    const path = this.absolutePath(soundId);
+    if (path === null) throw new ModelError(`Sound '${soundId}' not found.`);
+    return dsp.readWav(path);
+  }
+
+  /** Refuse a clip that cannot make a voice, then tidy it if asked. */
+  private prepareReferenceClip(
+    clip: { audio: dsp.Audio; sampleRate: number },
+    tidy: boolean,
+  ): { audio: dsp.Audio; sampleRate: number } {
+    reference.checkReference(clip.audio, clip.sampleRate);
+    if (!tidy) return clip;
+    const audio = reference.tidyReference(clip.audio, clip.sampleRate);
+    // Trimming can only shorten it; recheck so a clip that was mostly silence
+    // fails with the same message rather than saving a half-second voice.
+    reference.checkReference(audio, clip.sampleRate);
+    return { audio, sampleRate: clip.sampleRate };
+  }
+
+  /**
+   * Add another clip to a clone voice.
+   *
+   * Several clips of the same speaker clone better than one — more phonemes,
+   * more of their range — and it means a voice can be improved later without
+   * being remade under a new id, which would orphan every script line cast to
+   * it. The clips are joined into the one reference file the model reads.
+   */
+  addVoiceSample(
+    voiceId: string,
+    source: { audio: dsp.Audio; sampleRate: number } | { source_sound_id: string },
+    tidy = false,
+  ): Voice {
+    const voice = this.db.getVoice(voiceId);
+    if (voice === null) throw new ModelError(`Voice '${voiceId}' not found.`);
+    if (voice.kind !== "clone") {
+      throw new ModelError(
+        `'${voice.name}' is a built-in voice — it has no clips, the model ships it.`,
+      );
+    }
+    const existing = voice.samples ?? [];
+    if (existing.length >= reference.MAX_SAMPLES) {
+      throw new ModelError(
+        `'${voice.name}' already has ${reference.MAX_SAMPLES} clips. Remove one before adding another.`,
+      );
+    }
+    const clip = this.prepareReferenceClip(
+      "source_sound_id" in source ? this.sourceSoundAudio(source.source_sound_id) : source,
+      tidy,
+    );
+    const seconds = dsp.frameCount(clip.audio) / clip.sampleRate;
+    const already = existing.reduce((n, s) => n + (s.duration_s ?? 0), 0);
+    if (already + seconds > reference.MAX_COMBINED_S) {
+      throw new ModelError(
+        `With this clip '${voice.name}' would have ${Math.round(already + seconds)}s of reference ` +
+          `audio. Keep it under ${reference.MAX_COMBINED_S}s — past that, models stop listening.`,
+      );
+    }
+
+    const sampleId = randomUUID();
+    const filename = `voice-${voiceId}-${sampleId.slice(0, 8)}.wav`;
+    dsp.writeWav(join(this.config.paths.sounds, filename), clip.audio, clip.sampleRate);
+    this.db.addVoiceSample({
+      id: sampleId,
+      voice_id: voiceId,
+      filename,
+      duration_s: seconds,
+      created_at: now(),
+    });
+    this.rebuildVoiceReference(voiceId);
+    return this.db.getVoice(voiceId)!;
+  }
+
+  /** Remove one clip. A clone keeps at least one — with none it is not a
+   *  voice — so removing the last is refused rather than leaving a voice
+   *  that fails at speak time. */
+  async deleteVoiceSample(voiceId: string, sampleId: string): Promise<Voice | null> {
+    const voice = this.db.getVoice(voiceId);
+    if (voice === null) return null;
+    const samples = voice.samples ?? [];
+    if (!samples.some((s) => s.id === sampleId)) return null;
+    if (samples.length <= 1) {
+      throw new ModelError(
+        `That is the only clip '${voice.name}' has. Add another first, or delete the voice.`,
+      );
+    }
+    const filename = this.db.deleteVoiceSample(voiceId, sampleId);
+    this.rebuildVoiceReference(voiceId);
+    if (filename) {
+      await rm(join(this.config.paths.sounds, filename), { force: true }).catch(() => {});
+    }
+    return this.db.getVoice(voiceId);
+  }
+
+  /**
+   * Point a clone's `--voice-ref` at the right file after its clips changed:
+   * the clip itself when there is one, otherwise a freshly joined file.
+   *
+   * The joined file gets a new name on every rebuild rather than being
+   * overwritten. The app plays `reference_file` through a plain <audio>, and a
+   * browser holding the old bytes under the same URL would keep playing a
+   * reference the model no longer reads.
+   */
+  private rebuildVoiceReference(voiceId: string): void {
+    const files = this.db.voiceSampleFilenames(voiceId);
+    if (files.length === 0) return;
+    const dir = this.config.paths.sounds;
+    let target: string;
+    if (files.length === 1) {
+      target = files[0]!;
+    } else {
+      const joined = reference.combineReferences(files.map((f) => dsp.readWav(join(dir, f))));
+      target = `voice-${voiceId}-joined-${randomUUID().slice(0, 8)}.wav`;
+      dsp.writeWav(join(dir, target), joined.audio, joined.sampleRate);
+    }
+    const previous = this.db.setVoiceFilename(voiceId, target);
+    // Only a joined file is ours to delete here — a sample's own file is
+    // removed with its sample, and a previous single-clip reference is still
+    // that clip.
+    if (previous && previous !== target && !files.includes(previous)) {
+      void rm(join(dir, previous), { force: true }).catch(() => {});
+    }
+  }
+
+  /**
+   * A voice as a portable file — see `voiceExportSchema`.
+   *
+   * The clips travel, the joined reference does not: import rebuilds it, so a
+   * future change to how clips are joined applies to imported voices too.
+   */
+  exportVoice(voiceId: string): VoiceExport | null {
+    const voice = this.db.getVoice(voiceId);
+    if (voice === null) return null;
+    const dir = this.config.paths.sounds;
+    const samples = this.db.voiceSampleFilenames(voiceId).map((filename, i) => ({
+      wav_base64: readFileSync(join(dir, filename)).toString("base64"),
+      duration_s: voice.samples?.[i]?.duration_s ?? null,
+    }));
+    return {
+      format: "soundbox-voice",
+      version: 1,
+      exported_at: now(),
+      voice: {
+        name: voice.name,
+        kind: voice.kind,
+        voice_id: voice.voice_id ?? null,
+        model_id: voice.model_id ?? null,
+        notes: voice.notes ?? null,
+      },
+      samples,
+    };
+  }
+
+  /**
+   * Recreate a voice from an exported file, under a new id.
+   *
+   * A name already in the library gets " (2)", " (3)"… rather than replacing
+   * the existing voice: an import is a copy, and two voices called "Narrator"
+   * would make every voice picker ambiguous. A model this library does not
+   * know (an export from a newer Soundbox, or a custom entry) is dropped
+   * rather than failing the import — the clips still work with any model
+   * that clones, and the voice can be pointed at one afterwards. A built-in
+   * whose model is unknown has nothing left to speak with, so that one fails.
+   */
+  async importVoice(file: VoiceExport): Promise<Voice> {
+    const names = new Set(this.db.listVoices().map((v) => v.name));
+    let name = file.voice.name;
+    for (let n = 2; names.has(name); n++) name = `${file.voice.name} (${n})`;
+
+    let modelId = file.voice.model_id ?? null;
+    if (modelId !== null) {
+      try {
+        this.models.get(modelId).describe();
+      } catch {
+        modelId = null;
+      }
+    }
+
+    if (file.voice.kind === "builtin") {
+      if (modelId === null) {
+        throw new ModelError(
+          `'${file.voice.name}' is a built-in voice of ${file.voice.model_id ?? "an unnamed model"}, ` +
+            "which this Soundbox doesn't have.",
+        );
+      }
+      return this.createVoice({
+        name,
+        kind: "builtin",
+        voice_id: file.voice.voice_id ?? null,
+        model_id: modelId,
+        notes: file.voice.notes ?? null,
+      });
+    }
+
+    if (file.samples.length === 0) {
+      throw new ModelError("That file has no clips in it, so there is no voice to make.");
+    }
+    const clips = file.samples.map((sample, i) => {
+      try {
+        return dsp.decodeWav(Buffer.from(sample.wav_base64, "base64"));
+      } catch {
+        throw new ModelError(`Clip ${i + 1} in that file isn't a readable WAV.`);
+      }
+    });
+    const voice = this.createVoice(
+      { name, kind: "clone", model_id: modelId, notes: file.voice.notes ?? null },
+      clips[0],
+    );
+    try {
+      for (const clip of clips.slice(1)) this.addVoiceSample(voice.id, clip);
+    } catch (err) {
+      // All or nothing: a half-imported voice would look complete and sound
+      // like a fraction of the speaker.
+      await this.deleteVoice(voice.id);
+      throw err;
+    }
+    return this.db.getVoice(voice.id)!;
   }
 
   updateVoice(voiceId: string, patch: VoicePatch): Voice | null {
@@ -2063,9 +2298,11 @@ export class SoundboxService {
   /** Deletes the voice and its reference clip. The clip lives under the
    *  voice's own id (see createVoice), so nothing else references it. */
   async deleteVoice(voiceId: string): Promise<boolean> {
-    const filename = this.db.voiceFilename(voiceId);
+    const files = new Set(this.db.voiceSampleFilenames(voiceId));
+    const reference = this.db.voiceFilename(voiceId);
+    if (reference) files.add(reference);
     if (!this.db.deleteVoice(voiceId)) return false;
-    if (filename) {
+    for (const filename of files) {
       await rm(join(this.config.paths.sounds, filename), { force: true }).catch(() => {});
     }
     return true;
@@ -2080,10 +2317,13 @@ export class SoundboxService {
   /* ------------------------------------------------------------------- speak */
 
   submitSpeak(request: SpeakRequest): Job {
-    const model = this.models.get(request.model); // throws ModelError on unknown id
-    const info = model.describe();
-    if (info.task !== "tts") {
-      throw new ModelError(`${info.name} is not a text-to-speech model.`);
+    // Every model the read touches, checked before queueing: throws
+    // ModelError on an unknown id or one that cannot speak.
+    for (const id of new Set([request.model, ...request.lines.map((l) => l.model ?? request.model)])) {
+      const info = this.models.get(id).describe();
+      if (info.task !== "tts") {
+        throw new ModelError(`${info.name} is not a text-to-speech model.`);
+      }
     }
 
     // Same session handling as generate, for the same reason: a read started
@@ -2130,12 +2370,6 @@ export class SoundboxService {
       throw new ModelError(`${info.name} is not a text-to-speech model.`);
     }
 
-    if (!model.loaded) {
-      handle.phase("loading", `Loading ${info.name}`);
-      await this.models.load(req.model, (f, m) => handle.progress(f * 0.2, m, "loading"));
-    }
-    this.models.touch();
-
     // Resolve every voice before synthesising anything: failing on line 40 of
     // a 60-line script after five minutes of work, because one voice id was
     // stale, is the worst possible time to find out.
@@ -2152,15 +2386,29 @@ export class SoundboxService {
       const base = 0.2 + (i / n) * 0.7;
       const span = 0.7 / n;
       const label = n > 1 ? `Line ${i + 1}/${n}` : "Speaking";
+
+      // A line can name its own model — a dialogue whose voices were made on
+      // different families. Loading is per line so a swap happens only when
+      // the model actually changes between turns.
+      const lineModelId = line.model ?? req.model;
+      const lineModel = this.models.get(lineModelId);
+      const lineInfo = lineModel.describe();
+      if (!lineModel.loaded) {
+        handle.phase("loading", `Loading ${lineInfo.name}`);
+        await this.models.load(lineModelId, (f, m) =>
+          handle.progress(i === 0 ? f * 0.2 : base, m, "loading"),
+        );
+      }
+      this.models.touch();
       handle.phase("generating", label);
 
       clips.push(
-        await model.speak(line.text, {
+        await lineModel.speak(line.text, {
           voiceRefPath: refPath,
           voiceId: builtinId,
           // One delivery for the whole read: `speak` is the one-off path with
           // no story behind it, so there is nothing per-line to merge.
-          requestOptions: withRequirements(info.family, req.request_options),
+          requestOptions: withRequirements(lineInfo.family, req.request_options),
           // One seed for the whole read, not one per line: varying it between
           // turns makes the same character drift audibly mid-conversation.
           seed: req.seed ?? null,

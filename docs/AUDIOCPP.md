@@ -29,6 +29,18 @@ soundbox model install audiocpp --backend cuda   # cuda | hip | metal | vulkan |
 soundbox model install audiocpp --version 0.6.1
 ```
 
+From 0.9.x, upstream publishes one CUDA build per toolkit (CUDA 12.4 and 13.3
+on Windows), each with a matching `cudart` package of runtime DLLs. The
+installer picks the newest build your NVIDIA driver supports (from the "CUDA
+Version" line of `nvidia-smi`), and fetches the matching `cudart` alongside.
+If it cannot read the driver version, it picks the oldest. Linux assets are
+named `ubuntu`. The `lib`, `server-config` and Colab packages contain no
+`audiocpp_cli`, so the installer never picks them.
+
+Catalogue entries added in October 2026 use loaders that first appeared in
+audio.cpp 0.9.x. An older install reports an unknown family for them, and
+`soundbox model install audiocpp` fetches the latest release.
+
 The CLI then works without the server or web app running:
 
 ```bash
@@ -238,6 +250,24 @@ unaffected:
 
 `weights_glob` accepts a list, which keeps a download bounded. One of these
 repos is 58 GB and the entry pulls 8.45 GB of it.
+
+### Request options a family does not declare are rejected
+
+From 0.9.x, audio.cpp refuses any request option a family's spec does not
+list, with an error like `unknown MiDashengLM-Gen request option:
+duration_seconds`. Soundbox sends a generation the generic fields
+`duration_seconds`, `num_inference_steps` and `guidance_scale`. Most `gen`
+families accept all three, but not every one does. Two catalogue knobs cover
+that:
+
+- `supports.steps: false` / `supports.cfg: false` on a `gen` entry. Soundbox
+  then sends no step count or guidance scale at all, rather than a default
+  the family rejects.
+- `duration_option: "<name>"`. Soundbox sends the target length as that
+  request option (for example `duration_sec`) instead of `duration_seconds`.
+
+The family's accepted options are in `model_specs/<family>.json` beside the
+binary, or embedded in it.
 
 ### Component filenames are not yours to choose
 

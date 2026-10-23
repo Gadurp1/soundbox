@@ -12,6 +12,7 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -107,9 +108,9 @@ export function DashboardPage() {
         {/* Not a link, because there is nowhere to link to yet: the story has
             to exist before it can be opened, and which builder makes it is
             the question the picker asks. Same door as the sidebar's. */}
-        <button type="button" className="text-left" onClick={fresh.open}>
-          <Card className="hover:border-foreground/20 flex h-full flex-col gap-2 p-4 transition-colors">
-            <MessageSquareIcon className="text-muted-foreground size-5" aria-hidden="true" />
+        <button type="button" className="group/tile rounded-xl text-left" onClick={fresh.open}>
+          <Card className="group-hover/tile:bg-accent/50 group-hover/tile:ring-border-strong/50 flex h-full flex-col gap-2 p-4 transition-[background-color,box-shadow] duration-(--duration-fast)">
+            <MessageSquareIcon className="text-muted-foreground group-hover/tile:text-primary size-5 transition-colors" aria-hidden="true" />
             <div>
               <p className="text-sm font-medium">New sound</p>
               <p className="text-muted-foreground text-xs">
@@ -119,9 +120,9 @@ export function DashboardPage() {
           </Card>
         </button>
         {QUICK_LINKS.map(({ to, icon: Icon, label, hint }) => (
-          <Link key={to} to={to}>
-            <Card className="hover:border-foreground/20 flex h-full flex-col gap-2 p-4 transition-colors">
-              <Icon className="text-muted-foreground size-5" aria-hidden="true" />
+          <Link key={to} to={to} className="group/tile rounded-xl">
+            <Card className="group-hover/tile:bg-accent/50 group-hover/tile:ring-border-strong/50 flex h-full flex-col gap-2 p-4 transition-[background-color,box-shadow] duration-(--duration-fast)">
+              <Icon className="text-muted-foreground group-hover/tile:text-primary size-5 transition-colors" aria-hidden="true" />
               <div>
                 <p className="text-sm font-medium">{label}</p>
                 <p className="text-muted-foreground text-xs">{hint}</p>
@@ -179,9 +180,7 @@ export function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="border-border/70 text-muted-foreground rounded-2xl border border-dashed px-6 py-10 text-center text-sm">
-            No projects yet.
-          </div>
+          <EmptyState size="sm">No projects yet.</EmptyState>
         )}
       </div>
 
@@ -226,7 +225,7 @@ export function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="border-border/70 text-muted-foreground rounded-2xl border border-dashed px-6 py-10 text-center text-sm">
+          <EmptyState size="sm">
             Nothing generated yet —{" "}
             <button
               type="button"
@@ -236,7 +235,7 @@ export function DashboardPage() {
               make something
             </button>
             .
-          </div>
+          </EmptyState>
         )}
       </div>
     </div>

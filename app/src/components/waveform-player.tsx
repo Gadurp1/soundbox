@@ -114,13 +114,13 @@ export function WaveformPlayer({
     const ws = WaveSurfer.create({
       container: containerRef.current,
       height: compact ? 32 : 56,
-      waveColor: cssVar("--muted-foreground", "#888"),
+      waveColor: cssVar("--wave", "#888"),
       progressColor: cssVar("--primary", "#eee"),
-      cursorColor: cssVar("--ring", "#aaa"),
+      cursorColor: cssVar("--foreground", "#aaa"),
       cursorWidth: 1,
       barWidth: 2,
       barGap: 1,
-      barRadius: 2,
+      barRadius: 1,
       normalize: true,
       peaks: [sound.peaks],
       duration: sound.duration_s,
@@ -163,9 +163,9 @@ export function WaveformPlayer({
     if (!ws) return;
     const frame = requestAnimationFrame(() => {
       ws.setOptions({
-        waveColor: cssVar("--muted-foreground", "#888"),
+        waveColor: cssVar("--wave", "#888"),
         progressColor: cssVar("--primary", "#eee"),
-        cursorColor: cssVar("--ring", "#aaa"),
+        cursorColor: cssVar("--foreground", "#aaa"),
       });
     });
     return () => cancelAnimationFrame(frame);
@@ -326,13 +326,16 @@ export function WaveformPlayer({
     >
       <Button
         type="button"
-        variant="default"
+        // Graphite at rest, teal while it sounds: across a page of rows the
+        // one lit button is the one you are hearing, which a page of teal
+        // buttons could never say.
+        variant={isPlaying ? "default" : "outline"}
         size={compact ? "icon-sm" : "icon"}
         onClick={toggle}
         disabled={failed}
         aria-label={isPlaying ? `Pause ${sound.name}` : `Play ${sound.name}`}
         className={cn(
-          "rounded-full shadow-sm transition-[transform,box-shadow] duration-150 hover:scale-105 active:scale-95",
+          "rounded-full",
           isPlaying && "ring-4 ring-primary/15",
         )}
       >
@@ -346,6 +349,7 @@ export function WaveformPlayer({
       <div className="min-w-0 flex-1">
         <div
           ref={containerRef}
+          data-wave
           className={cn("w-full transition-opacity", failed && "opacity-40")}
           aria-hidden="true"
         />
@@ -356,7 +360,7 @@ export function WaveformPlayer({
         )}
       </div>
 
-      <span className="text-muted-foreground w-20 shrink-0 text-right font-mono text-xs tabular-nums">
+      <span className="text-muted-foreground readout w-20 shrink-0 text-right">
         {formatDuration(currentTime)} / {formatDuration(sound.duration_s)}
       </span>
     </div>

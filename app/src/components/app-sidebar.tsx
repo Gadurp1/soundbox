@@ -393,7 +393,7 @@ function NavGroup({
                   <SidebarMenuButton
                     isActive={isActive && !matchesExcept(item, pathname)}
                     tooltip={item.label}
-                    className="data-active:bg-primary/10 data-active:text-primary transition-colors [&[data-active=true]_svg]:text-primary"
+                    className="transition-colors duration-(--duration-fast) [&[data-active=true]_svg]:text-sidebar-primary"
                     asChild
                   >
                     <span>
@@ -421,7 +421,7 @@ function DeviceStatus() {
   const offline = isError || !data;
   const dot = (
     <span
-      className={`size-2 shrink-0 rounded-full ${offline ? "bg-red-500" : "bg-emerald-500"}`}
+      className={cn("sb-led", offline ? "text-danger" : "text-ok")}
       aria-hidden="true"
     />
   );
@@ -439,7 +439,7 @@ function DeviceStatus() {
           <span className="truncate font-medium">
             {offline ? "Backend offline" : (data.gpu_name ?? data.device)}
           </span>
-          <span className="text-muted-foreground truncate tabular-nums">
+          <span className="text-muted-foreground readout truncate">
             {offline
               ? "Start the server"
               : used !== null

@@ -29,6 +29,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 import { DEFAULT_HOST, DEFAULT_PORT, VERSION } from "../config.js";
+import { ProgressReporter } from "./progress.js";
 import { MCP_INSTRUCTIONS } from "./server.js";
 
 const BASE_URL = process.env.SOUNDBOX_URL || `http://${DEFAULT_HOST}:${DEFAULT_PORT}`;
@@ -227,7 +228,7 @@ export function build(): McpServer {
           .optional(),
       },
     },
-    async (args) => {
+    async (args, extra) => {
       const {
         prompt, duration_s, negative_prompt, seed, variations, tags, lyrics, track_name,
         source_sound_id, edit, edit_options,
@@ -282,9 +283,13 @@ export function build(): McpServer {
           const jobId: string = (await request("POST", "/api/generate", { json: body })).job_id;
           rep.job_id = jobId;
 
+          // The server sees only our HTTP polls, so progress for the stdio
+          // client has to come from here: relay what each poll says.
+          const progress = new ProgressReporter(extra);
           const deadline = performance.now() + 900_000;
           while (performance.now() < deadline) {
             const job = await request("GET", `/api/jobs/${jobId}`);
+            progress.job(job);
             if (job.status === "done") {
               const ids: string[] = job.result?.sounds ?? [];
               rep.sound_ids = ids;
@@ -335,12 +340,15 @@ export function build(): McpServer {
       inputSchema: {
         q: z.string().optional(),
         tag: z.string().optional(),
+        voice_id: z.string().optional(),
         limit: z.number().int().min(1).max(100).default(20),
       },
     },
-    async ({ q, tag, limit }) =>
-      await report("soundbox.list_sounds", { q, tag, limit }, clientOf(), async (rep) => {
-        const page = await request("GET", "/api/sounds", { params: { q, tag, limit } });
+    async ({ q, tag, voice_id, limit }) =>
+      await report("soundbox.list_sounds", { q, tag, voice_id, limit }, clientOf(), async (rep) => {
+        const page = await request("GET", "/api/sounds", {
+          params: { q, tag, voice_id, limit },
+        });
         const items = page.items;
         rep.sound_ids = items.map((s: { id: string }) => s.id);
         return json(items);

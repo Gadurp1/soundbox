@@ -80,6 +80,19 @@ Generates one or more sounds and saves them to the library. **Blocks until the
 audio is written to disk**, which can be seconds to a minute depending on model
 and length.
 
+A long music render can outlast a client's tool-call timeout, and some clients
+cut a call off at 60 seconds. If the request carries `_meta.progressToken`,
+Soundbox sends `notifications/progress` while the job runs: `progress` from 0
+to 1 (`total: 1`) and the job's own `message` ("loading model", "sampling",
+and so on). It sends one when the job moves, at most once a second, plus one
+every 5 seconds while nothing moves, such as while weights load. A client that
+resets its timeout on progress keeps the call alive this way. The same applies
+to every tool that waits on a job: `speak`, `speak_story` (one bar across all
+the lines it reads), `separate`, `export_story` and `open_in_studio`, over HTTP
+and over the stdio bridge (which only has `generate`). A client that sends no
+token gets no notifications. If the client neither sends a token nor resets on
+progress, raise its tool timeout, or ask for a shorter `duration_s`.
+
 | Argument | Type | Default | Notes |
 |---|---|---|---|
 | `prompt` | string | — | Describe material, action and space |
@@ -137,8 +150,9 @@ control the output.
 
 #### `soundbox.list_sounds` / `soundbox.get_sound` / `soundbox.delete_sound`
 
-Search and manage the library. `list_sounds` takes `q`, `tag` and `limit`;
-searching before generating is usually faster than regenerating. `get_sound`
+Search and manage the library. `list_sounds` takes `q`, `tag`, `voice_id` and
+`limit`; searching before generating is usually faster than regenerating, and
+`voice_id` answers "what has this voice already said" without re-reading it. `get_sound`
 takes a `sound_id` and returns the one sound with its absolute path.
 `delete_sound` takes a `sound_id` and **permanently** removes the row and the
 file on disk.
@@ -150,7 +164,24 @@ file on disk.
 #### `soundbox.list_voices`
 
 No arguments. Returns the saved voices a script can be read in. Call it before
-writing a script so lines are cast to real voice ids.
+writing a script so lines are cast to real voice ids. Each voice's `model_id` is
+the model it was made on, and the one it is read with unless you pass `model`.
+
+#### Which model reads a line
+
+`speak` and `speak_story` pick a model per line, in this order:
+
+1. `model`, when you pass it. Every line is read on it.
+2. The line's voice's `model_id`, when that model is installed. A clone read on
+   another family does not sound like the voice.
+3. A ready text-to-speech model, preferring the one already loaded. This covers
+   a line with no voice and a voice saved before voices carried a model.
+
+Lines cast to voices on different models are each read on their own. When a
+voice's model is not installed, the line falls back to step 3 and the result
+carries a `notes` entry saying so. `speak_story` returns `models`, a count of
+lines read per model id; a `speak` dialogue across families returns the same
+next to `model`.
 
 #### `soundbox.speak`
 
@@ -198,8 +229,8 @@ audio stays until the line is voiced again.
 #### `soundbox.speak_story`
 
 Takes `story_id`, `model`, and `regenerate` (re-read lines that already have
-audio, default false). Reads every silent line in its assigned voice, one at a
-time. **This is the slowest tool**: a forty-line script is forty reads.
+audio, default false). Reads every silent line in its assigned voice, on that
+voice's model, one at a time. **This is the slowest tool**: a forty-line script is forty reads.
 
 #### `soundbox.delete_line` / `soundbox.split_line`
 

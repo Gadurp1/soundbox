@@ -146,7 +146,7 @@ export function SettingsSection({
     >
       <h2
         id={`${id}-heading`}
-        className="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+        className="text-muted-foreground label-caps"
       >
         {title}
       </h2>

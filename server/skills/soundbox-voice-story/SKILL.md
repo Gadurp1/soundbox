@@ -53,7 +53,10 @@ re-running `soundbox.speak` on a changed script re-reads all of it.
    `speaker` even when the voice is the same; it is what makes the script
    readable back to the user.
 4. `soundbox.speak_story`. This is the minutes-long step: one subprocess per
-   line. Tell the user before you start.
+   line. Tell the user before you start. Leave `model` off: each line is read
+   on its own voice's model (`model_id` in `list_voices`), and passing one
+   reads every voice on it. If the result has `notes`, a voice's model was not
+   installed and its lines were read on another; tell the user.
 5. `soundbox.get_story` to see what landed, then `soundbox.update_line` for
    anything wrong, then `speak_story` again — it only re-reads silent lines
    unless you pass `regenerate: true`.

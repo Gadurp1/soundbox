@@ -210,7 +210,11 @@ export const MCP_TOOLS: McpToolDoc[] = [
         required: true,
         note: "1–200. Several lines with different voice_ids is a dialogue.",
       },
-      { name: "model", type: "string", note: "A text-to-speech model id. Defaults to a ready one." },
+      {
+        name: "model",
+        type: "string",
+        note: "A text-to-speech model id for every line. Omit it and each line is read on its voice's own model, or a ready one when the voice has none.",
+      },
       { name: "gap_s", type: "number", note: "Silence between lines, 0–5. Default 0.4." },
       { name: "name", type: "string", note: "What the resulting sound is called in the library." },
       {
@@ -299,12 +303,16 @@ export const MCP_TOOLS: McpToolDoc[] = [
     name: "soundbox.speak_story",
     title: "Voice a story",
     blurb:
-      "Reads every line that has no audio yet, in its assigned voice, one at a time. This is the slowest tool.",
+      "Reads every line that has no audio yet, in its assigned voice and on that voice's model, one at a time. This is the slowest tool.",
     group: "stories",
     slow: true,
     args: [
       { name: "story_id", type: "string", required: true },
-      { name: "model", type: "string", note: "A text-to-speech model id. Defaults to a ready one." },
+      {
+        name: "model",
+        type: "string",
+        note: "A text-to-speech model id for every line. Omit it and each line is read on its voice's own model, or a ready one when the voice has none.",
+      },
       {
         name: "regenerate",
         type: "boolean",

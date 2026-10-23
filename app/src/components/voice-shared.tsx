@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +54,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { LoadingVerb } from "@/components/loading-verb";
+import { TidySwitch, clipsSummary } from "@/components/voice-clips";
 import { SoundCard } from "@/components/sound-card";
 // Re-exported: the avatar moved to its own leaf module so the composer and
 // the script can import it without this file's dialog/recorder chain, and
@@ -85,12 +87,9 @@ export function isReady(model: Model): boolean {
 
 export function ErrorPanel({ title, error }: { title: string; error: unknown }) {
   return (
-    <div className="border-border rounded-xl border border-dashed px-6 py-8 text-center">
-      <p className="text-sm font-medium">{title}</p>
-      <p className="text-muted-foreground mt-1 text-sm">
-        {error instanceof Error ? error.message : "Unknown error"}
-      </p>
-    </div>
+    <EmptyState tone="error" title={title}>
+      {error instanceof Error ? error.message : "Unknown error"}
+    </EmptyState>
   );
 }
 
@@ -103,7 +102,7 @@ export function JobResult({ job }: { job: Job | null }) {
 
   if (job.status === "error") {
     return (
-      <p className="rounded-xl bg-red-500/8 px-3 py-2.5 text-sm text-red-600 ring-1 ring-red-600/20 ring-inset dark:text-red-400 dark:ring-red-400/25">
+      <p className="bg-danger/5 text-danger ring-danger/30 rounded-xl px-3 py-2.5 text-sm ring-1 ring-inset">
         {job.error ?? "The job failed."}
       </p>
     );
@@ -122,7 +121,7 @@ export function JobResult({ job }: { job: Job | null }) {
               <span className="text-muted-foreground font-normal"> · {job.message}</span>
             ) : null}
           </span>
-          <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
+          <span className="text-muted-foreground readout shrink-0">
             {Math.round(job.progress * 100)}%
           </span>
         </div>
@@ -185,6 +184,12 @@ export function VoiceCard({
         <p className="text-muted-foreground text-xs">
           {voice.voice_id} · only with {voice.model_id}
         </p>
+      )}
+
+      {/* With several clips the player below is the joined reference, so the
+          card says it is more than one recording. */}
+      {clipsSummary(voice) && (
+        <p className="text-muted-foreground text-xs">{clipsSummary(voice)}</p>
       )}
 
       {/* A plain <audio> rather than WaveformPlayer: the player takes a
@@ -251,6 +256,10 @@ export function AddVoiceDialog({
     (m) => isReady(m) && m.supports.voice_reference,
   );
   const [cloneModelId, setCloneModelId] = useState("");
+  /** On by default in the app, off by default in the API: someone clicking
+   *  through a dialog wants the phone memo's two seconds of fumbling cut, and
+   *  a script posting bytes wants them kept. */
+  const [tidy, setTidy] = useState(true);
   const cloneModel = cloneModels.find((m) => m.id === cloneModelId) ?? null;
 
   /** Every built-in across every installed TTS model, as one flat list.
@@ -284,6 +293,7 @@ export function AddVoiceDialog({
     setUploadName("");
     setNotes("");
     setCloneModelId("");
+    setTidy(true);
     setBuiltinKey("");
     recorder.reset();
     onOpenChange(false);
@@ -300,6 +310,7 @@ export function AddVoiceDialog({
           file: wav,
           notes: notes.trim() || null,
           modelId: cloneModelId || null,
+          tidy,
         },
         { onSuccess: close },
       );
@@ -364,9 +375,15 @@ export function AddVoiceDialog({
           placeholder="optional — accent, tone, where it came from"
         />
       </div>
+      <TidySwitch id="voice-upload-tidy" checked={tidy} onCheckedChange={setTidy} />
       <p className="text-muted-foreground text-xs">
         A few seconds of clean, single-speaker speech clones best. Music and
-        room noise end up in the clone.
+        room noise end up in the clone. You can add more clips of the same
+        speaker once it is saved.
+      </p>
+      <p className="text-muted-foreground text-xs">
+        Clone your own voice, or someone who has said yes. Most of these
+        models&apos; licences do not ask for consent, so getting it is on you.
       </p>
     </>
   );
