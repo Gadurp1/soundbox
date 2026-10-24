@@ -9,6 +9,11 @@
 //   npm run dev                 # server on 17494 + Vite on 5174
 //   SOUNDBOX_DATA_DIR=... npm run dev
 //   SOUNDBOX_AUDIOCPP_BACKEND=cpu npm run dev   # force a backend if auto-detect guesses wrong
+//   SOUNDBOX_DEV_HOST=0.0.0.0 npm run dev       # serve the dev UI beyond localhost (no auth!)
+//   SOUNDBOX_ALLOWED_HOSTS=soundbox.example.lan npm run dev   # names a proxy or other machine uses
+//
+// The server itself stays on 127.0.0.1 either way; Vite proxies to it.
+// app/vite.config.ts reads both variables, which Vite inherits from here.
 
 import { spawn } from "node:child_process";
 import { join } from "node:path";
@@ -59,7 +64,15 @@ run(
   { cwd: serverDir },
 );
 
-console.log("[dev] frontend: vite");
+const devHost = (process.env.SOUNDBOX_DEV_HOST ?? "").trim();
+if (devHost && !["localhost", "127.0.0.1", "::1", "[::1]"].includes(devHost)) {
+  console.warn(
+    `[dev] SOUNDBOX_DEV_HOST=${devHost} exposes the dev UI, and the whole API behind its proxy, ` +
+      "beyond this machine. There is no authentication.",
+  );
+}
+
+console.log(`[dev] frontend: vite${devHost ? ` --host ${devHost}` : ""}`);
 run("frontend", isWin ? "npm.cmd" : "npm", ["--prefix", join(root, "app"), "run", "dev"], {
   cwd: root,
 });

@@ -156,6 +156,16 @@ describe("trusted origins", () => {
       delete process.env.SOUNDBOX_ALLOWED_HOSTS;
     }
   });
+
+  it("holds a host:port entry in SOUNDBOX_ALLOWED_HOSTS to that port", () => {
+    process.env.SOUNDBOX_ALLOWED_HOSTS = "example.com:8443";
+    try {
+      expect(isTrustedOrigin("https://example.com:8443")).toBe(true);
+      expect(isTrustedOrigin("https://example.com")).toBe(false);
+    } finally {
+      delete process.env.SOUNDBOX_ALLOWED_HOSTS;
+    }
+  });
 });
 
 describe("routes", () => {

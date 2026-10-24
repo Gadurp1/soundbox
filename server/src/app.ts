@@ -32,6 +32,7 @@ import { registerLlm } from "./routes/llm.js";
 import { registerImage } from "./routes/image.js";
 import { registerEndpoints } from "./routes/endpoints.js";
 import { mountMcp, toolInfos } from "./mcp/server.js";
+import { hostnameOf, isListedHost } from "./origins.js";
 import { registerMcp, type McpToolsProvider } from "./routes/mcp.js";
 import { registerHistory } from "./routes/history.js";
 import { registerSessions } from "./routes/sessions.js";
@@ -64,6 +65,7 @@ export interface BuildAppOptions {
   /**
    * Extra hostnames the Host header may carry besides the loopback names — the
    * CLI passes its `--host` here when bound to a specific non-loopback address.
+   * SOUNDBOX_ALLOWED_HOSTS is accepted on top of these either way.
    * `"any"` disables the check (wildcard binds like 0.0.0.0).
    */
   allowedHosts?: string[] | "any";
@@ -84,18 +86,7 @@ const SIMPLE_CONTENT_TYPES = new Set([
  *  foreign origins. */
 export const CSRF_HEADER = "x-soundbox";
 
-/** Strips the port from a Host header value, keeping IPv6 brackets. */
-export function hostnameOf(hostHeader: string): string {
-  const h = hostHeader.trim().toLowerCase();
-  if (h.startsWith("[")) {
-    const end = h.indexOf("]");
-    return end === -1 ? h : h.slice(0, end + 1);
-  }
-  const colon = h.indexOf(":");
-  // More than one colon without brackets is a bare IPv6 literal.
-  if (colon !== -1 && h.indexOf(":", colon + 1) === -1) return h.slice(0, colon);
-  return h;
-}
+export { hostnameOf };
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -134,8 +125,9 @@ export function buildApp(config: Config, options: BuildAppOptions = {}): Fastify
 
   // DNS-rebinding defence: a hostile page whose domain re-resolves to
   // 127.0.0.1 reaches this server same-origin, but its Host header still
-  // names the hostile domain. Only loopback names (any port) — plus a host the
-  // user deliberately bound to — are served.
+  // names the hostile domain. Only loopback names (any port), a host the user
+  // deliberately bound to, and the names in SOUNDBOX_ALLOWED_HOSTS (what a
+  // reverse proxy forwards as Host) are served.
   const extraHosts = new Set(
     allowedHosts === "any" ? [] : allowedHosts.map((h) => hostnameOf(h)),
   );
@@ -146,8 +138,9 @@ export function buildApp(config: Config, options: BuildAppOptions = {}): Fastify
   const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
   app.addHook("onRequest", async (request, reply) => {
     if (allowedHosts !== "any") {
-      const name = hostnameOf(request.headers.host ?? "");
-      if (!LOOPBACK_HOSTS.has(name) && !extraHosts.has(name)) {
+      const host = request.headers.host ?? "";
+      const name = hostnameOf(host);
+      if (!LOOPBACK_HOSTS.has(name) && !extraHosts.has(name) && !isListedHost(host)) {
         return reply.code(403).send({ detail: "Forbidden host" });
       }
     }
