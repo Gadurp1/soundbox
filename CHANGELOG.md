@@ -15,6 +15,10 @@ to follow [Semantic Versioning](https://semver.org/).
   `{{key}}`. Each endpoint appears in the model pickers. WAV and PCM are read
   directly; other formats need ffmpeg. Endpoints outside the local network
   are marked, since prompts leave the machine. See `docs/ENDPOINTS.md`. (#22)
+- **Updates in the desktop app.** On launch, an installed copy checks for a
+  newer release and offers to install it and restart. Models and projects are
+  kept. Copies installed before this version need one manual download to get
+  it.
 
 ### Fixed
 

@@ -158,8 +158,23 @@ the web app), Rust (stable), and the platform toolchain Tauri needs:
   [audio.cpp](./AUDIOCPP.md), which has a Metal backend, but none of the
   verified-status claims were tested on a Mac. Web MIDI is unavailable in the
   macOS desktop shell.
-- **Auto-update is not wired up.** Tauri has an updater plugin; it should
-  cover the app shell only, never the weights.
+
+## Updates
+
+An installed copy checks the newest published GitHub Release once per launch,
+after the server is up. When a newer version exists it asks; **Install and
+restart** downloads it, stops the server, installs and restarts. **Later**
+asks again next launch. A failed check (offline, rate-limited) is logged and
+otherwise ignored. A checkout run with `npm run desktop` never checks.
+
+Updates replace the app only. Models and projects live in the data directory
+and are kept.
+
+The check reads `latest.json` from `releases/latest`, so a draft release
+reaches nobody until it is published. Every update is signed with the updater
+key (separate from Apple/Windows code signing) and the app rejects anything
+that doesn't verify against the public key in `src-tauri/tauri.conf.json`.
+[RELEASING.md](./RELEASING.md#updater-key) covers the key.
 
 ## Signing
 

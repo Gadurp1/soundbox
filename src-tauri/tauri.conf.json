@@ -40,5 +40,16 @@
     ],
     "shortDescription": "Local sound effects, music and speech from open-weight models",
     "longDescription": "Generate sound effects, music and speech locally from open-weight models. Includes an HTTP API and an MCP server so coding agents can generate audio directly."
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYzNEIyQzQ3MTQyOEJFM0EKUldRNnZpZ1VSeXhMWXpoc0hmZzc5TVh2dTdraytLMmtSZnlmY2hrZ0szZzFKQmsvTjVFYXRQeG8K",
+      "endpoints": [
+        "https://github.com/HamSanders/soundbox/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

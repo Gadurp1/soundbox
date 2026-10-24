@@ -8,6 +8,7 @@
 //! of the UI to keep in sync.
 
 mod backend;
+mod updater;
 
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -135,6 +136,8 @@ fn find_checkout() -> Option<PathBuf> {
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             backend: Mutex::new(None),
         })
@@ -207,6 +210,12 @@ pub fn run() {
                         }
                         Err(e) => notify("error", &format!("Bad server URL: {e}")),
                     }
+                }
+
+                // Only an installed copy updates itself: a checkout run with
+                // `npm run desktop` is updated with git.
+                if home.bundled {
+                    updater::check_and_offer(&handle);
                 }
             });
 
