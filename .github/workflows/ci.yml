@@ -20,7 +20,7 @@ jobs:
       matrix:
         node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Every file that records the version agrees (scripts/version.mjs).
       - run: node scripts/version.mjs check
       - uses: actions/setup-node@v4
@@ -58,7 +58,7 @@ jobs:
     name: Desktop shell (cargo check)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Tauri Linux dependencies
         run: |
           sudo apt-get update
