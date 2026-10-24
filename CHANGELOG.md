@@ -6,6 +6,16 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Custom endpoints.** Settings → Endpoints sends sound effects, music or
+  speech to a server you already run (LocalAI, an OpenAI-compatible speech
+  server) instead of downloading the model. The request body is a JSON
+  template with variables such as `{{prompt}}`, `{{lyrics}}`, `{{bpm}}` and
+  `{{key}}`. Each endpoint appears in the model pickers. WAV and PCM are read
+  directly; other formats need ffmpeg. Endpoints outside the local network
+  are marked, since prompts leave the machine. See `docs/ENDPOINTS.md`. (#22)
+
 ### Fixed
 
 - **GPU name and VRAM on NVIDIA.** `/api/health` reports the GPU's name and

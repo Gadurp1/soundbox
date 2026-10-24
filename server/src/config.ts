@@ -18,6 +18,7 @@ import {
   writeRegistry,
   type Registry,
 } from "./profiles.js";
+import type { AudioEndpoint } from "./endpoints/types.js";
 
 export const APP_NAME = "soundbox";
 /** From server/package.json, which sits one level above both src/ and dist/,
@@ -105,6 +106,11 @@ export interface SettingsData {
    *  default: the image model competes for the same VRAM as the audio model,
    *  and nobody's first render should get slower for a picture. */
   image_auto_artwork: boolean;
+  /** Custom audio endpoints — other people's servers Soundbox sends requests
+   *  to instead of running a model itself. Each is one model in the pickers.
+   *  Not settable through PATCH /api/settings: it has its own routes, so a key
+   *  can be kept without the client ever holding it. See endpoints/types.ts. */
+  audio_endpoints: AudioEndpoint[];
   /**
    * When first-run setup was finished or skipped, as an ISO timestamp, or null
    * for a profile that has never seen it.
@@ -143,6 +149,7 @@ const DEFAULT_SETTINGS: SettingsData = {
   image_external_model: "",
   image_external_api_key: null,
   image_auto_artwork: false,
+  audio_endpoints: [],
   onboarded_at: null,
 };
 
@@ -206,6 +213,7 @@ export class Settings {
   image_external_model: string = DEFAULT_SETTINGS.image_external_model;
   image_external_api_key: string | null = DEFAULT_SETTINGS.image_external_api_key;
   image_auto_artwork: boolean = DEFAULT_SETTINGS.image_auto_artwork;
+  audio_endpoints: AudioEndpoint[] = [];
   onboarded_at: string | null = DEFAULT_SETTINGS.onboarded_at;
 
   constructor(data: Partial<SettingsData> = {}) {
@@ -213,6 +221,7 @@ export class Settings {
       // Fresh arrays: the DEFAULT_SETTINGS literal is shared, and assigning it
       // would give every Settings instance the same array to push into.
       enabled_audiocpp_models: [],
+      audio_endpoints: [],
     });
     for (const key of SETTING_KEYS) {
       const value = data[key];
@@ -317,6 +326,7 @@ export class Settings {
       image_external_model: this.image_external_model,
       image_external_api_key: this.image_external_api_key,
       image_auto_artwork: this.image_auto_artwork,
+      audio_endpoints: this.audio_endpoints,
       onboarded_at: this.onboarded_at,
     };
   }

@@ -20,6 +20,10 @@ import {
   type AssistantOpenersRequest,
   type AssistantOpenersResponse,
   type AudioCppCatalogEntry,
+  type AudioEndpoint,
+  type AudioEndpointInput,
+  type EndpointList,
+  type EndpointTestResult,
   type HistoryEntry,
   type NewHistoryEntry,
   type AudioCppRuntimeStatus,
@@ -92,6 +96,7 @@ export const qk = {
   storyConversation: (storyId: string) => ["conversation", "story", storyId] as const,
   historyEntries: (id: string) => ["conversation", id, "entries"] as const,
   imageStatus: ["image-status"] as const,
+  endpoints: ["endpoints"] as const,
   mcpStatus: ["mcp-status"] as const,
   mcpCalls: (query: McpCallQuery) => ["mcp-calls", query] as const,
   assistantOpeners: (key: string) => ["assistant-openers", key] as const,
@@ -338,6 +343,51 @@ export function useLlmModelDelete() {
 
 export function useImageStatus(): UseQueryResult<ImageStatus> {
   return useQuery({ queryKey: qk.imageStatus, queryFn: () => api.getImageStatus() });
+}
+
+/* ---------------------------------------------------- custom endpoints */
+
+export function useEndpoints(): UseQueryResult<EndpointList> {
+  return useQuery({ queryKey: qk.endpoints, queryFn: () => api.listEndpoints() });
+}
+
+/** Saving or deleting an endpoint changes the model list too — each endpoint
+ *  is a model — so both are refetched. */
+export function useSaveEndpoint() {
+  const qc = useQueryClient();
+  return useMutation<AudioEndpoint, Error, { id: string; input: AudioEndpointInput }>({
+    mutationFn: ({ id, input }) => api.saveEndpoint(id, input),
+    onError: fail("Could not save the endpoint"),
+    onSuccess: (saved) => {
+      toast.success(`Saved ${saved.name}`);
+      void qc.invalidateQueries({ queryKey: qk.endpoints });
+      void qc.invalidateQueries({ queryKey: qk.models });
+    },
+  });
+}
+
+export function useDeleteEndpoint() {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (id) => api.deleteEndpoint(id),
+    onError: fail("Could not delete the endpoint"),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.endpoints });
+      void qc.invalidateQueries({ queryKey: qk.models });
+    },
+  });
+}
+
+/** No toast on error: the form shows the failure inline, next to the button
+ *  that caused it, since reading it is the point of testing. */
+export function useTestEndpoint() {
+  return useMutation<
+    EndpointTestResult,
+    Error,
+    AudioEndpointInput & { id?: string | null; prompt?: string | null }
+  >({
+    mutationFn: (input) => api.testEndpoint(input),
+  });
 }
 
 export function useImageEngineInstall() {

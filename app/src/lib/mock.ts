@@ -16,6 +16,9 @@ import type {
   NewHistoryEntry,
   AssistantChatResponse,
   AudioCppCatalogEntry,
+  AudioEndpoint,
+  AudioEndpointInput,
+  EndpointPreset,
   EnhanceLyricsRequest,
   EnhanceLyricsResponse,
   EnhanceRequest,
@@ -1043,6 +1046,138 @@ const MOCK_ARTWORK =
       `<text x="32" y="38" font-family="sans-serif" font-size="9" fill="#ffffffcc" ` +
       `text-anchor="middle">mock</text></svg>`,
   );
+
+/* --------------------------------------------------------- custom endpoints */
+
+/** A short version of the server's presets (server/src/endpoints/presets.ts) —
+ *  enough to drive the form, not a copy to keep in sync line by line. */
+const MOCK_ENDPOINT_PRESETS: EndpointPreset[] = [
+  {
+    id: "localai-ace-step",
+    label: "LocalAI — ACE-Step music",
+    hint: "LocalAI's /v1/sound-generation with an ACE-Step model. Set the model name to the one your LocalAI serves.",
+    docs_url: "https://localai.io/docs/features/text-to-audio/",
+    endpoint: {
+      task: "music",
+      url: "http://localhost:8080/v1/sound-generation",
+      headers: {},
+      body_template:
+        '{\n  "model": "ace-step-turbo",\n  "caption": "{{prompt}}",\n  "lyrics": "{{lyrics}}",\n  "instrumental": {{instrumental}},\n  "bpm": {{bpm}},\n  "keyscale": "{{key}}",\n  "duration_seconds": {{duration}}\n}',
+      response_path: "",
+      pcm_sample_rate: 24000,
+      max_duration_s: 240,
+      voices: [],
+    },
+  },
+  {
+    id: "openai-speech",
+    label: "OpenAI-compatible speech (/v1/audio/speech)",
+    hint: "OpenAI, LocalAI, Inference Gateway and most proxies. Asks for WAV, so no ffmpeg is needed.",
+    docs_url: "https://platform.openai.com/docs/api-reference/audio/createSpeech",
+    endpoint: {
+      task: "speech",
+      url: "http://localhost:8080/v1/audio/speech",
+      headers: {},
+      body_template:
+        '{\n  "model": "tts-1",\n  "input": "{{text}}",\n  "voice": "{{voice}}",\n  "response_format": "wav"\n}',
+      response_path: "",
+      pcm_sample_rate: 24000,
+      max_duration_s: 300,
+      voices: ["alloy", "echo", "nova"],
+    },
+  },
+];
+
+const MOCK_TEMPLATE_VARIABLES: Record<string, string> = {
+  prompt: "The description from the composer (sound effects and music).",
+  negative_prompt: "What to avoid, when the composer has one. Null otherwise.",
+  lyrics: "Lyrics for a vocal track. Null when there are none.",
+  instrumental: "true when there are no lyrics.",
+  duration: "Requested length in seconds.",
+  duration_ms: "Requested length in milliseconds.",
+  bpm: 'A tempo named in the prompt ("90 BPM"). Null when there is none.',
+  key: 'A key named in the prompt ("A minor", "Ebm"). Null when there is none.',
+  seed: "The seed for this render.",
+  steps: "Sampler steps, when set. Null otherwise.",
+  cfg: "Guidance scale, when set. Null otherwise.",
+  text: "The line to speak (speech endpoints).",
+  voice: "The chosen voice name, or the endpoint's default voice (speech).",
+  voice_ref_b64: "The reference clip of a cloned voice, base64 WAV (speech). Null otherwise.",
+  language: "A language code when one was chosen (speech). Null otherwise.",
+};
+
+const mockEndpoints: (AudioEndpoint & { api_key: string | null })[] = [];
+
+/** The model a saved endpoint shows up as — what the server's EndpointModel
+ *  describes, trimmed to what the pickers read. */
+function endpointAsModel(ep: AudioEndpoint): Model {
+  const speech = ep.task === "speech";
+  const uses = (v: string) => ep.body_template.includes(`{{${v}}}`);
+  let host = ep.url;
+  try {
+    host = new URL(ep.url).host;
+  } catch {
+    // keep the raw string
+  }
+  return {
+    id: `endpoint:${ep.id}`,
+    family: "endpoint",
+    params: [],
+    name: ep.name,
+    vendor: host,
+    description: `A custom endpoint: requests are sent to ${ep.url}.`,
+    license: { name: "Set by the endpoint", commercial: "conditional", url: "" },
+    hf_repo: "",
+    gated: false,
+    task: speech ? "tts" : "gen",
+    voice_ids: speech ? [...ep.voices] : [],
+    category: ep.task === "speech" ? "voice" : ep.task,
+    max_duration_s: ep.max_duration_s,
+    sample_rate: speech ? 24000 : 44100,
+    channels: speech ? 1 : 2,
+    supports: {
+      negative_prompt: uses("negative_prompt"),
+      seed: uses("seed"),
+      steps: uses("steps"),
+      cfg: uses("cfg"),
+      lyrics: uses("lyrics"),
+      text: speech,
+      voice_reference: speech && uses("voice_ref_b64"),
+      extend: false,
+      cover: false,
+      repaint: false,
+    },
+    defaults: { duration_s: Math.min(10, ep.max_duration_s) },
+    vram_estimate_mb: 0,
+    extras: [],
+    status: "installed",
+    installed_deps: true,
+    provider: "endpoint",
+    error: null,
+  };
+}
+
+function syncEndpointModels(): void {
+  for (let i = models.length - 1; i >= 0; i--) {
+    if (models[i]!.id.startsWith("endpoint:")) models.splice(i, 1);
+  }
+  for (const ep of mockEndpoints) if (ep.enabled) models.push(endpointAsModel(ep));
+}
+
+const publicEndpoint = ({ api_key, ...rest }: AudioEndpoint & { api_key: string | null }): AudioEndpoint => ({
+  ...rest,
+  api_key_set: Boolean(api_key),
+});
+
+function endpointFromInput(
+  id: string,
+  input: AudioEndpointInput,
+  previous: { api_key: string | null } | undefined,
+): AudioEndpoint & { api_key: string | null } {
+  const { api_key: key, ...rest } = input;
+  const api_key = key === undefined || key === null ? (previous?.api_key ?? null) : key.trim() || null;
+  return { ...rest, id, api_key, api_key_set: Boolean(api_key) };
+}
 
 /* ------------------------------------------------------------------ artwork */
 
@@ -3290,6 +3425,45 @@ export const mockApi: SoundboxApi = {
   async getImageStatus(): Promise<ImageStatus> {
     await wait(60);
     return imageStatusSnapshot();
+  },
+
+  async listEndpoints() {
+    await wait(60);
+    return {
+      endpoints: mockEndpoints.map(publicEndpoint),
+      presets: MOCK_ENDPOINT_PRESETS,
+      variables: MOCK_TEMPLATE_VARIABLES,
+    };
+  },
+
+  async saveEndpoint(id, input) {
+    await wait(120);
+    if (!/^[a-z0-9][a-z0-9-]{0,47}$/.test(id)) {
+      throw new Error(`"${id}" can't be an endpoint id. Use lower-case letters, digits and hyphens.`);
+    }
+    const unknown = [...input.body_template.matchAll(/\{\{\s*([a-z_]+)\s*\}\}/g)]
+      .map((m) => m[1]!)
+      .filter((v) => !(v in MOCK_TEMPLATE_VARIABLES));
+    if (unknown.length) throw new Error(`Unknown template variable: {{${unknown[0]}}}.`);
+    const index = mockEndpoints.findIndex((e) => e.id === id);
+    const next = endpointFromInput(id, input, mockEndpoints[index]);
+    if (index >= 0) mockEndpoints[index] = next;
+    else mockEndpoints.push(next);
+    syncEndpointModels();
+    return publicEndpoint(next);
+  },
+
+  async deleteEndpoint(id) {
+    await wait(80);
+    const index = mockEndpoints.findIndex((e) => e.id === id);
+    if (index >= 0) mockEndpoints.splice(index, 1);
+    syncEndpointModels();
+  },
+
+  async testEndpoint(input) {
+    await wait(700);
+    if (!/^https?:\/\//.test(input.url)) throw new Error("The URL must start with http:// or https://.");
+    return { duration_s: input.task === "speech" ? 2.4 : Math.min(5, input.max_duration_s), sample_rate: 44100, channels: 2 };
   },
 
   async installImageEngine(): Promise<JobRef> {

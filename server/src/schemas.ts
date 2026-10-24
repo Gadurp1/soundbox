@@ -23,8 +23,11 @@ export type { ModelParam, ParamGroup, ParamType } from "./models/params.js";
  * empty or `vram_estimate_mb` being zero: "runs somewhere else" is a fact
  * about the model, not something to infer from two fields that happen to be
  * falsy.
+ *
+ *   "local"    — weights on this machine, run by audio.cpp.
+ *   "endpoint" — a custom endpoint: somebody's server, reached over HTTP.
  */
-export type ModelProvider = "local";
+export type ModelProvider = "local" | "endpoint";
 
 export type ModelStatus =
   | "not_installed"
@@ -175,7 +178,8 @@ export interface ModelInfo {
   max_cfg?: number | null;
   extras: string[];
   status: ModelStatus;
-  /** Where this model runs: weights on this machine driven by audio.cpp. */
+  /** Where this model runs: weights on this machine driven by audio.cpp, or a
+   *  custom endpoint. See `ModelProvider`. */
   provider: ModelProvider;
   installed_deps: boolean;
   auto_installable: boolean;
@@ -1093,6 +1097,41 @@ export const settingsPatchSchema = z.object({
   // ISO timestamp when first-run setup was finished or skipped. "" clears it,
   // the `sounds_dir` convention — see `Config.updateSettings`.
   onboarded_at: z.string().nullish(),
+});
+
+/**
+ * PUT /api/endpoints/:id — create or replace one custom audio endpoint.
+ *
+ * `api_key` follows the `hf_token` convention: omitted (or null) keeps the
+ * stored key, so the form never needs to hold it; "" clears it.
+ */
+export const audioEndpointInputSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  task: z.enum(["sfx", "music", "speech"]),
+  url: z
+    .string()
+    .trim()
+    .url()
+    .refine((u) => /^https?:\/\//i.test(u), "The URL must start with http:// or https://."),
+  api_key: z.string().nullish(),
+  headers: z.record(z.string(), z.string()).default({}),
+  body_template: z.string().min(2).max(20_000),
+  response_path: z.string().trim().max(200).default(""),
+  pcm_sample_rate: z.number().int().min(8000).max(192_000).default(24_000),
+  max_duration_s: z.number().gt(0).max(600).default(30),
+  voices: z.array(z.string().trim().min(1).max(100)).max(200).default([]),
+  enabled: z.boolean().default(true),
+});
+export type AudioEndpointInput = z.infer<typeof audioEndpointInputSchema>;
+
+/** Endpoint ids become model ids (`endpoint:<id>`) and URL segments. */
+export const ENDPOINT_ID = /^[a-z0-9][a-z0-9-]{0,47}$/;
+
+/** POST /api/endpoints/test — try a configuration before (or after) saving
+ *  it. `id` names a saved endpoint whose key to use when none is given. */
+export const audioEndpointTestSchema = audioEndpointInputSchema.extend({
+  id: z.string().nullish(),
+  prompt: z.string().max(2000).nullish(),
 });
 
 /** POST /api/enhance. `n` caps at 5 — a rewrite-prompt list past that stops
