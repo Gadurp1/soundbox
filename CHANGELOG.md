@@ -19,6 +19,16 @@ to follow [Semantic Versioning](https://semver.org/).
   its total and free VRAM from `nvidia-smi`, for the first GPU in
   `CUDA_VISIBLE_DEVICES` or GPU 0, so the sidebar, Settings and onboarding show
   them instead of only "cuda". Other GPUs still report `null`. (#17)
+- **`SOUNDBOX_ALLOWED_HOSTS` behind a reverse proxy.** The server's `Host`
+  check now accepts the names in `SOUNDBOX_ALLOWED_HOSTS`, so `soundbox` on
+  `127.0.0.1` behind Caddy or nginx no longer answers 403 "Forbidden host" to
+  every request. Before, the variable only reached CORS and `/mcp`. A bare
+  `host` matches any port and `host:port` only that port, the same in every
+  check. (#22)
+- **Dev mode from another machine.** `npm run dev` passes
+  `SOUNDBOX_ALLOWED_HOSTS` to Vite's `server.allowedHosts`, and a new
+  `SOUNDBOX_DEV_HOST` sets the address Vite listens on. Both are unset by
+  default, which keeps the dev UI on localhost. (#22)
 
 ## [0.2.0] - 2026-10-23
 

@@ -256,16 +256,61 @@ header (and `Origin`, when a browser sends one) against loopback and answers
 **403** to anything else, so a web page cannot reach your server through DNS
 rebinding. `http://localhost:17494/mcp` from the Docker host passes as is.
 Reach it by any other name — a LAN IP, a proxy hostname — and that name has
-to be listed, exactly as the client sends it in `Host`, with the port unless it
-is 80/443:
+to be listed in `SOUNDBOX_ALLOWED_HOSTS`:
 
 ```bash
 -e SOUNDBOX_ALLOWED_HOSTS=soundbox.example.lan,192.168.1.20:17494
 ```
 
-A reverse proxy that rewrites `Host` to `127.0.0.1` also passes, but forwarding
-the original host and listing it is the clearer setup. The web UI and
-`/api/*` are not behind this check; only `/mcp` is.
+A bare `host` matches that name on any port; `host:port` matches only that
+port. A reverse proxy that rewrites `Host` to `127.0.0.1` also passes, but
+forwarding the original host and listing it is the clearer setup. In the
+container the server binds `0.0.0.0`, which turns off the `Host` check for the
+web UI and `/api/*`, so there only `/mcp` needs the list. Outside Docker every
+request is checked; see
+[Reverse proxy or another machine](#reverse-proxy-or-another-machine).
+
+## Reverse proxy or another machine
+
+By default everything listens on loopback, and the server answers **403
+Forbidden host** to a request whose `Host` header is not `localhost`,
+`127.0.0.1` or `::1`. That is the defence against DNS rebinding. There is no
+authentication, so anything you open up should sit behind a proxy that has
+some.
+
+**Built app (`soundbox`, the desktop app) behind Caddy or nginx.** Keep the
+server on `127.0.0.1` and list the name the proxy forwards as `Host`:
+
+```bash
+SOUNDBOX_ALLOWED_HOSTS=soundbox.example.lan soundbox
+```
+
+That one list feeds every check: the `Host` allowlist for the UI and
+`/api/*`, the MCP endpoint's `Host` check, and the trusted browser origins
+(CORS and the MCP `Origin` check). A bare `host` matches that name on any
+port; `host:port` matches only that port, so write
+`soundbox.example.lan:8443` to accept nothing else. Binding a specific address
+with `--host 192.168.1.20` also accepts that address as `Host` for the UI and
+`/api/*`, but `/mcp` still wants it listed.
+
+**Dev mode (`npm run dev`).** Vite serves the UI on localhost:5174 and proxies
+`/api`, `/mcp`, `/files` and `/artwork` to the server, which stays on
+`127.0.0.1`. Two variables open it up:
+
+- `SOUNDBOX_DEV_HOST` is the address Vite listens on (`0.0.0.0` for every
+  interface, or one LAN IP). Unset, Vite stays on localhost. `scripts/dev.mjs`
+  warns when it is set to anything else.
+- `SOUNDBOX_ALLOWED_HOSTS` is also handed to Vite's `server.allowedHosts`
+  (ports dropped), so Vite stops answering "Blocked request" for those names,
+  and the server trusts them as origins.
+
+```bash
+SOUNDBOX_DEV_HOST=0.0.0.0 SOUNDBOX_ALLOWED_HOSTS=soundbox.example.lan npm run dev
+```
+
+Behind a proxy on the same machine, `SOUNDBOX_ALLOWED_HOSTS` alone is enough;
+point the proxy at `127.0.0.1:5174`. Vite accepts IP addresses as `Host` on
+its own, so a LAN IP only needs `SOUNDBOX_DEV_HOST`.
 
 **NVIDIA GPUs.** The default image is CPU-only and runs anywhere (amd64 and
 arm64). For CUDA, install the
@@ -371,8 +416,12 @@ its terms, or the token is missing. See step 3.
 
 **MCP client can't connect.** The endpoint is `http://127.0.0.1:17494/mcp`
 with no trailing slash. If you bound a non-loopback host with `--host`, also
-set `SOUNDBOX_ALLOWED_HOSTS=your.host:port` (the exact `Host` header clients
-send), or the MCP endpoint's DNS-rebinding check answers 403.
+set `SOUNDBOX_ALLOWED_HOSTS=your.host` (or `your.host:port` to accept only that
+port), or the MCP endpoint's DNS-rebinding check answers 403.
+
+**403 "Forbidden host" through a reverse proxy.** The proxy forwards a `Host`
+the server does not know. List it in `SOUNDBOX_ALLOWED_HOSTS`; see
+[Reverse proxy or another machine](#reverse-proxy-or-another-machine).
 
 ## Environment variables
 
@@ -389,7 +438,8 @@ Server-side variables are read by the process running `soundbox` (or
 | `SOUNDBOX_LLAMA_SERVER_BACKEND` | server | Same, for the `llama-server` download. |
 | `SOUNDBOX_SD_SERVER_BACKEND` | server | Same, for the `sd-server` download. |
 | `SOUNDBOX_ALLOW_UNVERIFIED_BINARIES` | server | `1` installs an engine archive that no published SHA-256 covers. Off by default; a checksum *mismatch* is refused regardless. |
-| `SOUNDBOX_ALLOWED_HOSTS` | server | Comma-separated `host` or `host:port`. Adds trusted browser origins (CORS and the MCP `Origin` check) and exact `Host` values the MCP endpoint accepts. See [SECURITY.md](https://github.com/HamSanders/soundbox/blob/main/SECURITY.md). |
+| `SOUNDBOX_ALLOWED_HOSTS` | server, Vite | Comma-separated `host` (any port) or `host:port` (that port only). Adds `Host` values the server accepts (UI, `/api/*` and `/mcp`) and trusted browser origins (CORS and the MCP `Origin` check); under `npm run dev` also Vite's `server.allowedHosts`. See [Reverse proxy or another machine](#reverse-proxy-or-another-machine) and [SECURITY.md](https://github.com/HamSanders/soundbox/blob/main/SECURITY.md). |
+| `SOUNDBOX_DEV_HOST` | `npm run dev`, Vite | Address the Vite dev server listens on (`0.0.0.0`, a LAN IP). Default localhost. The server stays on `127.0.0.1`. No authentication, so open it up only on a network you trust or behind a proxy that has some. |
 | `PORT` | server, Vite | The Vite dev server's port (default 5174); the server also trusts it as a dev origin. |
 | `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` | server | Hugging Face token for gated models, used when none is saved in Settings. |
 | `HF_HOME` | server | Hugging Face cache location. Left alone if set; otherwise Soundbox points it at `<data dir>/models`. |

@@ -15,8 +15,9 @@
  *     the request's Host header. That is the built UI the server serves,
  *     including inside the desktop shell, whose webview is pointed straight
  *     at `http://127.0.0.1:<port>` (the Tauri splash page never calls the
- *     API). The Host header is itself checked against loopback in app.ts, so
- *     a rebinding page can't satisfy this by naming its own domain.
+ *     API). The Host header is itself checked in app.ts (loopback, the bound
+ *     host, SOUNDBOX_ALLOWED_HOSTS), so a rebinding page can't satisfy this
+ *     by naming its own domain.
  *   - the Vite dev server: `npm run dev` serves the UI on 5174 (or `PORT`)
  *     and proxies `/api`, `/mcp` and `/files` here with `changeOrigin`, so
  *     those requests arrive with Host rewritten to ours but Origin still
@@ -46,12 +47,38 @@ function devOrigins(): Set<string> {
   return origins;
 }
 
-/** SOUNDBOX_ALLOWED_HOSTS, comma-separated `host` or `host:port` values. */
-function extraHosts(): string[] {
+/** Strips the port from a Host header value, keeping IPv6 brackets. */
+export function hostnameOf(hostHeader: string): string {
+  const h = hostHeader.trim().toLowerCase();
+  if (h.startsWith("[")) {
+    const end = h.indexOf("]");
+    return end === -1 ? h : h.slice(0, end + 1);
+  }
+  const colon = h.indexOf(":");
+  // More than one colon without brackets is a bare IPv6 literal.
+  if (colon !== -1 && h.indexOf(":", colon + 1) === -1) return h.slice(0, colon);
+  return h;
+}
+
+/** SOUNDBOX_ALLOWED_HOSTS, comma-separated `host` or `host:port` values,
+ *  lower-cased. */
+export function allowedHostEntries(): string[] {
   return (process.env.SOUNDBOX_ALLOWED_HOSTS ?? "")
     .split(",")
     .map((h) => h.trim().toLowerCase())
     .filter(Boolean);
+}
+
+/**
+ * Whether a `host[:port]` value (a Host header, or an Origin's host) is listed
+ * in SOUNDBOX_ALLOWED_HOSTS. A bare `host` entry matches that name on any
+ * port; a `host:port` entry matches only that port. The Host-header check in
+ * app.ts, the MCP endpoint's Host check and the origin rule below all use it.
+ */
+export function isListedHost(host: string): boolean {
+  const h = host.trim().toLowerCase();
+  const name = hostnameOf(h);
+  return allowedHostEntries().some((entry) => entry === h || entry === name);
 }
 
 /**
@@ -74,5 +101,5 @@ export function isTrustedOrigin(origin: string, hostHeader?: string): boolean {
   const host = url.host; // hostname[:port], lower-cased, IPv6 bracketed
   if (hostHeader && host === hostHeader.trim().toLowerCase()) return true;
   if (url.protocol === "http:" && devOrigins().has(url.origin)) return true;
-  return extraHosts().some((h) => h === host || h === url.hostname);
+  return isListedHost(host);
 }
