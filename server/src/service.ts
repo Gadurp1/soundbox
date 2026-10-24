@@ -56,6 +56,7 @@ import type {
   AssistantTurn,
 } from "./llm/assistant.js";
 import { ImageService, type ImageStatus } from "./image/service.js";
+import { EndpointService } from "./endpoints/service.js";
 
 /**
  * What `GET /api/models/audiocpp/runtime` answers. Shaped like `LlmStatus`'s
@@ -219,6 +220,8 @@ export class SoundboxService {
   readonly jobs: JobManager;
   readonly llm: LlmService;
   readonly image: ImageService;
+  /** Custom audio endpoints — see endpoints/service.ts. */
+  readonly endpoints: EndpointService;
   readonly telemetry: McpTelemetry;
   /** Live story activity — see story-hub.ts. */
   readonly stories = new StoryHub();
@@ -231,7 +234,9 @@ export class SoundboxService {
       config.settings.effectiveHfToken(),
       config.settings.enabled_audiocpp_models,
       config.settings.effectiveAudiocppModelsDir(config.paths),
+      config.settings.audio_endpoints,
     );
+    this.endpoints = new EndpointService(config, this.models);
     this.jobs = new JobManager();
     this.llm = new LlmService(config);
     this.image = new ImageService(config);
@@ -2884,6 +2889,8 @@ export class SoundboxService {
     // After the root is set, so it looks in the folder this profile actually
     // uses: what is on the disk is enabled here too, without a second tick.
     await this.adoptDownloadedModels();
+    // Endpoints are per-profile too, and unlike weights nothing is shared.
+    await this.endpoints.reload();
     this.telemetry.otel.reconfigure();
     // Both engines may be running the model the *previous* profile chose.
     this.llm.reconfigure();
@@ -3192,9 +3199,16 @@ export class SoundboxService {
     });
   }
 
-  /** A model's catalog category, or null if it isn't one we know. */
+  /** A model's category, or null if it isn't one we know. The catalog first,
+   *  then the registry, which is the only place a custom endpoint is known. */
   private modelCategory(modelId: string): string | null {
-    return catalogById().get(modelId)?.category ?? null;
+    const fromCatalog = catalogById().get(modelId)?.category;
+    if (fromCatalog) return fromCatalog;
+    try {
+      return this.models.get(modelId).describe().category;
+    } catch {
+      return null;
+    }
   }
 
   /** Every audio.cpp model the adapter knows about, verified or not, with

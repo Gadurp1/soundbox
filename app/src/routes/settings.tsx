@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 
 import { ArtworkSettingsCard } from "@/components/artwork-settings";
+import { EndpointSettingsCard } from "@/components/endpoint-settings";
 import { FolderPickerDialog } from "@/components/folder-picker";
 import { SettingsLayout, SettingsSection } from "@/components/settings-layout";
 import { OutputDeviceCard } from "@/components/output-device-card";
@@ -537,6 +538,11 @@ export function SettingsPage() {
         </Card>
         {/* -------------------------------------------------------- artwork */}
         <ArtworkSettingsCard settings={settings} />
+      </SettingsSection>
+
+      <SettingsSection id="endpoints" title="Endpoints">
+        {/* ------------------------------------------------ custom endpoints */}
+        <EndpointSettingsCard />
       </SettingsSection>
 
       <SettingsSection id="storage" title="Storage">

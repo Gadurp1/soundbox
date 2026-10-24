@@ -8,6 +8,13 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Custom endpoints.** Settings → Endpoints sends sound effects, music or
+  speech to a server you already run (LocalAI, an OpenAI-compatible speech
+  server) instead of downloading the model. The request body is a JSON
+  template with variables such as `{{prompt}}`, `{{lyrics}}`, `{{bpm}}` and
+  `{{key}}`. Each endpoint appears in the model pickers. WAV and PCM are read
+  directly; other formats need ffmpeg. Endpoints outside the local network
+  are marked, since prompts leave the machine. See `docs/ENDPOINTS.md`. (#22)
 - **Updates in the desktop app.** On launch, an installed copy checks for a
   newer release and offers to install it and restart. Models and projects are
   kept. Copies installed before this version need one manual download to get

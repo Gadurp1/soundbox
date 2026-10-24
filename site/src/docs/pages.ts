@@ -13,6 +13,7 @@ import * as generating from "../../../docs/GENERATING.md?doc";
 import * as studio from "../../../docs/STUDIO.md?doc";
 import * as library from "../../../docs/LIBRARY.md?doc";
 import * as artwork from "../../../docs/ARTWORK.md?doc";
+import * as endpoints from "../../../docs/ENDPOINTS.md?doc";
 import * as audiocpp from "../../../docs/AUDIOCPP.md?doc";
 import * as desktop from "../../../docs/DESKTOP.md?doc";
 import * as api from "../../../docs/API.md?doc";
@@ -79,6 +80,13 @@ export const DOC_PAGES: DocPage[] = [
     section: "Using Soundbox",
     blurb: "Cover art for generated music, avatars for saved voices, and the image models behind them.",
     ...artwork,
+  },
+  {
+    slug: "endpoints",
+    label: "Custom endpoints",
+    section: "Using Soundbox",
+    blurb: "Send generation to a server you already run, such as LocalAI or an OpenAI-compatible speech server.",
+    ...endpoints,
   },
   {
     slug: "architecture",

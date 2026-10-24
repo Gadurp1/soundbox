@@ -19,8 +19,9 @@ export type ModelStatus =
   | "loaded"
   | "error";
 
-/** Where a model runs: weights on this machine. */
-export type ModelProvider = "local";
+/** Where a model runs: weights on this machine ("local"), or a custom
+ *  endpoint someone else's server answers ("endpoint"). */
+export type ModelProvider = "local" | "endpoint";
 
 /** `commercial` drives the licence badge colour on the Models screen. */
 export interface LicenseInfo {
@@ -428,6 +429,52 @@ export interface ImageStatus {
   running: boolean;
   auto_artwork: boolean;
   detected: DetectedImageEndpoint[];
+}
+
+/** A custom audio endpoint, as the server returns it (the key withheld). Each
+ *  one is a model in the pickers, `endpoint:<id>`. */
+export interface AudioEndpoint {
+  id: string;
+  name: string;
+  task: "sfx" | "music" | "speech";
+  url: string;
+  api_key_set: boolean;
+  headers: Record<string, string>;
+  /** JSON with `{{variable}}` placeholders. */
+  body_template: string;
+  /** Dotted path to base64 audio in a JSON response; "" for a raw audio body. */
+  response_path: string;
+  pcm_sample_rate: number;
+  max_duration_s: number;
+  voices: string[];
+  enabled: boolean;
+}
+
+/** What PUT /api/endpoints/:id and the test take. `api_key` omitted keeps the
+ *  saved key; "" clears it. */
+export type AudioEndpointInput = Omit<AudioEndpoint, "id" | "api_key_set"> & {
+  api_key?: string | null;
+};
+
+export interface EndpointPreset {
+  id: string;
+  label: string;
+  hint: string;
+  docs_url: string;
+  endpoint: Omit<AudioEndpoint, "id" | "name" | "api_key_set" | "enabled">;
+}
+
+export interface EndpointList {
+  endpoints: AudioEndpoint[];
+  presets: EndpointPreset[];
+  /** Template variable → what it holds. */
+  variables: Record<string, string>;
+}
+
+export interface EndpointTestResult {
+  duration_s: number;
+  sample_rate: number;
+  channels: number;
 }
 
 export interface EnhanceRequest {
@@ -1551,6 +1598,12 @@ export interface SoundboxApi {
   downloadLlmModel(id: string): Promise<JobRef>;
   getImageStatus(): Promise<ImageStatus>;
   installImageEngine(): Promise<JobRef>;
+  listEndpoints(): Promise<EndpointList>;
+  saveEndpoint(id: string, input: AudioEndpointInput): Promise<AudioEndpoint>;
+  deleteEndpoint(id: string): Promise<void>;
+  /** Render one short clip through a configuration; nothing is saved. `id`
+   *  names a saved endpoint whose key to use when the form sends none. */
+  testEndpoint(input: AudioEndpointInput & { id?: string | null; prompt?: string | null }): Promise<EndpointTestResult>;
   downloadImageModel(id: string): Promise<JobRef>;
   deleteImageModel(id: string): Promise<void>;
   /** Draw (or redraw) cover art for a sound; resolves to the updated Sound. */
@@ -2076,6 +2129,16 @@ export const httpApi: SoundboxApi = {
   getImageStatus: () => request<ImageStatus>("/api/image/status"),
   installImageEngine: () =>
     request<JobRef>("/api/image/engine/install", { method: "POST" }),
+  listEndpoints: () => request<EndpointList>("/api/endpoints"),
+  saveEndpoint: (id, input) =>
+    request<AudioEndpoint>(`/api/endpoints/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
+  deleteEndpoint: (id) =>
+    request<void>(`/api/endpoints/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  testEndpoint: (input) =>
+    request<EndpointTestResult>("/api/endpoints/test", { method: "POST", body: JSON.stringify(input) }),
   downloadImageModel: (id) =>
     request<JobRef>(`/api/image/models/${encodeURIComponent(id)}/download`, { method: "POST" }),
   deleteImageModel: (id) =>

@@ -224,16 +224,20 @@ function ModelListItem({
   const requestDownload = () =>
     nonCommercial ? setView("confirm-download") : startDownload();
 
-  const canDownload = model.status === "not_installed";
-  const canLoad = (model.status === "installed" || model.status === "error");
-  const canUnload = model.status === "loaded";
+  // A custom endpoint runs on somebody else's server: there are no weights to
+  // fetch, load or delete here, so none of those actions apply. It is edited
+  // from Settings → Endpoints instead.
+  const isEndpoint = model.provider === "endpoint";
+  const canDownload = !isEndpoint && model.status === "not_installed";
+  const canLoad = !isEndpoint && (model.status === "installed" || model.status === "error");
+  const canUnload = !isEndpoint && model.status === "loaded";
   const canDelete =
-    model.status !== "not_installed" && model.status !== "downloading";
+    !isEndpoint && model.status !== "not_installed" && model.status !== "downloading";
 
   const specs = {
-    rate: formatHz(model.sample_rate),
+    rate: isEndpoint ? "—" : formatHz(model.sample_rate),
     max: `${model.max_duration_s}s`,
-    vram: formatMb(model.vram_estimate_mb),
+    vram: isEndpoint ? "Remote" : formatMb(model.vram_estimate_mb),
   };
 
   /** The one action worth having on the row itself. */
@@ -577,15 +581,21 @@ function ModelListItem({
                   </div>
                 )}
 
-                <a
-                  href={`https://huggingface.co/${model.hf_repo}`}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 rounded font-mono text-xs underline underline-offset-4 focus-visible:ring-2 focus-visible:outline-none"
-                >
-                  {model.hf_repo}
-                  <ExternalLinkIcon className="size-3" aria-hidden="true" />
-                </a>
+                {isEndpoint ? (
+                  <p className="text-muted-foreground text-xs">
+                    Edit or remove this endpoint in Settings → Endpoints.
+                  </p>
+                ) : (
+                  <a
+                    href={`https://huggingface.co/${model.hf_repo}`}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex items-center gap-1 rounded font-mono text-xs underline underline-offset-4 focus-visible:ring-2 focus-visible:outline-none"
+                  >
+                    {model.hf_repo}
+                    <ExternalLinkIcon className="size-3" aria-hidden="true" />
+                  </a>
+                )}
               </div>
 
               {/* Actions come first in the DOM so the dialog's initial focus

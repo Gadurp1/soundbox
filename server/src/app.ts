@@ -30,6 +30,7 @@ import {
 import { registerJobs } from "./routes/jobs.js";
 import { registerLlm } from "./routes/llm.js";
 import { registerImage } from "./routes/image.js";
+import { registerEndpoints } from "./routes/endpoints.js";
 import { mountMcp, toolInfos } from "./mcp/server.js";
 import { hostnameOf, isListedHost } from "./origins.js";
 import { registerMcp, type McpToolsProvider } from "./routes/mcp.js";
@@ -204,6 +205,7 @@ export function buildApp(config: Config, options: BuildAppOptions = {}): Fastify
   registerProfiles(app, svc);
   registerLlm(app, svc);
   registerImage(app, svc);
+  registerEndpoints(app, svc);
   // Default to the server's own tool list (routes/mcp.ts uses this for
   // GET /api/mcp/status) rather than an empty array — the caller only needs
   // to override this for tests that stub the MCP layer out entirely.

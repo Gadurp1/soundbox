@@ -22,22 +22,33 @@ import {
 } from "./audiocpp.js";
 import { AudioCppRuntime } from "./audiocppRuntime.js";
 import type { GenerationModel } from "./types.js";
+import { EndpointModel } from "../endpoints/model.js";
+import { type AudioEndpoint, endpointModelId } from "../endpoints/types.js";
 
 /**
  * A registry entry. Tagged so `instantiate()` stays the single place that
  * knows which class runs which kind of entry.
  */
-type Entry = { kind: "local"; spec: ModelSpec };
+type Entry = { kind: "local"; spec: ModelSpec } | { kind: "endpoint"; endpoint: AudioEndpoint };
 
 /**
  * audio.cpp runs everything that runs on this machine; every model-specific
  * Python stack (MOSS, Stable Audio, TangoFlux, AudioLDM2, AudioGen) was
  * removed in favour of it. See docs/AUDIOCPP.md.
+ *
+ * Custom endpoints come after the local models, so anything that picks "the
+ * first installed model" lands on one this machine runs.
  */
-function registry(enabledAudiocppIds: ReadonlySet<string>): Map<string, Entry> {
+function registry(
+  enabledAudiocppIds: ReadonlySet<string>,
+  endpoints: readonly AudioEndpoint[],
+): Map<string, Entry> {
   const entries = new Map<string, Entry>();
   for (const spec of modelSpecs(enabledAudiocppIds)) {
     entries.set(spec.id, { kind: "local", spec });
+  }
+  for (const endpoint of endpoints) {
+    if (endpoint.enabled) entries.set(endpointModelId(endpoint.id), { kind: "endpoint", endpoint });
   }
   return entries;
 }
@@ -78,6 +89,8 @@ export class ModelManager {
    * is "hide the weights I already have".
    */
   private presentAudiocpp = new Set<string>();
+  /** The profile's custom endpoints, as of the last `setEndpoints()`. */
+  private endpoints: AudioEndpoint[] = [];
   private specs: Map<string, Entry>;
   private instances = new Map<string, GenerationModel>();
   private _resident: string | null = null;
@@ -92,12 +105,14 @@ export class ModelManager {
     hfToken: string | null = null,
     enabledAudiocppModels: string[] = [],
     audiocppRoot?: string,
+    endpoints: AudioEndpoint[] = [],
   ) {
     this.modelsDir = modelsDir;
     this.hfToken = hfToken;
     this.audiocppRoot = audiocppRoot ?? join(modelsDir, "audiocpp");
     this.enabledAudiocpp = new Set(enabledAudiocppModels);
-    this.specs = registry(this.audiocppEnabled());
+    this.endpoints = [...endpoints];
+    this.specs = registry(this.audiocppEnabled(), this.endpoints);
   }
 
   /**
@@ -147,7 +162,7 @@ export class ModelManager {
     if (!added.length && !dropped.length) return [];
     await this.locked(async () => {
       this.presentAudiocpp = present;
-      const next = registry(this.audiocppEnabled());
+      const next = registry(this.audiocppEnabled(), this.endpoints);
       for (const id of this.specs.keys()) {
         if (next.has(id) || !this.instances.has(id)) continue;
         if (this._resident === id) await this.unloadInner(id);
@@ -160,7 +175,25 @@ export class ModelManager {
 
   /** The one place that knows which class runs which kind of entry. */
   private instantiate(entry: Entry, hfToken = this.hfToken): GenerationModel {
+    if (entry.kind === "endpoint") return new EndpointModel(entry.endpoint);
     return new AudioCppModel(entry.spec, this.modelsDir, hfToken, this.audiocppRoot, this.runtime);
+  }
+
+  /**
+   * Replace the custom endpoints, after an edit or a profile switch.
+   *
+   * Every endpoint instance is dropped rather than just the changed ones: an
+   * instance holds its config, so an edited URL or template has to reach the
+   * next request, and rebuilding one is free. Local instances are untouched.
+   */
+  async setEndpoints(endpoints: AudioEndpoint[]): Promise<void> {
+    await this.locked(async () => {
+      this.endpoints = [...endpoints];
+      this.specs = registry(this.audiocppEnabled(), this.endpoints);
+      for (const [id, model] of this.instances) {
+        if (model instanceof EndpointModel) this.instances.delete(id);
+      }
+    });
   }
 
   /**
@@ -240,7 +273,7 @@ export class ModelManager {
   async setAudiocppEnabled(enabledIds: string[]): Promise<void> {
     await this.locked(async () => {
       this.enabledAudiocpp = new Set(enabledIds);
-      const next = registry(this.audiocppEnabled());
+      const next = registry(this.audiocppEnabled(), this.endpoints);
       for (const id of this.specs.keys()) {
         if (next.has(id) || !this.instances.has(id)) continue;
         if (this._resident === id) await this.unloadInner(id);
