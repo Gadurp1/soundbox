@@ -14,6 +14,9 @@
       "dependsOn": ["^build"]
     },
     "lint": {},
-    "test": {}
+    "test": {
+      "env": ["SOUNDBOX_TEST_REPORT"],
+      "outputs": ["test-results/**"]
+    }
   }
 }
