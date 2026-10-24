@@ -1,0 +1,43 @@
+name: Changelog
+
+# A PR that changes what users run (the app, the server, the desktop shell)
+# should say so under `## [Unreleased]` in CHANGELOG.md, since that section
+# becomes the release notes. Refactors, tests, CI and docs-only changes can
+# carry the `no-changelog` label instead. Advisory: not a required check.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changelog:
+    name: Changelog entry
+    if: >-
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      !contains(github.event.pull_request.labels.*.name, 'no-changelog')
+    runs-on: ubuntu-latest
+    steps:
+      - name: User-facing changes come with a CHANGELOG.md entry
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          files=$(gh pr diff "$PR" --repo "$REPO" --name-only)
+          if echo "$files" | grep -qx CHANGELOG.md; then
+            echo "CHANGELOG.md is updated."
+            exit 0
+          fi
+          touched=$(echo "$files" | grep -E '^(app/src/|server/src/|src-tauri/src/|src-tauri/tauri[^/]*\.json$)' | grep -vE '\.test\.' || true)
+          if [ -z "$touched" ]; then
+            echo "No user-facing paths changed."
+            exit 0
+          fi
+          echo "::error title=No changelog entry::Add a line under ## [Unreleased] in CHANGELOG.md, or label this PR no-changelog if users won't notice the change."
+          echo "User-facing files changed:"
+          echo "$touched" | sed 's/^/  /'
+          exit 1

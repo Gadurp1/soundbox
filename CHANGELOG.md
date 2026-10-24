@@ -6,6 +6,13 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **GPU name and VRAM on NVIDIA.** `/api/health` reports the GPU's name and
+  its total and free VRAM from `nvidia-smi`, for the first GPU in
+  `CUDA_VISIBLE_DEVICES` or GPU 0, so the sidebar, Settings and onboarding show
+  them instead of only "cuda". Other GPUs still report `null`. (#17)
+
 ## [0.2.0] - 2026-10-23
 
 ### Added

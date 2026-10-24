@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Release PRs are pushed by a workflow, which starts no CI on its own;
+  # release-prepare.yml dispatches this instead.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,6 +21,8 @@ jobs:
         node: [22, 24]
     steps:
       - uses: actions/checkout@v4
+      # Every file that records the version agrees (scripts/version.mjs).
+      - run: node scripts/version.mjs check
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}

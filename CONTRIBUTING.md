@@ -89,4 +89,9 @@ Keep pull requests small and focused. Explain what you changed and how you
 verified it. For an audio change, "I generated a 3s clip on a 3060 and it
 sounded right" is useful information.
 
+PRs are squash-merged into `main` once CI passes. If users will notice the
+change, add a line under `## [Unreleased]` in `CHANGELOG.md`. Leave version
+numbers alone: they change only in a release PR. [docs/RELEASING.md](docs/RELEASING.md)
+covers versions, releases and hotfixes.
+
 By contributing you agree your contributions are licensed under the MIT licence.

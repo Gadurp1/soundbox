@@ -89,6 +89,16 @@ jobs:
             fi
           done
 
+      # The release notes are the tag's section of CHANGELOG.md. A tag made by
+      # hand with no section of its own (an -rc, say) falls back to a link.
+      - name: Release notes from the changelog
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          notes=$(node scripts/version.mjs notes "${GITHUB_REF_NAME#v}" 2>/dev/null) ||
+            notes="See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/CHANGELOG.md) for what changed."
+          { echo "RELEASE_NOTES<<__NOTES__"; echo "$notes"; echo "__NOTES__"; } >> "$GITHUB_ENV"
+
       - name: Build the installer
         uses: tauri-apps/tauri-action@v0
         env:
@@ -97,11 +107,11 @@ jobs:
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: Soundbox ${{ github.ref_name }}
           releaseBody: |
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for what changed.
+            ${{ env.RELEASE_NOTES }}
 
             **Installers are not yet signed.** Windows shows a SmartScreen prompt (More info → Run anyway); macOS asks you to allow the app in System Settings → Privacy & Security. [docs/DESKTOP.md](https://github.com/${{ github.repository }}/blob/main/docs/DESKTOP.md) has the details.
           releaseDraft: true
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config src-tauri/tauri.bundle.conf.json
 
       - name: Keep the installer as an artifact
