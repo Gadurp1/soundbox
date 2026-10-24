@@ -1,0 +1,43 @@
+name: Tag release
+
+# When main (or a release/X.Y hotfix branch) carries a version that has no
+# tag yet, which happens once, when a "Release X.Y.Z" PR merges, tag that
+# commit vX.Y.Z and start release.yml on the tag.
+#
+# release.yml is started by dispatch because a tag pushed with this
+# workflow's token does not trigger `on: push: tags` itself.
+
+on:
+  push:
+    branches: [main, "release/**"]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: release-tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag a new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node scripts/version.mjs check)
+          tag="v$version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "$tag already exists; nothing to release."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Soundbox $version" "$GITHUB_SHA"
+          git push -q origin "$tag"
+          gh workflow run release.yml --ref "$tag"
+          echo "Tagged $tag at $GITHUB_SHA and started the release build." >> "$GITHUB_STEP_SUMMARY"

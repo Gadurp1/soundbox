@@ -1,0 +1,89 @@
+name: Prepare release
+
+# Opens the "Release X.Y.Z" pull request: every version file bumped together
+# and the changelog's Unreleased section turned into the release's own
+# (scripts/version.mjs). Merging that PR is what releases: release-tag.yml
+# tags the merge and starts release.yml. docs/RELEASING.md has the whole flow.
+#
+# Run it from the Actions tab. `base` is main for a normal release, or a
+# release/X.Y branch for a hotfix cut from an older tag.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "patch, minor, major, or an exact X.Y.Z"
+        required: true
+        default: patch
+      base:
+        description: "Branch to release from: main, or release/X.Y for a hotfix"
+        required: true
+        default: main
+      installers:
+        description: "Also build the installers from the PR branch, to try before merging"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: release-prepare
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Bump the version and cut the changelog
+        id: bump
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: echo "version=$(node scripts/version.mjs bump "$BUMP")" >> "$GITHUB_OUTPUT"
+
+      - name: Open the release PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.bump.outputs.version }}
+          BASE: ${{ inputs.base }}
+          INSTALLERS: ${{ inputs.installers }}
+        run: |
+          branch="prepare/v$VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -qam "Release $VERSION"
+          git push -q origin "$branch"
+
+          {
+            echo "Merging this tags \`v$VERSION\` and builds the installers into a draft release, which is published by hand."
+            echo
+            if [ "$INSTALLERS" = "true" ]; then
+              echo "Installers built from this branch are in the **Release** workflow run for \`$branch\` (Actions tab), to install and try before merging."
+              echo
+            fi
+            echo "Edit \`CHANGELOG.md\` on this branch if the notes need work; they become the release notes."
+            echo
+            echo "## Release notes"
+            echo
+            node scripts/version.mjs notes "$VERSION"
+          } > "$RUNNER_TEMP/body.md"
+          gh pr create --base "$BASE" --head "$branch" --title "Release $VERSION" --body-file "$RUNNER_TEMP/body.md"
+
+          # A push made with this workflow's token starts no other workflow, so
+          # CI would never report on the PR and the required checks would never
+          # pass. A dispatch is the exception: ask for the runs directly.
+          gh workflow run ci.yml --ref "$branch"
+          if [ "$INSTALLERS" = "true" ]; then
+            gh workflow run release.yml --ref "$branch"
+          fi
