@@ -28,7 +28,7 @@ import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 import { DEFAULT_HOST, DEFAULT_PORT, VERSION } from "../config.js";
-import { isTrustedOrigin } from "../origins.js";
+import { allowedHostEntries, isListedHost, isTrustedOrigin } from "../origins.js";
 import type { Job, ModelInfo, McpToolInfo, Origin, Sound, StorySegment } from "../schemas.js";
 import type { SoundboxService } from "../service.js";
 import type { CallRecord, TrackOptions } from "../telemetry.js";
@@ -1632,25 +1632,15 @@ export function buildMcp(
   return mcp;
 }
 
-/**
- * Extra exact `host:port` (or bare host) values to accept, from
- * SOUNDBOX_ALLOWED_HOSTS (comma-separated) — for a deployment bound to a
- * non-loopback address.
- */
-function extraAllowedHosts(): string[] {
-  const extra = process.env.SOUNDBOX_ALLOWED_HOSTS;
-  if (!extra) return [];
-  return extra.split(",").map((h) => h.trim()).filter(Boolean);
-}
-
-/** Kept for callers/tests that want the configured exception list on its own. */
+/** Kept for callers/tests that want the configured exception list on its own:
+ *  SOUNDBOX_ALLOWED_HOSTS, parsed the same way as everywhere else (origins.ts). */
 export function allowedHosts(): string[] {
-  return extraAllowedHosts();
+  return allowedHostEntries();
 }
 
 /**
- * Is this `Host` header a loopback address (any port), or one of the exact
- * exceptions from SOUNDBOX_ALLOWED_HOSTS?
+ * Is this `Host` header a loopback address (any port), or listed in
+ * SOUNDBOX_ALLOWED_HOSTS (a bare `host` on any port, `host:port` on that port)?
  *
  * The SDK's own `allowedHosts` option only does exact-string `.includes()`
  * matching — there is no wildcard port support — so "127.0.0.1:*" silently
@@ -1663,7 +1653,7 @@ export function allowedHosts(): string[] {
 function isHostAllowed(hostHeader: string | undefined): boolean {
   if (!hostHeader) return false;
   if (/^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(hostHeader)) return true;
-  return extraAllowedHosts().includes(hostHeader);
+  return isListedHost(hostHeader);
 }
 
 /**

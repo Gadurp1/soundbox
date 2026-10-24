@@ -38,10 +38,13 @@ following assumptions. Please report any way to break one of them.
   your own authenticating proxy in front of it.
 - **Host-header allowlist.** Requests whose `Host` header is not a loopback
   name (`localhost`, `127.0.0.1`, `::1`, any port) are rejected with 403,
-  which defends against DNS rebinding from web pages in your browser. Only
-  `--host` widens this: a specific address adds that name, and a wildcard bind
-  (`0.0.0.0`, `::`) turns the check off. The MCP endpoint additionally
-  accepts the exact `Host` values listed in `SOUNDBOX_ALLOWED_HOSTS`.
+  which defends against DNS rebinding from web pages in your browser. Two
+  things widen it, both opt-in: names listed in `SOUNDBOX_ALLOWED_HOSTS` (a
+  bare `host` on any port, `host:port` on that port only — what a reverse
+  proxy forwards), and `--host`: a specific address adds that name, and a
+  wildcard bind (`0.0.0.0`, `::`) turns the check off. The MCP endpoint keeps
+  its own check, which accepts loopback and `SOUNDBOX_ALLOWED_HOSTS` only,
+  even under a wildcard bind.
 - **Origin allowlist.** Only trusted browser origins get CORS headers (so only
   they can read responses), and the MCP endpoint refuses any other `Origin`
   outright. The trusted set is the server's own origin (an `Origin` naming
