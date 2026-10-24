@@ -45,14 +45,14 @@ export const ENDPOINT_PRESETS: EndpointPreset[] = [
     label: "LocalAI — ACE-Step music",
     hint:
       "LocalAI's /v1/sound-generation with an ACE-Step model. Set the model name to the one your " +
-      "LocalAI serves. LocalAI's docs show both `model` and `model_id`; if one is rejected, try the other.",
+      "LocalAI serves. This sends `model_id`, as LocalAI's field table names it; its ACE-Step example uses `model`, so if one is rejected, rename it.",
     docs_url: "https://localai.io/docs/features/text-to-audio/",
     endpoint: {
       ...BASE,
       task: "music",
       url: "http://localhost:8080/v1/sound-generation",
       body_template: json({
-        model: '"ace-step-turbo"',
+        model_id: '"ace-step-turbo"',
         caption: '"{{prompt}}"',
         lyrics: '"{{lyrics}}"',
         instrumental: "{{instrumental}}",
