@@ -38,6 +38,7 @@ import {
   userModelSpecs,
   type EditSpec,
 } from "./models/audiocpp.js";
+import { listGpus, pickGpu } from "./gpu.js";
 import { HistoryStore } from "./history.js";
 import { ModelManager } from "./models/manager.js";
 import * as audiocppBinary from "./models/audiocppBinary.js";
@@ -256,18 +257,20 @@ export class SoundboxService {
 
   /* --------------------------------------------------------------- health */
 
-  health(): HealthStatus {
+  async health(): Promise<HealthStatus> {
     // Deviation: the Python asked torch for the device, the GPU name and VRAM.
     // There is no torch in this runtime — inference happens inside audio.cpp —
     // so `device` comes from the same ggml backend detection the model uses,
-    // and the hardware detail fields stay null rather than being guessed.
+    // and the hardware detail comes from nvidia-smi (see gpu.ts). Without it
+    // (Metal, AMD, Intel, CPU) those fields stay null rather than being guessed.
+    const gpu = pickGpu(await listGpus());
     return {
       status: "ok",
       version: VERSION,
       device: backend(),
-      gpu_name: null,
-      vram_total_mb: null,
-      vram_free_mb: null,
+      gpu_name: gpu?.name ?? null,
+      vram_total_mb: gpu?.vram_total_mb ?? null,
+      vram_free_mb: gpu?.vram_free_mb ?? null,
       loaded_model: this.models.resident,
       queue_length: this.jobs.queueLength,
     };

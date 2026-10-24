@@ -201,13 +201,14 @@ otherwise a JSON stub saying it has not.
 
 `GET /api/health`
 ```json
-{ "status": "ok", "version": "0.1.0", "device": "cuda", "gpu_name": null,
-  "vram_total_mb": null, "vram_free_mb": null,
+{ "status": "ok", "version": "0.1.0", "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 3080", "vram_total_mb": 10240, "vram_free_mb": 9800,
   "loaded_model": "audiocpp-stable-audio-3-sfx" | null, "queue_length": 0 }
 ```
-`device` comes from the same backend detection audio.cpp uses. Inference runs
-inside audio.cpp, so the server cannot query the GPU for its name or VRAM;
-`gpu_name` and the `vram_*` fields are always `null`.
+`device` comes from the same backend detection audio.cpp uses. On NVIDIA
+hardware `gpu_name` and the `vram_*` fields come from `nvidia-smi`, for the
+first GPU in `CUDA_VISIBLE_DEVICES` or GPU 0 when that is unset. Without
+`nvidia-smi` (Metal, AMD, Intel, CPU) they are `null`.
 
 ## Models
 
