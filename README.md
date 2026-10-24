@@ -19,6 +19,11 @@ do it for you. Open-weight models, no account, no credits, works offline. MIT li
 
 <img src="site/public/product/studio.png" alt="The Soundbox studio: a script cast across three speakers above a multi-track timeline holding the spoken lines, an ambient music bed and sound effects, with the library panel on the right" width="900">
 
+<a href="https://hamsanders.github.io/soundbox/media/soundbox-vibe.mp4"><img src="site/public/product/video-vibe.jpg" alt="Play the 30-second tour: type a sound, hear it, sound effects, songs and voices" width="440"></a>
+<a href="https://hamsanders.github.io/soundbox/media/soundbox-tech.mp4"><img src="site/public/product/video-tech.jpg" alt="Play the 43-second technical tour: no Python, one native C++ binary, the same prompt on three models, measured timings" width="440"></a>
+
+<sub><b>The 30-second tour</b> &nbsp;·&nbsp; <b>Under the hood:</b> no Python, swap models, real timings</sub>
+
 </div>
 
 ## Download
@@ -132,14 +137,24 @@ Connection details, the stdio bridge and the full tool reference are in
 [docs/MCP.md](docs/MCP.md).
 
 <p align="center">
+  <a href="https://hamsanders.github.io/soundbox/media/soundbox-agents.mp4"><img src="site/public/product/video-agents.jpg" alt="Play the 21-second agents tour: one line gives your agent 21 audio tools, a real generate call, the Agents page and progress notifications" width="720"></a>
+</p>
+
+<p align="center">
   <img src="site/public/product/agents.png" alt="The Agents page: connected MCP clients, copy-paste connection commands, and a log of recent calls with tool, client, prompt, duration and sounds produced" width="900">
 </p>
 
 ## Models
 
 Every model runs through [audio.cpp](docs/AUDIOCPP.md), a native runtime, so
-there is no Python to set up. Four models are verified end to end and on by
-default:
+there is no Python to set up, and switching models is a dropdown, not a new
+environment. The same prompt and seed on three music models:
+
+<p align="center">
+  <img src="site/public/product/same-prompt-three-models.gif" alt="The same prompt and seed rendered by Stable Audio 3.0 Small Music, MiniMax Music 3 and ACE-Step 1.5 Turbo, each with its licence badge, waveform and measured render time on an RTX 5080" width="720">
+</p>
+
+Four models are verified end to end and on by default:
 
 | Model | Good for | Licence | Commercial use |
 |---|---|---|---|
