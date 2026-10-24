@@ -6,6 +6,13 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Updates in the desktop app.** On launch, an installed copy checks for a
+  newer release and offers to install it and restart. Models and projects are
+  kept. Copies installed before this version need one manual download to get
+  it.
+
 ### Fixed
 
 - **GPU name and VRAM on NVIDIA.** `/api/health` reports the GPU's name and

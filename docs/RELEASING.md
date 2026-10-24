@@ -80,6 +80,8 @@ of the release PR (step 2 below).
    installers again and attaches them to a draft GitHub Release with the
    changelog section as its notes.
 5. **Publish the draft** from the Releases page once the assets are all there.
+   Check that `latest.json` is among them: publishing is what offers the
+   update to installed copies.
 
 The tag is created by the merge. Don't push version tags by hand, except for
 a pre-release (below).
@@ -117,3 +119,18 @@ These live in GitHub, not in the repo:
 - Settings → Actions → General: **Allow GitHub Actions to create and approve
   pull requests** turned on, so Prepare release can open its PR.
 - A `no-changelog` label.
+- The **updater key** secrets (below).
+
+## Updater key
+
+Installed copies update themselves (see [DESKTOP.md](./DESKTOP.md#updates)).
+Each update is signed with a minisign key pair: the public half is in
+`src-tauri/tauri.conf.json`, the private half is the repository secret
+`TAURI_SIGNING_PRIVATE_KEY`, with its password, if any, in
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Without the secret, **Release** still
+builds installers but warns and attaches no `latest.json`, so nobody is
+offered that version.
+
+Keep a backup of the private key outside GitHub. If it's lost, a new key pair
+needs a new public key in the app, and every copy installed before that can't
+verify updates anymore: those users have to download one installer by hand.
