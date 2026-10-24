@@ -6,6 +6,8 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-24
+
 ### Added
 
 - **Custom endpoints.** Settings → Endpoints sends sound effects, music or
@@ -130,6 +132,7 @@ Initial public release, MIT-licensed. Everything below is new.
   `SOUNDBOX_ALLOWED_HOSTS`), and requires JSON or an `X-Soundbox` header on
   mutating API requests.
 
-[Unreleased]: https://github.com/HamSanders/soundbox/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/HamSanders/soundbox/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/HamSanders/soundbox/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/HamSanders/soundbox/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/HamSanders/soundbox/releases/tag/v0.1.0
