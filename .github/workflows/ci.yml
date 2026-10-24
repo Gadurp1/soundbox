@@ -27,7 +27,24 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+      # Node 24 also writes report files (server/vitest.config.ts); the next
+      # two steps publish them even when a test fails.
       - run: npm test
+        env:
+          SOUNDBOX_TEST_REPORT: ${{ matrix.node == 24 && '1' || '' }}
+      - name: Test summary
+        if: ${{ !cancelled() && matrix.node == 24 }}
+        run: node scripts/test-summary.mjs server/test-results/results.json "Server tests (Node 24)"
+      - name: Upload test report
+        if: ${{ !cancelled() && matrix.node == 24 }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: |
+            server/test-results/junit.xml
+            server/test-results/html/
+          if-no-files-found: warn
+          retention-days: 30
       # Builds the app, stages app/dist into server/web, then builds the server.
       - run: npm run build
       - run: npm run site:build
