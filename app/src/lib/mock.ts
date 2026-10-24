@@ -1062,7 +1062,7 @@ const MOCK_ENDPOINT_PRESETS: EndpointPreset[] = [
       url: "http://localhost:8080/v1/sound-generation",
       headers: {},
       body_template:
-        '{\n  "model": "ace-step-turbo",\n  "caption": "{{prompt}}",\n  "lyrics": "{{lyrics}}",\n  "instrumental": {{instrumental}},\n  "bpm": {{bpm}},\n  "keyscale": "{{key}}",\n  "duration_seconds": {{duration}}\n}',
+        '{\n  "model_id": "ace-step-turbo",\n  "caption": "{{prompt}}",\n  "lyrics": "{{lyrics}}",\n  "instrumental": {{instrumental}},\n  "bpm": {{bpm}},\n  "keyscale": "{{key}}",\n  "duration_seconds": {{duration}}\n}',
       response_path: "",
       pcm_sample_rate: 24000,
       max_duration_s: 240,

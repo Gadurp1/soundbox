@@ -309,7 +309,7 @@ describe("custom endpoints through the API", () => {
     expect(received[0]!.url).toBe("/v1/sound-generation");
     expect(received[0]!.auth).toBe("Bearer secret");
     expect(received[0]!.body).toEqual({
-      model: "ace-step-turbo",
+      model_id: "ace-step-turbo",
       caption: "lofi piano, 84 BPM, D minor",
       instrumental: true,
       bpm: 84,

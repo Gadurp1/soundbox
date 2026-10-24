@@ -29,7 +29,7 @@ server's error. Nothing is added to the library.
 
 | Preset | Endpoint | Notes |
 | --- | --- | --- |
-| LocalAI ACE-Step music | `POST /v1/sound-generation` | Sends `caption`, `lyrics`, `bpm`, `keyscale` and `duration_seconds`. LocalAI's docs use both `model` and `model_id`. If your server rejects one, try the other. |
+| LocalAI ACE-Step music | `POST /v1/sound-generation` | Sends `model_id`, `caption`, `lyrics`, `bpm`, `keyscale` and `duration_seconds`. LocalAI's ACE-Step example uses `model` instead. If your server rejects `model_id`, rename it. |
 | LocalAI sound effects | `POST /v1/sound-generation` | ElevenLabs-shaped: `model_id`, `text`, `duration_seconds`. |
 | OpenAI-compatible speech | `POST /v1/audio/speech` | Works with LocalAI, OpenAI-compatible servers and most proxies. Asks for `response_format: "wav"`, so ffmpeg is not needed. List your server's voices in **Voices**. |
 
