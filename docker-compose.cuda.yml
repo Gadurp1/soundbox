@@ -9,11 +9,12 @@
 
 services:
   soundbox:
-    image: soundbox:cuda
-    build:
-      args:
-        AUDIOCPP_TAG: full-cuda12
-        AUDIOCPP_BACKEND: cuda
+    # uncomment to perform a local build instead
+    # image: soundbox:cuda
+    # build:
+    #  args:
+    #    AUDIOCPP_TAG: full-cuda12
+    #    AUDIOCPP_BACKEND: cuda
     deploy:
       resources:
         reservations:
