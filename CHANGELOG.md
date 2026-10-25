@@ -19,19 +19,6 @@ to follow [Semantic Versioning](https://semver.org/).
   download, Hugging Face gated or unreachable, disk full, timeout) in
   `server/src/failure.ts`; jobs carry the result as `failure`. A failed
   generation also stays on the Library page as a card instead of vanishing.
-
-### Changed
-
-- **Composer.** The Generate button keeps one width and names the running
-  job's stage ("Loading model", "Generating 42%"), Cancel keeps its place
-  instead of pushing the pills about, a progress strip runs along the card's
-  bottom edge, and whatever stops a run is said in one sentence with the link
-  that fixes it rather than a greyed-out button.
-- **Sidebar.** Each area's icon carries its own hue, the sidebar folds to an
-  icon rail on studio, Music and Voice Lab pages (with a "keep expanded"
-  preference in Settings → Interface and on the rail itself), and the device
-  row in the footer opens a panel with the GPU, VRAM in use, the loaded model
-  and an Unload button that frees the memory without a trip to Models.
 - **Command palette.** Ctrl/⌘+K now finds sounds, stories, voices and models
   as well as pages: a sound opens, a story opens in its builder, a model
   loads, downloads or unloads from the row. Settings rows appear once you
@@ -57,6 +44,19 @@ to follow [Semantic Versioning](https://semver.org/).
   fetches only what is missing; and a Self-test in a model's details renders
   one second through the normal path and reports the time and device without
   saving anything (`POST /api/models/:id/selftest`).
+
+### Changed
+
+- **Composer.** The Generate button keeps one width and names the running
+  job's stage ("Loading model", "Generating 42%"), Cancel keeps its place
+  instead of pushing the pills about, a progress strip runs along the card's
+  bottom edge, and whatever stops a run is said in one sentence with the link
+  that fixes it rather than a greyed-out button.
+- **Sidebar.** Each area's icon carries its own hue, the sidebar folds to an
+  icon rail on studio, Music and Voice Lab pages (with a "keep expanded"
+  preference in Settings → Interface and on the rail itself), and the device
+  row in the footer opens a panel with the GPU, VRAM in use, the loaded model
+  and an Unload button that frees the memory without a trip to Models.
 
 ## [0.3.0] - 2026-10-24
 
