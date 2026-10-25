@@ -8,6 +8,39 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Failure cards.** A generation or download that fails now says what
+  happened, why, what to do and what is kept, with up to two fix links, Retry
+  where a retry can help, the raw text under Details and a Copy diagnostic
+  button, in place of a bare red line or a toast. The server classifies the
+  common causes (GPU out of memory, system memory, paging file, missing
+  runtime, model not downloaded, corrupt model file, stalled or truncated
+  download, Hugging Face gated or unreachable, disk full, timeout) in
+  `server/src/failure.ts`; jobs carry the result as `failure`. A failed
+  generation also stays on the Library page as a card instead of vanishing.
+
+### Changed
+
+- **Composer.** The Generate button keeps one width and names the running
+  job's stage ("Loading model", "Generating 42%"), Cancel keeps its place
+  instead of pushing the pills about, a progress strip runs along the card's
+  bottom edge, and whatever stops a run is said in one sentence with the link
+  that fixes it rather than a greyed-out button.
+- **Sidebar.** Each area's icon carries its own hue, the sidebar folds to an
+  icon rail on studio, Music and Voice Lab pages (with a "keep expanded"
+  preference in Settings → Interface and on the rail itself), and the device
+  row in the footer opens a panel with the GPU, VRAM in use, the loaded model
+  and an Unload button that frees the memory without a trip to Models.
+- **Command palette.** Ctrl/⌘+K now finds sounds, stories, voices and models
+  as well as pages: a sound opens, a story opens in its builder, a model
+  loads, downloads or unloads from the row. Settings rows appear once you
+  type. On a page with a composer the first row is Generate, or Cancel while
+  a job runs. `?` opens a keyboard cheatsheet.
+- **Script Builder: paste a script.** Paste a scene or a passage and
+  Auto-cast reads the speaker cues and "said X" attributions, hands each
+  character a voice (a voice of the same name if there is one, otherwise the
+  next unused one) and adds the lines; or split prose into lines by
+  sentence, paragraph or chapter with a longest-line limit. An empty script
+  offers Add first line, Paste a script and Load sample.
 - **Library.** Every row carries its recipe (model, length, seed, steps,
   CFG, and whether it was extended or covered) so two takes of one prompt
   can be told apart; the sound page has a "How it was made" list with Copy

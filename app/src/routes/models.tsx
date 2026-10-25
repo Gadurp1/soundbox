@@ -51,6 +51,7 @@ import { Switch } from "@/components/ui/switch";
 
 import { ModelStatusPill, modelStatusLabel } from "@/components/model-status";
 import { LicenseChip, LicensePanel } from "@/components/license-badge";
+import { FailureCard } from "@/components/failure-card";
 import { Notice } from "@/components/notice";
 import { useJobStream } from "@/hooks/use-job-stream";
 import { formatBytes, formatHz, formatMb } from "@/lib/format";
@@ -68,7 +69,7 @@ import {
 } from "@/lib/queries";
 import { repoFile } from "@/lib/marketing-links";
 import { cn } from "@/lib/utils";
-import type { AudioCppCatalogEntry, LlmModelEntry, Model } from "@/lib/api";
+import type { AudioCppCatalogEntry, Job, LlmModelEntry, Model } from "@/lib/api";
 
 /* Column geometry, shared by the header strip and every row so the list reads
    as a table without being one.
@@ -194,9 +195,15 @@ function ModelListItem({
   const downloading =
     model.status === "downloading" || Boolean(jobId && job?.status === "running");
 
+  // A failed download used to leave nothing behind once its job was let
+  // go: the row refetched, read "Not installed" again, and the reason was
+  // gone. The last failure stays on the row until the next attempt or a
+  // dismiss.
+  const [lastFailure, setLastFailure] = useState<Job | null>(null);
   useEffect(() => {
     if (!job) return;
     if (job.status === "done" || job.status === "error" || job.status === "cancelled") {
+      if (job.status === "error") setLastFailure(job);
       setJobId(null);
       void qc.invalidateQueries({ queryKey: ["models"] });
     }
@@ -217,6 +224,7 @@ function ModelListItem({
 
   const startDownload = () => {
     setView(null);
+    setLastFailure(null);
     download.mutate(model.id, { onSuccess: (ref) => setJobId(ref.job_id) });
   };
 
@@ -499,14 +507,25 @@ function ModelListItem({
                   </Notice>
                 )}
 
-                {model.status === "error" && model.error && (
-                  <Notice tone="red">
-                    <TriangleAlertIcon
-                      className="mt-0.5 size-3.5 shrink-0"
-                      aria-hidden="true"
-                    />
-                    <p className="leading-relaxed">{model.error}</p>
-                  </Notice>
+                {lastFailure && !downloading && (
+                  <FailureCard
+                    compact
+                    failure={lastFailure.failure}
+                    error={lastFailure.error ?? "The download failed."}
+                    context={`Downloading ${model.name}`}
+                    onRetry={startDownload}
+                    retryLabel="Download again"
+                    onDismiss={() => setLastFailure(null)}
+                  />
+                )}
+
+                {model.status === "error" && model.error && !lastFailure && (
+                  <FailureCard
+                    compact
+                    failure={model.failure}
+                    error={model.error}
+                    context={model.name}
+                  />
                 )}
 
                 {model.status === "needs_runtime" &&

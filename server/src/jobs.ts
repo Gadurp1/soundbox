@@ -15,6 +15,7 @@
 import { randomUUID } from "node:crypto";
 
 import { CancelledJob, QueueFull } from "./errors.js";
+import { buildFailure } from "./failure.js";
 import { getLogger } from "./logging.js";
 import type { Job, JobPhase } from "./schemas.js";
 
@@ -453,6 +454,7 @@ export class JobManager {
           if (exc instanceof Error && exc.stack) log.error(exc.stack);
           job.status = "error";
           job.error = message;
+          job.failure = buildFailure(exc, { stage: job.phase });
           job.message = "Failed";
         }
       } finally {
