@@ -28,7 +28,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useJobStreams } from "@/hooks/use-job-stream";
-import {
+import { ApiError,
   api,
   errorMessage,
   type EditKind,
@@ -39,6 +39,7 @@ import {
   type Voice,
 } from "@/lib/api";
 import { usePrefillStore } from "@/lib/generate-store";
+import { composerBlocker } from "@/lib/composer-blocker";
 import { isNotReady, notReadyReason } from "@/lib/model-ready";
 import {
   clampDuration,
@@ -364,8 +365,41 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
     [sessionId, setSessionProject, setProjectIdStore],
   );
 
-  const running =
-    Boolean(jobId) && (!job || job.status === "queued" || job.status === "running");
+  // "Running" is the last-submitted turn still being pending, not the job
+  // stream's word for it: a finished turn leaves `pendingJobIds`, which
+  // drops its job from `jobs` and used to make `!job` read as "still
+  // starting" forever — a Cancel square that never went away, and now a
+  // button stuck on "Queued" with a strip that never stopped pulsing.
+  const running = useMemo(() => {
+    if (!jobId) return false;
+    const turn = turns.find((t) => t.jobId === jobId);
+    if (turn) return turn.status === "pending";
+    return Boolean(job && (job.status === "queued" || job.status === "running"));
+  }, [jobId, turns, job]);
+
+  // The server refuses an extend that wouldn't add anything, and a model
+  // that can't run the edit at all — fail here, with the reason, instead.
+  const blocker = useMemo(
+    () =>
+      composerBlocker({
+        prompt: settings.prompt,
+        modelId: settings.modelId,
+        model,
+        modelsLoading,
+        edit: settings.edit,
+        duration: settings.duration,
+        sourceDurationS: settings.sourceSound?.duration_s ?? null,
+      }),
+    [
+      settings.prompt,
+      settings.modelId,
+      settings.edit,
+      settings.duration,
+      settings.sourceSound,
+      model,
+      modelsLoading,
+    ],
+  );
 
   /* Pick a sensible default model once the list arrives. */
   useEffect(() => {
@@ -564,7 +598,12 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
           setJobId(ref.job_id);
           patchTurn(turnId, { jobId: ref.job_id });
         },
-        (err: Error) => patchTurn(turnId, { status: "error", error: err.message }),
+        (err: Error) =>
+          patchTurn(turnId, {
+            status: "error",
+            error: err.message,
+            failure: err instanceof ApiError ? err.failure : null,
+          }),
       );
     },
     [
@@ -631,6 +670,7 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
         patchTurnByJob(jid, {
           status: j.status === "error" ? "error" : "cancelled",
           error: j.error ?? null,
+          failure: j.failure ?? null,
         });
       }
     }
@@ -690,6 +730,24 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
       document.getElementById("prompt")?.focus();
     },
     [setSettings],
+  );
+
+  const removeTurn = useSessionStore((s) => s.removeTurn);
+
+  /** Run a failed turn again, unchanged: its request goes back into the
+   *  controls and straight out, and the failed turn makes way for the new
+   *  one so the thread does not show the same prompt twice. */
+  const retryTurn = useCallback(
+    (turn: Turn) => {
+      // An edit (extend, cover, repaint) needs its source sound, which the
+      // turn does not carry; resubmitting would quietly become a plain
+      // generation of the same prompt. Callers hide Retry for those.
+      if (turn.request.edit) return;
+      reuseTurn(turn);
+      removeTurn(turn.id);
+      submitWith();
+    },
+    [reuseTurn, removeTurn, submitWith],
   );
 
   /**
@@ -891,14 +949,10 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
     projects,
     projectId,
     changeProject,
-    canSubmit:
-      Boolean(settings.prompt.trim() && settings.modelId) &&
-      // The server refuses an "extend" that wouldn't add anything, and a
-      // model that can't run the edit at all — fail here, on the button.
-      (!settings.edit ||
-        (Boolean(model?.supports[settings.edit]) &&
-          (settings.edit !== "extend" ||
-            settings.duration > (settings.sourceSound?.duration_s ?? 0)))),
+    /** The one reason a submit would not go through, or null. The composer
+     *  renders it as a sentence with a link; `canSubmit` is its boolean. */
+    blocker,
+    canSubmit: blocker === null,
     submit,
     /** Submit with explicit changes applied first — see `submitWith`. Use
      *  this instead of patch-then-submit from any code path. */
@@ -908,6 +962,9 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
     clearEdit,
     cancelTurn,
     reuseTurn,
+    retryTurn,
+    /** Drop a failed turn once it has been read. */
+    dismissTurn: removeTurn,
     /** Whether the composer should show the enhance affordance at all. */
     llmEnabled: (llmStatus?.mode ?? "off") !== "off",
     enhance,

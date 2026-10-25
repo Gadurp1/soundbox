@@ -7,6 +7,7 @@
  */
 
 import type {
+  Failure,
   AssistantChatRequest,
   AssistantOpenersRequest,
   AssistantOpenersResponse,
@@ -1475,6 +1476,59 @@ function startMockJob(
   return { job_id: job.id };
 }
 
+/** The canned failures behind a "fail: <topic>" prompt. Any other word
+ *  after "fail:" gives an unclassified failure. */
+function mockFailure(prompt: string, job: Job): Failure | null {
+  const m = /^fail:\s*(\w+)?/i.exec(prompt.trim());
+  if (!m) return null;
+  const which = (m[1] ?? "").toLowerCase();
+  const base = { stage: job.phase, terminal: false };
+  switch (which) {
+    case "oom":
+      return {
+        ...base,
+        topic: "gpu_oom",
+        title: "The GPU ran out of memory",
+        hint:
+          "This is video memory, not system RAM. A shorter duration, fewer steps or variations, or a smaller model fits; closing other programs that use the GPU frees some. Everything already in the library is kept.",
+        fixes: [{ label: "Pick a smaller model", to: "/models" }],
+        detail:
+          "ggml_backend_cuda_buffer_type_alloc_buffer: allocating 2048.00 MiB on device 0: cudaMalloc failed: out of memory\nstable-audio: failed to allocate compute buffer\naudio.cpp exited with code 1.",
+      };
+    case "disk":
+      return {
+        ...base,
+        terminal: true,
+        topic: "disk_full",
+        title: "The disk is full",
+        hint:
+          "There was no room to write the file, so the partial file was removed. Free space on the drive that holds the Soundbox data directory, or move the models folder to another drive, then try again.",
+        fixes: [{ label: "Check storage in Settings", to: "/settings" }],
+        detail: "ENOSPC: no space left on device, write",
+      };
+    case "stalled":
+      return {
+        ...base,
+        topic: "download_stalled",
+        title: "The download stopped receiving data",
+        hint:
+          "The connection went quiet for too long, so the partial file was discarded and a retry starts clean. Check the network, a VPN or a proxy first.",
+        fixes: [{ label: "Open Models", to: "/models" }],
+        detail:
+          "Download of https://huggingface.co/stabilityai/stable-audio-open-small/resolve/main/model.gguf stalled — no data for 60s. Check your network and try again.",
+      };
+    default:
+      return {
+        ...base,
+        topic: null,
+        title: "audio.cpp exited with code 3.",
+        hint: null,
+        fixes: [],
+        detail: "audio.cpp exited with code 3.\n\n[stable-audio] unknown sampler 'dpm++'\n[stable-audio] aborting",
+      };
+  }
+}
+
 /** Walk a job through its phases over roughly three seconds. */
 async function runGenerateJob(job: Job, req: GenerateRequest) {
   const model = models.find((e) => e.id === req.model);
@@ -1484,6 +1538,20 @@ async function runGenerateJob(job: Job, req: GenerateRequest) {
   const needsLoad = model ? model.status !== "loaded" : false;
   job.started_at = new Date().toISOString();
   job.status = "running";
+
+  // "fail: oom" and friends make the job fail the way the server would,
+  // so the failure card can be seen without a GPU to run out of memory.
+  const forced = mockFailure(req.prompt, job);
+  if (forced) {
+    job.status = "error";
+    job.phase = "generating";
+    job.message = "Failed";
+    job.error = forced.detail;
+    job.failure = forced;
+    job.finished_at = new Date().toISOString();
+    emit(job);
+    return;
+  }
 
   if (needsLoad && model) {
     job.phase = "loading";
