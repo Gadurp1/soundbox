@@ -41,6 +41,13 @@ to follow [Semantic Versioning](https://semver.org/).
   next unused one) and adds the lines; or split prose into lines by
   sentence, paragraph or chapter with a longest-line limit. An empty script
   offers Add first line, Paste a script and Load sample.
+- **Library.** Every row carries its recipe (model, length, seed, steps,
+  CFG, and whether it was extended or covered) so two takes of one prompt
+  can be told apart; the sound page has a "How it was made" list with Copy
+  recipe. A sound's menu has Send to: add it to a story, open it in the
+  studio, or make a voice from it in the Voice Lab. The tag, model,
+  favourites and by-agents filters fold behind a Filters button whose
+  summary shows each chosen value as a chip that clears itself.
 - **README.** Shorter and faster to scan: a Make / Arrange / Connect table,
   a hardware table, profiles, an "install with a prompt" block for coding
   agents, and the source, Docker and API sections folded. `docs/INSTALL-AGENT.md`
