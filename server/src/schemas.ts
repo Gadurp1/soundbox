@@ -35,7 +35,24 @@ export type ModelStatus =
   | "installed"
   | "downloading"
   | "loaded"
+  /** Something of the weights is on disk but not enough to run: a download
+   *  that stopped, or a package missing a file. Repair downloads the rest. */
+  | "incomplete"
   | "error";
+
+/** What `POST /api/models/:id/selftest` reports: one short render through
+ *  the normal path, timed, nothing saved. */
+export interface ModelSelfTest {
+  model: string;
+  ok: boolean;
+  /** Where it ran, as the health endpoint names it. */
+  device: string;
+  /** Wall time including any load. */
+  elapsed_s: number;
+  /** Seconds of audio that came back, or null when it failed. */
+  rendered_s: number | null;
+  error: string | null;
+}
 
 export type JobStatus = "queued" | "running" | "done" | "error" | "cancelled";
 
@@ -339,7 +356,7 @@ export interface Failure {
 
 export interface Job {
   id: string;
-  kind: "generate" | "download" | "separate" | "speak" | "convert" | "segment" | "export";
+  kind: "generate" | "download" | "separate" | "speak" | "convert" | "segment" | "export" | "selftest";
   status: JobStatus;
   phase: JobPhase;
   progress: number;
