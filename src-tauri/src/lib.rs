@@ -11,10 +11,12 @@ mod backend;
 mod updater;
 
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 
-use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri::webview::{NewWindowFeatures, NewWindowResponse};
+use tauri::{Emitter, Manager, RunEvent, Url, WebviewUrl, WebviewWindowBuilder};
 
 /// How long to wait for the backend before giving up and showing an error.
 /// Generous on purpose: a first launch after a model install can be slow.
@@ -132,6 +134,46 @@ fn find_checkout() -> Option<PathBuf> {
     None
 }
 
+/// Opens the studio's pop-out panels as real windows.
+///
+/// The studio pops a panel out with `window.open("")` and renders into the
+/// blank page it gets back (see `app/src/lib/popout.ts`), so the new window
+/// has to stay attached to the page that opened it: same process, same
+/// origin, a live `window.opener`. A webview does not do that on its own —
+/// left alone, wry refuses `window.open` on macOS and Linux — so each request
+/// for a blank window becomes a native window built from the opener's own
+/// webview configuration, which is what keeps the two related.
+///
+/// Anything else (a link with `target="_blank"`) keeps the default
+/// behaviour; this exists for the panels, not as a general browser.
+fn popout_handler(
+    app: tauri::AppHandle,
+) -> impl Fn(Url, NewWindowFeatures) -> NewWindowResponse<tauri::Wry> + Send + 'static {
+    static NEXT: AtomicU32 = AtomicU32::new(1);
+    move |url, features| {
+        if url.as_str() != "about:blank" {
+            return NewWindowResponse::Allow;
+        }
+        let label = format!("panel-{}", NEXT.fetch_add(1, Ordering::Relaxed));
+        let built = WebviewWindowBuilder::new(&app, label, WebviewUrl::External(url))
+            .window_features(features)
+            .title("Soundbox")
+            // The page names itself after the panel ("Timeline · My story"),
+            // and the taskbar is where you find which window is which.
+            .on_document_title_changed(|window, title| {
+                let _ = window.set_title(&title);
+            })
+            .build();
+        match built {
+            Ok(window) => NewWindowResponse::Create { window },
+            Err(e) => {
+                backend::log_line(&format!("could not open a panel window: {e}"));
+                NewWindowResponse::Deny
+            }
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -152,6 +194,7 @@ pub fn run() {
             .inner_size(1200.0, 820.0)
             .min_inner_size(720.0, 560.0)
             .resizable(true)
+            .on_new_window(popout_handler(app.handle().clone()))
             .build()?;
 
             let handle = app.handle().clone();

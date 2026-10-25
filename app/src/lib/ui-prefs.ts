@@ -14,11 +14,15 @@ interface UiPrefs {
   /** Keep the sidebar open on studio and Voice Lab pages, where it folds to
    *  a rail by default so the timeline gets the width. */
   sidebarKeepExpanded: boolean;
+  /** How the studio lays its panels out: the three columns, or a canvas of
+   *  cards you place yourself (see `panel-canvas`). One choice for every
+   *  story, because it is how you work rather than what you are working on. */
+  studioLayout: "columns" | "canvas";
   set: (patch: Partial<Omit<UiPrefs, "set">>) => void;
 }
 
 function load(): Omit<UiPrefs, "set"> {
-  const defaults = { sidebarKeepExpanded: false };
+  const defaults: Omit<UiPrefs, "set"> = { sidebarKeepExpanded: false, studioLayout: "columns" };
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaults;
