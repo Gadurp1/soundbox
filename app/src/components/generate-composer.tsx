@@ -28,6 +28,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpIcon,
+  ArrowUpRightIcon,
   ClockIcon,
   CpuIcon,
   DicesIcon,
@@ -43,7 +44,6 @@ import {
   SparklesIcon,
   SquareIcon,
   TagIcon,
-  TriangleAlertIcon,
   Undo2Icon,
   UserRoundIcon,
 } from "lucide-react";
@@ -66,9 +66,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ModelStatusPill } from "@/components/model-status";
 import { LicenseChip } from "@/components/license-badge";
 import { VoiceAvatar } from "@/components/voice-avatar";
-import { Notice } from "@/components/notice";
+import { PHASE_LABEL } from "@/components/pending-sound-row";
 import { formatDuration } from "@/lib/format";
-import type { Model, Project, Voice } from "@/lib/api";
+import type { Job, Model, Project, Voice } from "@/lib/api";
+import type { ComposerBlocker } from "@/lib/composer-blocker";
 import { NOT_READY } from "@/lib/model-ready";
 import { clampDuration, type ComposerSettings } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
@@ -150,7 +151,13 @@ interface ComposerProps {
   modelsLoading: boolean;
   model: Model | undefined;
   running: boolean;
-  canSubmit: boolean;
+  /** The last-submitted job while it is in flight, so the button can name
+   *  its stage and the card edge can show its progress. Null when idle. */
+  job: Job | null;
+  /** The one reason a submit would not go through, or null. Rendered as a
+   *  sentence with a link above the controls — never as a bare disabled
+   *  button, which says that something is wrong and nothing about what. */
+  blocker: ComposerBlocker | null;
   onSubmit: () => void;
   onCancel: () => void;
   /** Estimated wall time for this request, or null when we genuinely do not
@@ -200,7 +207,8 @@ export function GenerateComposer({
   modelsLoading,
   model,
   running,
-  canSubmit,
+  job,
+  blocker,
   onSubmit,
   onCancel,
   estimateS,
@@ -279,7 +287,42 @@ export function GenerateComposer({
     return "No model";
   }, [model, modelsLoading]);
 
-  const modelNotReady = Boolean(model && NOT_READY.has(model.status));
+  /* --------------------------------------------------------- button */
+
+  /** What the Generate button says. Idle: the verb. Running: the stage of
+   *  the last-submitted job, with its percentage once the model is actually
+   *  rendering — the same words `PendingSoundRow` uses for the same job, so
+   *  the button and the row above it never disagree about what is going on.
+   *  The button keeps a fixed width so none of these changes shifts the
+   *  pills beside it. */
+  const verb = isTts ? "Speak" : "Generate";
+  const stageLabel = (() => {
+    if (!running) return verb;
+    if (!job) return "Queued";
+    const base = PHASE_LABEL[job.phase] ?? job.phase;
+    if (job.phase === "generating" && job.progress > 0) {
+      return `${base} ${Math.round(job.progress * 100)}%`;
+    }
+    return base;
+  })();
+
+  /** 0–100 for the strip along the card's bottom edge; null while the job is
+   *  queued or has reported nothing yet, which renders an indeterminate pulse
+   *  rather than an empty bar pretending to be at zero. */
+  const stripPercent =
+    running && job && job.status === "running" && job.progress > 0
+      ? Math.min(100, Math.round(job.progress * 100))
+      : null;
+
+  /** The button's click when blocked: focus the box when the box is the fix,
+   *  otherwise nothing — the sentence above already says where to go. */
+  const handleSubmit = () => {
+    if (blocker) {
+      if (blocker.focusPrompt) document.getElementById("prompt")?.focus();
+      return;
+    }
+    onSubmit();
+  };
 
   /* ------------------------------------------------------------- voices */
 
@@ -362,7 +405,7 @@ export function GenerateComposer({
   return (
     <div
       className={cn(
-        "bg-card ring-foreground/10 rounded-2xl p-2 shadow-lg ring-1",
+        "bg-card ring-foreground/10 relative rounded-2xl p-2 shadow-lg ring-1",
         "focus-within:ring-ring/40 transition-shadow",
       )}
     >
@@ -609,6 +652,29 @@ export function GenerateComposer({
           </div>
         )}
       </div>
+
+      {/* ----------------------------------------------------------- blocker */}
+      {/* One reason, one sentence, one link — above the controls so it reads
+          before the button it explains. Never a bare disabled button: that
+          says something is wrong and nothing about what. Hidden while a job
+          runs, when the stage label already has the floor. */}
+      {blocker && !running && (
+        <p
+          role="status"
+          className="text-muted-foreground mx-1 mt-0.5 mb-1 flex flex-wrap items-center gap-x-1.5 text-xs leading-relaxed"
+        >
+          <span>{blocker.sentence}</span>
+          {blocker.link && (
+            <Link
+              to={blocker.link.to}
+              className="text-foreground inline-flex items-center gap-0.5 font-medium underline underline-offset-4"
+            >
+              {blocker.link.label}
+              <ArrowUpRightIcon className="size-3" aria-hidden="true" />
+            </Link>
+          )}
+        </p>
+      )}
 
       {/* ---------------------------------------------------------- controls */}
       <div className="mt-1 flex items-center gap-2 px-0.5">
@@ -1064,28 +1130,51 @@ export function GenerateComposer({
           {/* Cancel affords stopping the last-submitted job, but no longer
               replaces Submit — several turns can be in flight together now,
               so hiding Submit behind "running" is exactly what used to make
-              a second Generate click silently do nothing. */}
-          {running && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              onClick={onCancel}
-              aria-label="Cancel the running job"
-              className="rounded-full"
-            >
-              <SquareIcon />
-            </Button>
-          )}
+              a second Generate click silently do nothing. Its square is
+              always reserved and merely invisible when idle, so the row does
+              not jump by 36px every time a job starts or ends. */}
           <Button
             type="button"
+            variant="secondary"
             size="icon"
-            onClick={onSubmit}
-            disabled={!canSubmit || modelNotReady}
-            aria-label={isTts ? "Speak" : "Generate"}
-            className="rounded-full shadow-sm transition-transform hover:scale-105 active:scale-95"
+            onClick={onCancel}
+            aria-label="Cancel the running job"
+            aria-hidden={!running}
+            tabIndex={running ? 0 : -1}
+            disabled={!running}
+            className={cn("rounded-full", !running && "invisible")}
           >
-            <ArrowUpIcon />
+            <SquareIcon />
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSubmit}
+            aria-disabled={Boolean(blocker)}
+            aria-busy={running}
+            aria-label={
+              running
+                ? `${stageLabel}. ${verb} again to queue another.`
+                : blocker
+                  ? `${verb} is unavailable: ${blocker.sentence}`
+                  : verb
+            }
+            className={cn(
+              "h-8 w-36 justify-start gap-1.5 overflow-hidden rounded-full pr-3 pl-2.5 text-xs shadow-sm transition-[transform,opacity]",
+              blocker
+                ? "cursor-default opacity-50 hover:bg-primary active:scale-100"
+                : "hover:scale-[1.03] active:scale-95",
+            )}
+          >
+            {running ? (
+              <span
+                className="bg-primary-foreground/80 size-2 shrink-0 animate-pulse rounded-full motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+            ) : (
+              <ArrowUpIcon className="size-4 shrink-0" aria-hidden="true" />
+            )}
+            <span className="truncate text-left tabular-nums">{stageLabel}</span>
           </Button>
         </div>
       </div>
@@ -1142,65 +1231,30 @@ export function GenerateComposer({
         </Popover>
       </div>
 
-      {modelNotReady && model && (
-        <Notice
-          tone={model.status === "error" ? "red" : "amber"}
-          className="mx-0.5 mt-1.5"
+      {/* ------------------------------------------------------ progress */}
+      {/* A 2px strip along the card's bottom edge while a job runs. Known
+          progress fills it; an unknown stage (queued, loading) pulses the
+          whole strip rather than parking a bar at zero. */}
+      {running && (
+        <div
+          className="bg-muted absolute inset-x-0 bottom-0 h-0.5 overflow-hidden rounded-b-2xl"
+          role="progressbar"
+          aria-label="Job progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={stripPercent ?? undefined}
+          aria-valuetext={stripPercent === null ? stageLabel : `${stripPercent}%`}
         >
-          <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-          <p className="leading-relaxed">
-            {model.status === "not_installed" && (
-              <>
-                {model.name} isn&rsquo;t installed yet — its weights need to be
-                downloaded before it can generate. Go to{" "}
-                <Link to="/models" className="font-medium underline underline-offset-4">
-                  Models
-                </Link>{" "}
-                to download it.
-              </>
+          <div
+            className={cn(
+              "bg-primary h-full",
+              stripPercent === null
+                ? "w-full animate-pulse motion-reduce:animate-none"
+                : "transition-[width] duration-300",
             )}
-            {model.status === "needs_runtime" && (
-              <>
-                The weights are downloaded, but this server cannot import{" "}
-                {model.name}&rsquo;s runtime
-                {model.extras.length > 0 && (
-                  <>
-                    {" "}
-                    (needs{" "}
-                    <code className="text-foreground/80">{model.extras.join(", ")}</code>)
-                  </>
-                )}
-                . See{" "}
-                <Link to="/models" className="font-medium underline underline-offset-4">
-                  Models
-                </Link>{" "}
-                for the install command.
-              </>
-            )}
-            {model.status === "incomplete" && (
-              <>
-                {model.name}&rsquo;s download did not finish, so its weights can&rsquo;t be
-                used. Repair it in{" "}
-                <Link to="/models" className="font-medium underline underline-offset-4">
-                  Models
-                </Link>
-                ; what is already there is kept.
-              </>
-            )}
-            {model.status === "downloading" && (
-              <>
-                {model.name} is still downloading its weights. Generate will be
-                available once that finishes.
-              </>
-            )}
-            {model.status === "error" && (
-              <>
-                {model.error ||
-                  `${model.name} is in an error state and can't generate right now.`}
-              </>
-            )}
-          </p>
-        </Notice>
+            style={stripPercent === null ? undefined : { width: `${stripPercent}%` }}
+          />
+        </div>
       )}
 
       <p id="composer-hint" className="sr-only">

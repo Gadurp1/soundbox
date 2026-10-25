@@ -31,6 +31,7 @@ import { EndpointSettingsCard } from "@/components/endpoint-settings";
 import { FolderPickerDialog } from "@/components/folder-picker";
 import { SettingsLayout, SettingsSection } from "@/components/settings-layout";
 import { OutputDeviceCard } from "@/components/output-device-card";
+import { useUiPrefs } from "@/lib/ui-prefs";
 import {
   useAudioCppRuntime,
   useHealth,
@@ -704,6 +705,10 @@ export function SettingsPage() {
         </Card>
       </SettingsSection>
 
+      <SettingsSection id="interface" title="Interface">
+        <InterfaceCard />
+      </SettingsSection>
+
       <SettingsSection id="advanced" title="Advanced">
         {/* ------------------------------------------------------ telemetry */}
         <Card>
@@ -820,5 +825,37 @@ export function SettingsPage() {
         </Card>
       </SettingsSection>
     </SettingsLayout>
+  );
+}
+
+/** Per-browser interface preferences (see `ui-prefs.ts`): nothing here
+ *  reaches the server, so there is no save round trip and no loading state. */
+function InterfaceCard() {
+  const keep = useUiPrefs((s) => s.sidebarKeepExpanded);
+  const set = useUiPrefs((s) => s.set);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Interface</CardTitle>
+        <CardDescription>Kept in this browser, not on the server.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <Label htmlFor="sidebar-keep">Keep the sidebar open in the studio</Label>
+            <p className="text-muted-foreground text-xs">
+              Leaves the navigation expanded on studio, Music and Voice Lab pages. Off: it folds
+              to an icon rail there so the timeline gets the width, and opens again when you
+              leave.
+            </p>
+          </div>
+          <Switch
+            id="sidebar-keep"
+            checked={keep}
+            onCheckedChange={(on) => set({ sidebarKeepExpanded: on })}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 }

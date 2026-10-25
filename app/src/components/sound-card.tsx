@@ -11,8 +11,11 @@ import {
   FolderIcon,
   FolderOpenIcon,
   Maximize2Icon,
+  MicIcon,
   MoreHorizontalIcon,
   PencilIcon,
+  ScrollTextIcon,
+  SendIcon,
   RotateCcwIcon,
   ScissorsIcon,
   SlidersHorizontalIcon,
@@ -40,6 +43,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,6 +57,7 @@ import { PeakGlyph } from "@/components/peak-glyph";
 import { WaveformPlayer } from "@/components/waveform-player";
 import { downloadSound, formatBytes, formatRelative } from "@/lib/format";
 import {
+  useStories,
   useDeleteSound,
   useModels,
   useProjects,
@@ -62,6 +70,7 @@ import {
 import { api } from "@/lib/api";
 import { usePlayerStore } from "@/lib/player-store";
 import { instrumentIcon } from "@/lib/instrument-icons";
+import { recipeLine } from "@/lib/recipe";
 import { cn } from "@/lib/utils";
 import type { EditKind, Sound } from "@/lib/api";
 
@@ -116,6 +125,26 @@ export function SoundCard({
   const { data: models } = useModels();
   const separate = useSeparateSound();
   const openInStudio = useStoryFromSound();
+  const { data: stories } = useStories(20);
+  /** Drop this sound onto a story's timeline, after whatever is already
+   *  there, and say where it went. */
+  const addToStory = (storyId: string, title: string) => {
+    api
+      .createSegment(storyId, { sound_id: sound.id, text: "" })
+      .then(() => {
+        void qc.invalidateQueries({ queryKey: ["stories"] });
+        void qc.invalidateQueries({ queryKey: ["story", storyId] });
+        const story = stories?.find((st) => st.id === storyId);
+        toast.success(`Added to “${title}”`, {
+          action: story
+            ? { label: "Open", onClick: () => navigate(`/studio/${story.builder}/${storyId}`) }
+            : undefined,
+        });
+      })
+      .catch((exc: unknown) => {
+        toast.error(exc instanceof Error ? exc.message : `Could not add it to “${title}”`);
+      });
+  };
   const playSound = usePlayerStore((s) => s.play);
   const setNowPlaying = usePlayerStore((s) => s.setSound);
   const [opening, setOpening] = useState(false);
@@ -374,12 +403,15 @@ export function SoundCard({
 
         <div className="order-2 min-w-0 flex-1 basis-full sm:basis-48">
           {nameControl}
-          {/* The reference's `Uploader | Tag, Tag` line: here the two facts
-              that actually locate a sound are the model that made it and its
-              tags. */}
-          <p className="text-muted-foreground mt-0.5 flex min-w-0 items-center gap-1 truncate text-xs">
+          {/* The recipe line: the model and the settings that made this, so a
+              row can be told from its neighbour that was the same prompt with
+              another seed. Tags follow, as before. */}
+          <p
+            className="text-muted-foreground mt-0.5 flex min-w-0 items-center gap-1 truncate text-xs"
+            title={recipeLine(sound, modelName)}
+          >
             <UserRoundIcon className="size-3 shrink-0" aria-hidden="true" />
-            <span className="truncate">{modelName ?? sound.model}</span>
+            <span className="truncate">{recipeLine(sound, modelName)}</span>
             {sound.tags.length > 0 && (
               <>
                 <span aria-hidden="true">|</span>
@@ -551,45 +583,73 @@ export function SoundCard({
                 <FolderOpenIcon />
                 Open in Finder
               </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={opening}
-                onClick={() => {
-                  // Splitting is a choice — which stems, and what happens to
-                  // the rest — so it gets asked. Opening something whole has
-                  // nothing to ask about and just goes.
-                  if (splittable) {
-                    setStemPicker("studio");
-                    return;
-                  }
-                  setOpening(true);
-                  openInStudio.mutate(
-                    { soundId: sound.id, separate: splittable },
-                    {
-                      onSuccess: ({ job_id }) => {
-                        const stop = api.subscribeJob(job_id, (job) => {
-                          if (job.status === "done") {
-                            stop();
-                            setOpening(false);
-                            void qc.invalidateQueries({ queryKey: ["sounds"] });
-                            const storyId = job.result?.story_id as string | undefined;
-                            // Stems on lanes with nothing written: the Music Builder's
-                    // shape, and what the server files it as.
-                    if (storyId) navigate(`/studio/music/${storyId}`);
-                          } else if (job.status === "error" || job.status === "cancelled") {
-                            stop();
-                            setOpening(false);
-                            toast.error(job.error || "Could not open this in the studio");
-                          }
-                        });
-                      },
-                      onError: () => setOpening(false),
-                    },
-                  );
-                }}
-              >
-                <SlidersHorizontalIcon />
-                {splittable ? "Split into tracks and open in studio…" : "Open in the studio"}
-              </DropdownMenuItem>
+              {/* Where a sound goes next. Three destinations, one verb, so the
+                  menu does not grow a row per place a sound could land. */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <SendIcon />
+                  Send to
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-56">
+                  {(stories ?? []).length > 0 && (
+                    <>
+                      {(stories ?? []).slice(0, 6).map((story) => (
+                        <DropdownMenuItem
+                          key={story.id}
+                          onClick={() => addToStory(story.id, story.title)}
+                        >
+                          <ScrollTextIcon />
+                          <span className="truncate">Add to “{story.title}”</span>
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    disabled={opening}
+                    onClick={() => {
+                      // Splitting is a choice — which stems, and what happens to
+                      // the rest — so it gets asked. Opening something whole has
+                      // nothing to ask about and just goes.
+                      if (splittable) {
+                        setStemPicker("studio");
+                        return;
+                      }
+                      setOpening(true);
+                      openInStudio.mutate(
+                        { soundId: sound.id, separate: splittable },
+                        {
+                          onSuccess: ({ job_id }) => {
+                            const stop = api.subscribeJob(job_id, (job) => {
+                              if (job.status === "done") {
+                                stop();
+                                setOpening(false);
+                                void qc.invalidateQueries({ queryKey: ["sounds"] });
+                                const storyId = job.result?.story_id as string | undefined;
+                                // Stems on lanes with nothing written: the Music Builder's
+                        // shape, and what the server files it as.
+                        if (storyId) navigate(`/studio/music/${storyId}`);
+                              } else if (job.status === "error" || job.status === "cancelled") {
+                                stop();
+                                setOpening(false);
+                                toast.error(job.error || "Could not open this in the studio");
+                              }
+                            });
+                          },
+                          onError: () => setOpening(false),
+                        },
+                      );
+                    }}
+                  >
+                    <SlidersHorizontalIcon />
+                    {splittable ? "Split into tracks and open in studio…" : "Open in the studio"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(`/voice/lab?from=${sound.id}`)}>
+                    <MicIcon />
+                    Make a voice from this
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               {sepModel && (
                 <DropdownMenuItem disabled={separating} onClick={() => setStemPicker("library")}>
                   <ScissorsIcon />

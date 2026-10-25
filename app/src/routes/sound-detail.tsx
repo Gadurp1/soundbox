@@ -19,6 +19,7 @@ import {
   RotateCcwIcon,
   StarIcon,
   Trash2Icon,
+  CopyIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -52,6 +53,7 @@ import {
   useUpdateSound,
 } from "@/lib/queries";
 import { api } from "@/lib/api";
+import { recipeText } from "@/lib/recipe";
 import { cn } from "@/lib/utils";
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
@@ -393,12 +395,29 @@ export function SoundDetailPage() {
       <StemGroup sourceId={sound.id} className="mt-4" />
 
       <section aria-labelledby="provenance" className="mt-8">
-        <h2 id="provenance" className="font-heading text-lg font-semibold tracking-tight">
-          Generation details
-        </h2>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-          Everything used to make this clip — reuse it as a starting point from the button above.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 id="provenance" className="font-heading text-lg font-semibold tracking-tight">
+              How it was made
+            </h2>
+            <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+              Everything used to make this clip. Reuse it as a starting point from the button
+              above, or copy it as text for a note or an issue.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void navigator.clipboard
+                .writeText(recipeText(sound, modelName))
+                .then(() => toast.success("Recipe copied"));
+            }}
+          >
+            <CopyIcon />
+            Copy recipe
+          </Button>
+        </div>
         <dl className="bg-card ring-border/70 mt-4 rounded-2xl p-5 ring-1">
           <Fact label="Model" value={modelName} />
           <Fact label="Prompt" value={sound.prompt} />

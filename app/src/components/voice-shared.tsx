@@ -19,7 +19,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /* oxlint-disable only-export-components */
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   MicIcon,
@@ -53,6 +53,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { FailureCard } from "@/components/failure-card";
 import { LoadingVerb } from "@/components/loading-verb";
 import { TidySwitch, clipsSummary } from "@/components/voice-clips";
 import { SoundCard } from "@/components/sound-card";
@@ -65,7 +66,7 @@ import { AUDIO_ACCEPT, stemOf, toWav } from "@/lib/audio-file";
 import { isBusyPhase } from "@/lib/loading-verbs";
 import { cn } from "@/lib/utils";
 import { useCreateVoice, useSound, useUploadVoice } from "@/lib/queries";
-import type { Job, Model, Voice } from "@/lib/api";
+import type { Job, Model, Sound, Voice } from "@/lib/api";
 
 export { VoiceAvatar };
 
@@ -101,11 +102,7 @@ export function JobResult({ job }: { job: Job | null }) {
   if (!job) return null;
 
   if (job.status === "error") {
-    return (
-      <p className="bg-danger/5 text-danger ring-danger/30 rounded-xl px-3 py-2.5 text-sm ring-1 ring-inset">
-        {job.error ?? "The job failed."}
-      </p>
-    );
+    return <FailureCard compact failure={job.failure} error={job.error ?? "The job failed."} />;
   }
   if (job.status === "cancelled") {
     return <p className="text-muted-foreground text-sm">Cancelled.</p>;
@@ -235,10 +232,14 @@ export function AddVoiceDialog({
   open,
   onOpenChange,
   ttsModels,
+  sourceSound = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   ttsModels: Model[];
+  /** A library sound to clone from, in place of a clip to upload or record:
+   *  "Make a voice from this" on a sound's menu lands here. */
+  sourceSound?: Sound | null;
 }) {
   const upload = useUploadVoice();
   const create = useCreateVoice();
@@ -261,6 +262,12 @@ export function AddVoiceDialog({
    *  a script posting bytes wants them kept. */
   const [tidy, setTidy] = useState(true);
   const cloneModel = cloneModels.find((m) => m.id === cloneModelId) ?? null;
+
+  // A sound arriving from the library names the voice after itself until
+  // something better is typed.
+  useEffect(() => {
+    if (open && sourceSound) setUploadName((n) => n || sourceSound.name);
+  }, [open, sourceSound]);
 
   /** Every built-in across every installed TTS model, as one flat list.
    *
@@ -392,13 +399,39 @@ export function AddVoiceDialog({
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add a voice</DialogTitle>
+          <DialogTitle>{sourceSound ? "Make a voice from this sound" : "Add a voice"}</DialogTitle>
           <DialogDescription>
-            Clone one from a clip you upload or record, or save a voice a model
-            already ships.
+            {sourceSound
+              ? `“${sourceSound.name}” becomes the reference clip. The sound itself is kept as it is.`
+              : "Clone one from a clip you upload or record, or save a voice a model already ships."}
           </DialogDescription>
         </DialogHeader>
 
+        {sourceSound ? (
+          <div className="space-y-3">
+            {clipFields}
+            <DialogFooter>
+              <Button
+                disabled={!uploadName.trim() || !cloneModel || create.isPending}
+                onClick={() =>
+                  create.mutate(
+                    {
+                      name: uploadName.trim(),
+                      kind: "clone",
+                      model_id: cloneModelId,
+                      notes: notes.trim() || null,
+                      source_sound_id: sourceSound.id,
+                      tidy,
+                    },
+                    { onSuccess: close },
+                  )
+                }
+              >
+                {create.isPending ? "Saving…" : "Save voice"}
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : (
         <Tabs defaultValue="upload">
           <TabsList>
             <TabsTrigger value="upload">Upload clip</TabsTrigger>
@@ -608,6 +641,7 @@ export function AddVoiceDialog({
             )}
           </TabsContent>
         </Tabs>
+        )}
       </DialogContent>
     </Dialog>
   );
