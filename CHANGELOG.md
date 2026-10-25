@@ -18,7 +18,8 @@ to follow [Semantic Versioning](https://semver.org/).
   its header past the edge of the window, or press its pop-out button. A
   popped-out panel shares the studio's state, opens its menus in its own
   window and passes keyboard shortcuts through. Closing the window puts the
-  panel back. The desktop app opens these as native windows.
+  panel back, and docking or closing the panel, or leaving the studio, closes
+  the window. The desktop app opens these as native windows.
 - **Failure cards.** A generation or download that fails now says what
   happened, why, what to do and what is kept, with up to two fix links, Retry
   where a retry can help, the raw text under Details and a Copy diagnostic
