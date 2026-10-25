@@ -55,6 +55,10 @@ to follow [Semantic Versioning](https://semver.org/).
   fetches only what is missing; and a Self-test in a model's details renders
   one second through the normal path and reports the time and device without
   saving anything (`POST /api/models/:id/selftest`).
+- **README.** Shorter and faster to scan: a Make / Arrange / Connect table,
+  a hardware table, profiles, an "install with a prompt" block for coding
+  agents, and the source, Docker and API sections folded. `docs/INSTALL-AGENT.md`
+  is the runbook that prompt points at.
 
 ## [0.3.0] - 2026-10-24
 
