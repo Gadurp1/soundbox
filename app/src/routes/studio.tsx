@@ -1366,7 +1366,7 @@ export function StudioEditor({
   const panelCommands: Command[] = panels.map((panel) => ({
     id: panel.id,
     label: panel.label,
-    hint: `${MOD_LABEL}${panel.key.toUpperCase()}`,
+    hint: ["mod", panel.key.toUpperCase()],
     // An unavailable panel is not "on", whatever `closedPanels` happens to
     // say about it — a tick beside a row you cannot choose is just confusing.
     active: !closedPanels.has(panel.id),
