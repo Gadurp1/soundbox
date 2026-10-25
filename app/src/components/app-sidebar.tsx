@@ -5,7 +5,7 @@
  * rail (Ctrl/Cmd+B, or the trigger in the header).
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import {
@@ -22,6 +22,7 @@ import {
   MicIcon,
   MoonIcon,
   MusicIcon,
+  PanelLeftIcon,
   PlusIcon,
   SearchIcon,
   SettingsIcon,
@@ -57,8 +58,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useDeleteSession, useHealth, useSessions } from "@/lib/queries";
+import { useDeleteSession, useHealth, useModelAction, useModels, useSessions } from "@/lib/queries";
+import { useUiPrefs, wantsRail } from "@/lib/ui-prefs";
 import { formatMb, formatRelative } from "@/lib/format";
 import { SITE_URL } from "@/lib/marketing-links";
 import { useNewStudioPicker } from "@/components/new-studio-dialog";
@@ -91,40 +95,41 @@ import { cn } from "@/lib/utils";
  * `end: true` would go dark the moment you opened a story, so `end: false`
  * with an `except` is what lights exactly one of them.
  */
-const NAV_STUDIO = [
+const NAV_STUDIO: NavItem[] = [
   {
     to: "/studio",
     label: "Studio",
     icon: MessagesSquareIcon,
     end: false,
+    hue: "studio",
   },
-  { to: "/voice/lab", label: "Voice Lab", icon: MicIcon, end: false },
+  { to: "/voice/lab", label: "Voice Lab", icon: MicIcon, end: false, hue: "voice" },
   // A project is a folder over many samples, not a single kind of one — so
   // unlike Samples below it isn't category-scoped, and it isn't a browse
   // surface either (it's where you organize what Studio work produced). That
   // makes it a Studio entry, not a third group between Studio and Samples.
-  { to: "/projects", label: "Projects", icon: FolderIcon, end: false },
-  { to: "/models", label: "Models", icon: CpuIcon, end: false },
+  { to: "/projects", label: "Projects", icon: FolderIcon, end: false, hue: "projects" },
+  { to: "/models", label: "Models", icon: CpuIcon, end: false, hue: "models" },
   // MCP is a first-class surface, not a footer utility link: this is where an
   // agent connected over MCP shows up, so it lives beside the areas a human
   // works in, not tucked under Settings/Activity.
-  { to: "/agents", label: "Agents", icon: BotIcon, end: false },
+  { to: "/agents", label: "Agents", icon: BotIcon, end: false, hue: "agents" },
 ];
 
 /** Samples: what you have already made, split by kind so an SFX browse never
  *  turns up a music track or a spoken read. Browsing, not doing — which is why
  *  it is a group of its own rather than more entries under Studio. */
-const NAV_SAMPLES = [
-  { to: "/library/speech", label: "Text to Speech", icon: MessageSquareTextIcon, end: false },
-  { to: "/library/sfx", label: "SFX", icon: AudioLinesIcon, end: false },
-  { to: "/library/music", label: "Music", icon: MusicIcon, end: false },
+const NAV_SAMPLES: NavItem[] = [
+  { to: "/library/speech", label: "Text to Speech", icon: MessageSquareTextIcon, end: false, hue: "voice" },
+  { to: "/library/sfx", label: "SFX", icon: AudioLinesIcon, end: false, hue: "sfx" },
+  { to: "/library/music", label: "Music", icon: MusicIcon, end: false, hue: "music" },
 ];
 
 /** App-level nav — not content you're working in, so it lives in the sticky
  *  footer alongside About/theme/device rather than the scrollable content
  *  area, where it would otherwise drift out of view under a long Recent
  *  list. */
-const NAV_FOOTER = [
+const NAV_FOOTER: NavItem[] = [
   { to: "/settings", label: "Settings", icon: SettingsIcon, end: false },
   { to: "/activity", label: "Activity", icon: ActivityIcon, end: false },
   // No "API & MCP" entry: the reference is published once, on the public site
@@ -348,6 +353,25 @@ ${s.sound_count} sound${s.sound_count === 1 ? "" : "s"} · ${formatRelative(s.up
   );
 }
 
+/**
+ * One hue per area, so the rail reads as a row of places rather than a
+ * column of identical grey glyphs. The tint is on the icon only, muted while
+ * the item is idle and full when it is active, and the Samples entries share
+ * the hue of the Studio area that makes them (speech with the Voice Lab). The
+ * footer utilities stay neutral: they are not places you work.
+ */
+type NavHue = "studio" | "voice" | "projects" | "models" | "agents" | "sfx" | "music";
+
+const HUE_CLASS: Record<NavHue, string> = {
+  studio: "[&_svg]:text-teal-600 dark:[&_svg]:text-teal-400",
+  voice: "[&_svg]:text-violet-600 dark:[&_svg]:text-violet-400",
+  projects: "[&_svg]:text-amber-600 dark:[&_svg]:text-amber-400",
+  models: "[&_svg]:text-sky-600 dark:[&_svg]:text-sky-400",
+  agents: "[&_svg]:text-fuchsia-600 dark:[&_svg]:text-fuchsia-400",
+  sfx: "[&_svg]:text-orange-600 dark:[&_svg]:text-orange-400",
+  music: "[&_svg]:text-indigo-600 dark:[&_svg]:text-indigo-400",
+};
+
 interface NavItem {
   to: string;
   label: string;
@@ -356,6 +380,40 @@ interface NavItem {
   /** A child path that belongs to a *different* nav item, and so must not
    *  light this one up. See "/voice" vs "/voice/lab". */
   except?: string;
+  /** Area tint for the icon. Omitted for the neutral footer utilities. */
+  hue?: NavHue;
+}
+
+/**
+ * Fold to the rail on a `wantsRail` page and unfold again on the way out,
+ * restoring whatever the user had before. A choice made *on* such a page
+ * (Ctrl/Cmd+B, the rail) is theirs and is left alone until the next
+ * navigation. The preference turns the whole behaviour off.
+ */
+function useRailOnImmersivePages() {
+  const { pathname } = useLocation();
+  const { open, setOpen, isMobile } = useSidebar();
+  const keepExpanded = useUiPrefs((s) => s.sidebarKeepExpanded);
+  const rail = wantsRail(pathname);
+  /** The open state to go back to once a rail page is left; null when we
+   *  did not fold it ourselves. */
+  const restore = useRef<boolean | null>(null);
+  const openRef = useRef(open);
+  openRef.current = open;
+
+  useEffect(() => {
+    if (isMobile) return;
+    if (rail && !keepExpanded) {
+      if (restore.current === null) {
+        restore.current = openRef.current;
+        if (openRef.current) setOpen(false);
+      }
+    } else if (restore.current !== null) {
+      const back = restore.current;
+      restore.current = null;
+      if (back) setOpen(true);
+    }
+  }, [rail, keepExpanded, isMobile, setOpen]);
 }
 
 /** True when `path` falls under an item's carved-out exception, so a parent
@@ -393,7 +451,12 @@ function NavGroup({
                   <SidebarMenuButton
                     isActive={isActive && !matchesExcept(item, pathname)}
                     tooltip={item.label}
-                    className="transition-colors duration-(--duration-fast) [&[data-active=true]_svg]:text-sidebar-primary"
+                    className={cn(
+                      "transition-colors duration-(--duration-fast)",
+                      item.hue
+                        ? cn(HUE_CLASS[item.hue], "[&_svg]:opacity-70 [&[data-active=true]_svg]:opacity-100")
+                        : "[&[data-active=true]_svg]:text-sidebar-primary",
+                    )}
                     asChild
                   >
                     <span>
@@ -411,10 +474,18 @@ function NavGroup({
   );
 }
 
+/**
+ * The device row: a dot for the backend, the GPU's name, and VRAM in use.
+ * Clicking it opens the one place the loaded model can be seen and unloaded
+ * without a trip to Models — freeing VRAM is the thing people want from this
+ * row when a generation has just failed for lack of it.
+ */
 function DeviceStatus() {
   const { data, isLoading, isError } = useHealth();
+  const { data: models } = useModels();
+  const { unload } = useModelAction();
   const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const [open, setOpen] = useState(false);
 
   if (isLoading) return <SidebarMenuSkeleton />;
 
@@ -429,41 +500,149 @@ function DeviceStatus() {
     data && data.vram_total_mb && data.vram_free_mb != null
       ? data.vram_total_mb - data.vram_free_mb
       : null;
+  const percent =
+    used !== null && data?.vram_total_mb ? Math.round((used / data.vram_total_mb) * 100) : null;
+  const loaded = data?.loaded_model
+    ? (models?.find((m) => m.id === data.loaded_model) ?? null)
+    : null;
+  const loadedName = loaded?.name ?? data?.loaded_model ?? null;
+  const title = offline ? "Backend offline" : (data.gpu_name ?? data.device);
+  const subtitle = offline
+    ? "Start the server"
+    : used !== null
+      ? `${formatMb(used)} / ${formatMb(data.vram_total_mb)} VRAM`
+      : data.device;
 
-  const body = (
-    <SidebarMenuButton size="lg" className="cursor-default" asChild>
-      <div>
+  // No `tooltip` prop on the button: SidebarMenuButton would then wrap
+  // itself in a Tooltip, and PopoverTrigger's Slot would clone that wrapper
+  // (which renders no element) instead of the button, so a click would
+  // open nothing. The tooltip is composed on the outside instead, for the
+  // rail, where the row's text is hidden.
+  const row = (
+    <PopoverTrigger asChild>
+      <SidebarMenuButton
+        size="lg"
+        aria-label={`Device: ${title}, ${subtitle}. Show details.`}
+        aria-expanded={open}
+      >
         {dot}
         {/* Hidden on the icon rail — otherwise the labels clip to a letter. */}
         <div className="grid min-w-0 flex-1 text-left text-xs leading-tight group-data-[collapsible=icon]:hidden">
-          <span className="truncate font-medium">
-            {offline ? "Backend offline" : (data.gpu_name ?? data.device)}
-          </span>
-          <span className="text-muted-foreground readout truncate">
-            {offline
-              ? "Start the server"
-              : used !== null
-                ? `${formatMb(used)} / ${formatMb(data.vram_total_mb)} VRAM`
-                : data.device}
-          </span>
+          <span className="truncate font-medium">{title}</span>
+          <span className="text-muted-foreground readout truncate">{subtitle}</span>
         </div>
-      </div>
-    </SidebarMenuButton>
+      </SidebarMenuButton>
+    </PopoverTrigger>
   );
 
-  if (!collapsed || offline) return body;
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{body}</TooltipTrigger>
-      <TooltipContent side="right">
-        <div className="space-y-0.5">
-          <div>{data.gpu_name ?? data.device}</div>
-          <div>Free VRAM: {formatMb(data.vram_free_mb)}</div>
-          <div>Loaded: {data.loaded_model ?? "none"}</div>
-          <div>Queue: {data.queue_length}</div>
-        </div>
-      </TooltipContent>
-    </Tooltip>
+    <Popover open={open} onOpenChange={setOpen}>
+      {open ? (
+        row
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>{row}</TooltipTrigger>
+          <TooltipContent side="right" hidden={state !== "collapsed"}>
+            {title} · {subtitle}
+          </TooltipContent>
+        </Tooltip>
+      )}
+      <PopoverContent side="right" align="end" className="w-72 p-3">
+        {offline ? (
+          <div className="space-y-1 text-sm">
+            <p className="font-medium">Backend offline</p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              The app cannot reach the Soundbox server. Start it (or the desktop app) and this
+              row turns green on its own; nothing in the library is affected.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium">{data.gpu_name ?? data.device}</p>
+              <p className="text-muted-foreground text-xs">
+                {data.gpu_name ? `Running on ${data.device}` : "No discrete GPU reported"}
+                {" · "}Soundbox {data.version}
+              </p>
+            </div>
+            {used !== null && data.vram_total_mb ? (
+              <div>
+                <div className="flex items-baseline justify-between text-xs">
+                  <span className="text-muted-foreground">VRAM in use</span>
+                  <span className="readout tabular-nums">
+                    {formatMb(used)} / {formatMb(data.vram_total_mb)}
+                  </span>
+                </div>
+                <Progress value={percent ?? 0} className="mt-1.5 h-1.5" aria-label="VRAM in use" />
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {formatMb(data.vram_free_mb)} free
+                </p>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-xs">
+                No VRAM readout on this device.
+              </p>
+            )}
+            <div className="border-border/60 border-t pt-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-muted-foreground text-xs">Loaded model</p>
+                  <p className="truncate text-sm">{loadedName ?? "None"}</p>
+                </div>
+                {data.loaded_model && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 shrink-0 text-xs"
+                    disabled={unload.isPending || data.queue_length > 0}
+                    onClick={() => unload.mutate(data.loaded_model as string)}
+                  >
+                    {unload.isPending ? "Unloading…" : "Unload (frees VRAM)"}
+                  </Button>
+                )}
+              </div>
+              <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
+                {data.queue_length > 0
+                  ? `${data.queue_length} job${data.queue_length === 1 ? "" : "s"} running: the model stays loaded until they finish.`
+                  : data.loaded_model
+                    ? "The next generation loads it again, which takes a few seconds."
+                    : "The first generation loads whichever model it needs."}
+              </p>
+            </div>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** The "keep expanded" switch, in the sidebar itself so it can be found from
+ *  the thing it changes. Only shown on a page that would otherwise fold. */
+function KeepExpandedRow() {
+  const { pathname } = useLocation();
+  const keep = useUiPrefs((s) => s.sidebarKeepExpanded);
+  const set = useUiPrefs((s) => s.set);
+  if (!wantsRail(pathname)) return null;
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        tooltip={keep ? "Fold to a rail on studio pages" : "Keep the sidebar open on studio pages"}
+        onClick={() => set({ sidebarKeepExpanded: !keep })}
+        aria-pressed={keep}
+      >
+        <PanelLeftIcon />
+        <span className="flex-1">Keep expanded here</span>
+        <span
+          className={cn(
+            "readout text-xs group-data-[collapsible=icon]:hidden",
+            keep ? "text-sidebar-primary" : "text-muted-foreground",
+          )}
+        >
+          {keep ? "On" : "Off"}
+        </span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
 
@@ -485,6 +664,7 @@ function ThemeToggle() {
 export function AppSidebar() {
   const { setOpenMobile } = useSidebar();
   const picker = useNewStudioPicker();
+  useRailOnImmersivePages();
 
   return (
     // The picker is a sibling of the sidebar, not a child of it. On a narrow
@@ -566,6 +746,7 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <ThemeToggle />
             </SidebarMenuItem>
+            <KeepExpandedRow />
             <SidebarMenuItem>
               <DeviceStatus />
             </SidebarMenuItem>

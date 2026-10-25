@@ -6,6 +6,14 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Sidebar.** Each area's icon carries its own hue, the sidebar folds to an
+  icon rail on studio, Music and Voice Lab pages (with a "keep expanded"
+  preference in Settings → Interface and on the rail itself), and the device
+  row in the footer opens a panel with the GPU, VRAM in use, the loaded model
+  and an Unload button that frees the memory without a trip to Models.
+
 ## [0.3.0] - 2026-10-24
 
 ### Added
