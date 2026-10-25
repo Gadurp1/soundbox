@@ -11,6 +11,7 @@
  */
 
 import type { EditKind, Model } from "@/lib/api";
+import { isNotReady, notReadyReason } from "@/lib/model-ready";
 
 export interface ComposerBlocker {
   /** What stops the run and what to do about it. One sentence. */
@@ -71,6 +72,12 @@ export function composerBlocker(input: {
         link: { to: "/models", label: "Open Models" },
       };
     default:
+      // A status this switch does not name yet (a new one added to the
+      // model) still blocks if the shared ready-check says so, with its
+      // sentence, rather than leaving the button live to fail as a turn.
+      if (isNotReady(model)) {
+        return { sentence: notReadyReason(model), link: { to: "/models", label: "Open Models" } };
+      }
       break;
   }
 
