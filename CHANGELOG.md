@@ -10,6 +10,15 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Studio: canvas layout and pop-out windows.** The studio can lay its
+  panels out as free cards on a grid instead of three columns: drag a card's
+  header to move it, drag its edges to resize it, and Panels → Tidy puts it
+  back. Positions are remembered per builder. Any panel can also leave the
+  studio for a window of its own, so you can put it on another monitor. Drag
+  its header past the edge of the window, or press its pop-out button. A
+  popped-out panel shares the studio's state, opens its menus in its own
+  window and passes keyboard shortcuts through. Closing the window puts the
+  panel back. The desktop app opens these as native windows.
 - **Failure cards.** A generation or download that fails now says what
   happened, why, what to do and what is kept, with up to two fix links, Retry
   where a retry can help, the raw text under Details and a Copy diagnostic
