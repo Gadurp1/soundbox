@@ -6,6 +6,15 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Script Builder: paste a script.** Paste a scene or a passage and
+  Auto-cast reads the speaker cues and "said X" attributions, hands each
+  character a voice (a voice of the same name if there is one, otherwise the
+  next unused one) and adds the lines; or split prose into lines by
+  sentence, paragraph or chapter with a longest-line limit. An empty script
+  offers Add first line, Paste a script and Load sample.
+
 ## [0.3.0] - 2026-10-24
 
 ### Added

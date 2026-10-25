@@ -2331,6 +2331,12 @@ export function StudioEditor({
                         onSelect={setSelectedId}
                         onPatch={(id, patch) => updateSegment.mutate({ id, patch })}
                         onCreate={(values) => createSegment.mutate(values)}
+                        onCreateMany={async (values) => {
+                          // One at a time, awaited: the server appends each
+                          // after the last, so firing them together would
+                          // leave the order to the network.
+                          for (const v of values) await createSegment.mutateAsync(v);
+                        }}
                         onDelete={removeLine}
                         onGenerate={speakLine}
                         generating={generatingIds}
