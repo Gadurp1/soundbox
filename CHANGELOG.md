@@ -6,6 +6,18 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Failure cards.** A generation or download that fails now says what
+  happened, why, what to do and what is kept, with up to two fix links, Retry
+  where a retry can help, the raw text under Details and a Copy diagnostic
+  button, in place of a bare red line or a toast. The server classifies the
+  common causes (GPU out of memory, system memory, paging file, missing
+  runtime, model not downloaded, corrupt model file, stalled or truncated
+  download, Hugging Face gated or unreachable, disk full, timeout) in
+  `server/src/failure.ts`; jobs carry the result as `failure`. A failed
+  generation also stays on the Library page as a card instead of vanishing.
+
 ## [0.3.0] - 2026-10-24
 
 ### Added

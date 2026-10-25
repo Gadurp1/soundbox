@@ -28,7 +28,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useJobStreams } from "@/hooks/use-job-stream";
-import {
+import { ApiError,
   api,
   errorMessage,
   type EditKind,
@@ -559,7 +559,12 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
           setJobId(ref.job_id);
           patchTurn(turnId, { jobId: ref.job_id });
         },
-        (err: Error) => patchTurn(turnId, { status: "error", error: err.message }),
+        (err: Error) =>
+          patchTurn(turnId, {
+            status: "error",
+            error: err.message,
+            failure: err instanceof ApiError ? err.failure : null,
+          }),
       );
     },
     [
@@ -618,6 +623,7 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
         patchTurnByJob(jid, {
           status: j.status === "error" ? "error" : "cancelled",
           error: j.error ?? null,
+          failure: j.failure ?? null,
         });
       }
     }
@@ -677,6 +683,20 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
       document.getElementById("prompt")?.focus();
     },
     [setSettings],
+  );
+
+  const removeTurn = useSessionStore((s) => s.removeTurn);
+
+  /** Run a failed turn again, unchanged: its request goes back into the
+   *  controls and straight out, and the failed turn makes way for the new
+   *  one so the thread does not show the same prompt twice. */
+  const retryTurn = useCallback(
+    (turn: Turn) => {
+      reuseTurn(turn);
+      removeTurn(turn.id);
+      submitWith();
+    },
+    [reuseTurn, removeTurn, submitWith],
   );
 
   /**
@@ -895,6 +915,9 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
     clearEdit,
     cancelTurn,
     reuseTurn,
+    retryTurn,
+    /** Drop a failed turn once it has been read. */
+    dismissTurn: removeTurn,
     /** Whether the composer should show the enhance affordance at all. */
     llmEnabled: (llmStatus?.mode ?? "off") !== "off",
     enhance,

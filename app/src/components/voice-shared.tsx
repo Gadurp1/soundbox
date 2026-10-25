@@ -53,6 +53,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { FailureCard } from "@/components/failure-card";
 import { LoadingVerb } from "@/components/loading-verb";
 import { TidySwitch, clipsSummary } from "@/components/voice-clips";
 import { SoundCard } from "@/components/sound-card";
@@ -101,11 +102,7 @@ export function JobResult({ job }: { job: Job | null }) {
   if (!job) return null;
 
   if (job.status === "error") {
-    return (
-      <p className="bg-danger/5 text-danger ring-danger/30 rounded-xl px-3 py-2.5 text-sm ring-1 ring-inset">
-        {job.error ?? "The job failed."}
-      </p>
-    );
+    return <FailureCard compact failure={job.failure} error={job.error ?? "The job failed."} />;
   }
   if (job.status === "cancelled") {
     return <p className="text-muted-foreground text-sm">Cancelled.</p>;

@@ -143,6 +143,8 @@ export interface Model {
   /** The equivalent shell command, for display and copy-to-clipboard. */
   install_command?: string | null;
   error?: string | null;
+  /** Set alongside `error` when the adapter could not report its status. */
+  failure?: Failure | null;
   /** Id of the in-flight download/install job for this model, from server
    *  job state rather than client memory — lets a row resume watching
    *  progress after a reload or remount (e.g. a tab switch) instead of
@@ -1029,6 +1031,43 @@ export type JobPhase =
   | "encoding"
   | "done";
 
+/** A stable name for a class of failure. Mirrors `server/src/failure.ts`. */
+export type FailureTopic =
+  | "gpu_oom"
+  | "host_memory"
+  | "paging_file"
+  | "backend_mismatch"
+  | "runtime_missing"
+  | "disk_full"
+  | "hf_gated"
+  | "hf_unreachable"
+  | "download_stalled"
+  | "download_truncated"
+  | "model_not_installed"
+  | "model_file_corrupt"
+  | "timeout"
+  | "no_audio"
+  | "queue_full";
+
+export interface FailureFix {
+  /** States its effect: "Download it in Models". */
+  label: string;
+  /** An app route. */
+  to: string;
+}
+
+/** What went wrong, in the user's terms, with the raw text kept whole. The
+ *  server builds it (`buildFailure`) and `FailureCard` renders it. */
+export interface Failure {
+  topic: FailureTopic | null;
+  title: string;
+  hint: string | null;
+  fixes: FailureFix[];
+  terminal: boolean;
+  stage: string | null;
+  detail: string;
+}
+
 export interface Job {
   id: string;
   kind: JobKind;
@@ -1037,6 +1076,8 @@ export interface Job {
   progress: number;
   message?: string | null;
   error?: string | null;
+  /** Set alongside `error` when the job failed. */
+  failure?: Failure | null;
   request?: unknown;
   /** Always carries `sounds`; some jobs add their own keys — a story built
    *  from a sound returns `story_id`, so the caller can go there. */
@@ -1621,10 +1662,13 @@ export interface SoundboxApi {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** The server's classified failure, when the error was a `ModelError`. */
+  failure: Failure | null;
+  constructor(message: string, status: number, failure: Failure | null = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.failure = failure;
   }
 }
 
@@ -1650,13 +1694,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (!res.ok) {
     let detail = `${res.status} ${res.statusText}`;
+    let failure: Failure | null = null;
     try {
-      const body = (await res.json()) as { detail?: string; message?: string };
+      const body = (await res.json()) as {
+        detail?: string;
+        message?: string;
+        failure?: Failure | null;
+      };
       detail = body.detail ?? body.message ?? detail;
+      failure = body.failure ?? null;
     } catch {
       /* non-JSON error body */
     }
-    throw new ApiError(detail, res.status);
+    throw new ApiError(detail, res.status, failure);
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
