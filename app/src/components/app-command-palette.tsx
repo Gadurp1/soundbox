@@ -86,14 +86,12 @@ function pageOwnsTheKey(pathname: string): boolean {
 
 /** What the row for a model offers, by its state. Null when nothing applies
  *  (downloading, or a state the palette should not poke). */
-function modelVerb(model: Model): "Load" | "Unload" | "Download" | null {
+function modelVerb(model: Model): "Load" | "Unload" | null {
   switch (model.status) {
     case "loaded":
       return "Unload";
     case "installed":
       return "Load";
-    case "not_installed":
-      return "Download";
     default:
       return null;
   }
@@ -220,10 +218,12 @@ export function AppCommandPalette() {
       const verb = modelVerb(model);
       return {
         id: `model:${model.id}`,
+        // Downloading is not offered from here: a non-commercial model asks
+        // for a licence acknowledgement first, and that lives on Models.
         label: verb ? `${verb} ${model.name}` : model.name,
         detail:
-          verb === "Download"
-            ? "Fetches the weights; nothing runs until it finishes"
+          model.status === "not_installed"
+            ? "Not installed · open in Models to download"
             : verb === "Unload"
               ? "Frees its VRAM"
               : verb === "Load"
