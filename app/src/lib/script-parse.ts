@@ -48,9 +48,16 @@ export function splitSentences(text: string): string[] {
     const s = m[0].trim();
     if (!s) continue;
     // "Dr. Who" and "3.14": glue a piece that ended on an abbreviation or a
-    // digit onto the next one.
+    // digit onto the next one. Likewise a quote that closed on ? or ! with
+    // the attribution still to come ("Did you hear that?" asked Theo.): a
+    // piece starting in lower case belongs to the sentence before it.
     const last = out[out.length - 1];
-    if (last && (/\b(?:[A-Z][a-z]?|Mr|Mrs|Ms|Dr|St|No|vs|etc)\.$/.test(last) || /\d\.$/.test(last))) {
+    if (
+      last &&
+      (/\b(?:[A-Z][a-z]?|Mr|Mrs|Ms|Dr|St|No|vs|etc)\.$/.test(last) ||
+        /\d\.$/.test(last) ||
+        (/["”’']$/.test(last) && /^[a-z]/.test(s)))
+    ) {
       out[out.length - 1] = `${last} ${s}`;
     } else {
       out.push(s);
