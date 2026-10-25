@@ -391,7 +391,7 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
               failure={turn.failure}
               error={turn.error}
               context={`${turn.request.prompt.trim() || "New sound"} · ${modelNames.get(turn.request.model) ?? turn.request.model}`}
-              onRetry={() => retryTurn(turn)}
+              onRetry={turn.request.edit ? undefined : () => retryTurn(turn)}
               onDismiss={() => dismissTurn(turn.id)}
             />
           ))}

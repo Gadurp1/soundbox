@@ -32,6 +32,10 @@ describe("classify", () => {
     expect(classify("CUDA out of memory")).toBe("gpu_oom");
   });
 
+  it("does not read any 1455 as the paging file", () => {
+    expect(classify("wrote 1455 bytes then failed")).toBeNull();
+  });
+
   it("returns null for the unknown", () => {
     expect(classify("")).toBeNull();
     expect(classify("The trim's end must be after its start.")).toBeNull();

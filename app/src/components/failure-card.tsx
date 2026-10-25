@@ -57,6 +57,8 @@ export function FailureCard({
     void navigator.clipboard.writeText(diagnosticText(f, context)).then(() => {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
+    }).catch(() => {
+      /* clipboard refused (permissions, insecure context): nothing to undo */
     });
   };
 

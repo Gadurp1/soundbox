@@ -692,6 +692,10 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
    *  one so the thread does not show the same prompt twice. */
   const retryTurn = useCallback(
     (turn: Turn) => {
+      // An edit (extend, cover, repaint) needs its source sound, which the
+      // turn does not carry; resubmitting would quietly become a plain
+      // generation of the same prompt. Callers hide Retry for those.
+      if (turn.request.edit) return;
       reuseTurn(turn);
       removeTurn(turn.id);
       submitWith();

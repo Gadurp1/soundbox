@@ -47,7 +47,7 @@ interface Rule {
 const RULES: Rule[] = [
   {
     topic: "paging_file",
-    all: [/1455|paging file/i],
+    all: [/(?:error|winerror|os error)\s*1455|paging file/i],
     title: "Windows could not map the model into memory",
     hint:
       "Windows error 1455: the paging file is too small to map a model this size, " +
