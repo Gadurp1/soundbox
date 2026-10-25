@@ -13,6 +13,8 @@
  * panel comes back into the studio and you drag it out again.
  */
 
+import { isDesktop } from "@/lib/desktop";
+
 /** Where the new window goes and how big it is, in screen pixels. A missing
  *  position lets the browser or the OS choose. */
 export interface PopOutAt {
@@ -43,6 +45,34 @@ export function openPopoutWindow(id: string, at: PopOutAt): Window | null {
   // A name per panel, so a second "pop out" of the same panel reuses the
   // window it already has rather than stacking another one on top of it.
   return window.open("", `soundbox-panel-${id}`, features);
+}
+
+/** Must match `POPOUT_CLOSE_TITLE` in src-tauri/src/lib.rs. */
+export const POPOUT_CLOSE_TITLE = "soundbox:close-popout";
+
+/**
+ * Close a panel's window: when its panel is docked or closed, or when the
+ * studio goes away.
+ *
+ * In a browser that's `win.close()`. In the desktop app it isn't: a pop-out
+ * there is a native window the shell built, and a script's `close()` only
+ * tears down the webview inside it, leaving an empty frame on screen, which
+ * is the blank window you got after leaving the studio. So the desktop asks
+ * the shell instead, by setting a title its window handler watches for, and
+ * the shell closes the whole window. That needs no IPC, which a page served
+ * from the local server doesn't have.
+ */
+export function closePopoutWindow(win: Window): void {
+  if (win.closed) return;
+  if (isDesktop()) {
+    try {
+      win.document.title = POPOUT_CLOSE_TITLE;
+      return;
+    } catch {
+      // The document is already gone; fall through to the plain close.
+    }
+  }
+  win.close();
 }
 
 /** Is the pointer past the edge of this window? Where a drag has to end to
