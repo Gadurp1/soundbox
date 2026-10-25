@@ -438,7 +438,7 @@ const models: Model[] = [
     defaults: { duration_s: 8, steps: null, cfg: 3.0 },
     vram_estimate_mb: 7200,
     extras: [],
-    status: "not_installed",
+    status: "incomplete",
     installed_deps: false,
     error: null,
   },
@@ -2169,6 +2169,18 @@ export const mockApi: SoundboxApi = {
     const job = newJob("download", { model: id });
     void runDownloadJob(job, id);
     return { job_id: job.id };
+  },
+
+  async selfTestModel(id) {
+    const model = models.find((e) => e.id === id);
+    if (!model) throw new Error(`Unknown model ${id}`);
+    await wait(1400);
+    if (model.status === "not_installed" || model.status === "incomplete") {
+      return { model: id, ok: false, device: "cuda", elapsed_s: 0.1, rendered_s: null, error: `${model.name}'s weights are not downloaded yet.` };
+    }
+    for (const e of models) if (e.status === "loaded") e.status = "installed";
+    model.status = "loaded";
+    return { model: id, ok: true, device: "cuda", elapsed_s: 1.4, rendered_s: 1, error: null };
   },
 
   async loadModel(id) {

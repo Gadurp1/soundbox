@@ -48,6 +48,10 @@ export function registerModels(app: FastifyInstance, svc: SoundboxService): void
     return reply.code(202).send({ job_id: job.id });
   });
 
+  app.post<IdParams>("/api/models/:model_id/selftest", async (request) =>
+    svc.selfTestModel(request.params.model_id),
+  );
+
   app.post<IdParams>("/api/models/:model_id/load", async (request) =>
     svc.loadModel(request.params.model_id),
   );

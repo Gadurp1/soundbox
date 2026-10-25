@@ -1177,6 +1177,16 @@ export function GenerateComposer({
                 for the install command.
               </>
             )}
+            {model.status === "incomplete" && (
+              <>
+                {model.name}&rsquo;s download did not finish, so its weights can&rsquo;t be
+                used. Repair it in{" "}
+                <Link to="/models" className="font-medium underline underline-offset-4">
+                  Models
+                </Link>
+                ; what is already there is kept.
+              </>
+            )}
             {model.status === "downloading" && (
               <>
                 {model.name} is still downloading its weights. Generate will be

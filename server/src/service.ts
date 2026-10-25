@@ -77,6 +77,7 @@ import type { EnhanceCategory, EnhanceResult, ModelContext } from "./llm/enhance
 import { getLogger } from "./logging.js";
 import { isUncPath, isWithin, samePath } from "./pathGuards.js";
 import type {
+  ModelSelfTest,
   AudioCppCatalogEntry,
   ModelInfo,
   EditKind,
@@ -357,6 +358,55 @@ export class SoundboxService {
 
   async deleteWeights(modelId: string): Promise<void> {
     await this.models.deleteWeights(modelId);
+  }
+
+  /**
+   * One short render through the normal path, timed, and thrown away: the
+   * quickest way to learn whether a model actually runs here, and how fast,
+   * without a sound landing in the library. Loads the model if it is not
+   * resident, which is part of what is being measured.
+   */
+  async selfTestModel(modelId: string): Promise<ModelSelfTest> {
+    const model = this.models.get(modelId);
+    const info = model.describe();
+    const started = Date.now();
+    const base = { model: modelId, device: (await this.health()).device };
+    try {
+      if (!model.loaded) await this.models.load(modelId);
+      this.models.touch();
+      let rendered: { audio: dsp.Audio; sampleRate: number };
+      if (info.task === "gen") {
+        rendered = await model.generate("a single short wooden click", 1, {
+          steps: info.defaults.steps ?? null,
+        });
+      } else if (info.task === "tts") {
+        rendered = await model.speak("Soundbox self test.", {});
+      } else {
+        return {
+          ...base,
+          ok: false,
+          elapsed_s: 0,
+          rendered_s: null,
+          error: `${info.name} is a ${info.task} model: the self-test renders a one-second clip from a prompt and has nothing to feed it. Run it on a real sound instead.`,
+        };
+      }
+      const samples = rendered.audio[0]?.length ?? 0;
+      return {
+        ...base,
+        ok: true,
+        elapsed_s: round3((Date.now() - started) / 1000),
+        rendered_s: round3(samples / rendered.sampleRate),
+        error: null,
+      };
+    } catch (exc) {
+      return {
+        ...base,
+        ok: false,
+        elapsed_s: round3((Date.now() - started) / 1000),
+        rendered_s: null,
+        error: exc instanceof Error ? exc.message : String(exc),
+      };
+    }
   }
 
   /* ------------------------------------------------------------- generate */

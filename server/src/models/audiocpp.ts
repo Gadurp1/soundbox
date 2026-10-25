@@ -937,10 +937,25 @@ export class AudioCppModel {
       info.status = "installed";
     } else if (downloaded) {
       info.status = "needs_runtime";
+    } else if (await this.hasPartialWeights()) {
+      info.status = "incomplete";
     } else {
       info.status = "not_installed";
     }
     return info;
+  }
+
+  /** Whether the package folder holds anything at all while `weightsFile()`
+   *  still finds nothing to run: a transfer that stopped (a `.part` left
+   *  behind), or a directory layout missing one of its required files. */
+  private async hasPartialWeights(): Promise<boolean> {
+    if (this.spec.weights_path) return false;
+    try {
+      const entries = await readdir(this.weightsDir());
+      return entries.length > 0;
+    } catch {
+      return false;
+    }
   }
 
   /* ---------------------------------------------------------- weights */

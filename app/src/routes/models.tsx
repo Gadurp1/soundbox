@@ -30,6 +30,8 @@ import {
   Trash2Icon,
   TriangleAlertIcon,
   ZapIcon,
+  ActivityIcon,
+  WrenchIcon,
 } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
@@ -55,6 +57,7 @@ import { Notice } from "@/components/notice";
 import { useJobStream } from "@/hooks/use-job-stream";
 import { formatBytes, formatHz, formatMb } from "@/lib/format";
 import {
+  useHealth,
   useAudioCppCatalog,
   useLlmEngineInstall,
   useLlmModelDelete,
@@ -68,7 +71,9 @@ import {
 } from "@/lib/queries";
 import { repoFile } from "@/lib/marketing-links";
 import { cn } from "@/lib/utils";
-import type { AudioCppCatalogEntry, LlmModelEntry, Model } from "@/lib/api";
+import type { AudioCppCatalogEntry, LlmModelEntry, Model, ModelSelfTest } from "@/lib/api";
+import { api } from "@/lib/api";
+import { buildPacks, INTENT_LABEL } from "@/lib/model-packs";
 
 /* Column geometry, shared by the header strip and every row so the list reads
    as a table without being one.
@@ -88,6 +93,9 @@ const COL = {
 };
 
 const CATEGORY_ORDER: Model["category"][] = ["sfx", "music", "voice", "utility"];
+
+/** Statuses whose weights are on this machine, whatever else is missing. */
+const ON_DISK = new Set<Model["status"]>(["installed", "loaded", "needs_runtime"]);
 
 const CATEGORY_LABEL: Record<Model["category"], string> = {
   sfx: "SFX",
@@ -126,12 +134,26 @@ function SearchFilterBar({
   onQueryChange: (q: string) => void;
   category: Model["category"] | "all";
   onCategoryChange: (c: Model["category"] | "all") => void;
-  items: { category: Model["category"] }[];
+  /** `status` is only on real model rows; the catalog section has none and
+   *  gets tabs without counts. */
+  items: { category: Model["category"]; status?: Model["status"] }[];
   placeholder: string;
 }) {
   const present = useMemo(() => {
     const seen = new Set(items.map((i) => i.category));
     return CATEGORY_ORDER.filter((c) => seen.has(c));
+  }, [items]);
+  /** "2/5": on this machine out of listed. A tab that says how much of its
+   *  category is actually here answers the first question before the click. */
+  const counts = useMemo(() => {
+    const out = new Map<Model["category"], { here: number; total: number }>();
+    for (const i of items) {
+      const c = out.get(i.category) ?? { here: 0, total: 0 };
+      c.total++;
+      if (i.status && ON_DISK.has(i.status)) c.here++;
+      out.set(i.category, c);
+    }
+    return out;
   }, [items]);
 
   return (
@@ -144,6 +166,11 @@ function SearchFilterBar({
             {present.map((c) => (
               <TabsTrigger key={c} value={c}>
                 {CATEGORY_LABEL[c]}
+                {items.some((i) => i.status) && (
+                  <span className="text-muted-foreground ml-1 text-[10px] tabular-nums">
+                    {counts.get(c)?.here ?? 0}/{counts.get(c)?.total ?? 0}
+                  </span>
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -176,6 +203,28 @@ function ModelListItem({
   const { download, load, unload, remove } = useModelAction();
   const [jobId, setJobId] = useState<string | null>(null);
   const [view, setView] = useState<DialogView | null>(null);
+  /** The last self-test, kept while the dialog is open. */
+  const [selfTest, setSelfTest] = useState<ModelSelfTest | null>(null);
+  const [testing, setTesting] = useState(false);
+  const runSelfTest = async () => {
+    setTesting(true);
+    setSelfTest(null);
+    try {
+      setSelfTest(await api.selfTestModel(model.id));
+      void qc.invalidateQueries({ queryKey: ["models"] });
+    } catch (exc) {
+      setSelfTest({
+        model: model.id,
+        ok: false,
+        device: "unknown",
+        elapsed_s: 0,
+        rendered_s: null,
+        error: exc instanceof Error ? exc.message : "The self-test could not start.",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   // `model.active_job_id` comes from the server's job queue, not client
   // memory, so a fresh page load or a remount after a tab switch (which
@@ -241,7 +290,20 @@ function ModelListItem({
   };
 
   /** The one action worth having on the row itself. */
-  const inlineAction = downloading ? null : canDownload ? (
+  const incomplete = model.status === "incomplete";
+  const inlineAction = downloading ? null : incomplete ? (
+    <Button
+      size="sm"
+      variant="outline"
+      className="w-full"
+      onClick={requestDownload}
+      disabled={download.isPending}
+      aria-label={`Repair ${model.name}: download what is missing`}
+    >
+      <WrenchIcon />
+      Repair
+    </Button>
+  ) : canDownload ? (
     <Button
       size="sm"
       variant="outline"
@@ -598,11 +660,47 @@ function ModelListItem({
                 )}
               </div>
 
+              {incomplete && (
+                <Notice>
+                  <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                  <p className="leading-relaxed">
+                    The download did not finish, so these weights can&rsquo;t be used. Repair
+                    downloads what is missing; what is already on disk is kept.
+                  </p>
+                </Notice>
+              )}
+
+              {selfTest && (
+                <p
+                  className={cn(
+                    "rounded-lg px-3 py-2 text-xs leading-relaxed ring-1 ring-inset",
+                    selfTest.ok ? "bg-ok/10 ring-ok/30" : "bg-danger/10 ring-danger/30",
+                  )}
+                  role="status"
+                >
+                  {selfTest.ok
+                    ? `Rendered ${selfTest.rendered_s?.toFixed(1) ?? "?"}s of audio in ${selfTest.elapsed_s.toFixed(1)}s on ${selfTest.device}, including any load. Nothing was saved.`
+                    : `The self-test failed on ${selfTest.device}: ${selfTest.error ?? "unknown error"}`}
+                </p>
+              )}
+
               {/* Actions come first in the DOM so the dialog's initial focus
                   lands on the useful action rather than on "Delete weights";
                   order-first puts the destructive one back on the left. */}
               <DialogFooter className="sm:justify-end">
                 <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                  {incomplete && (
+                    <Button onClick={requestDownload} disabled={downloading || download.isPending}>
+                      <WrenchIcon />
+                      Repair
+                    </Button>
+                  )}
+                  {(canLoad || canUnload) && (model.task === "gen" || model.task === "tts") && (
+                    <Button variant="outline" onClick={() => void runSelfTest()} disabled={testing}>
+                      <ActivityIcon className={cn(testing && "animate-pulse")} />
+                      {testing ? "Testing…" : "Self-test"}
+                    </Button>
+                  )}
                   {canDownload && (
                     <Button onClick={requestDownload} disabled={downloading || download.isPending}>
                       <DownloadIcon />
@@ -937,6 +1035,10 @@ export function ModelsPage() {
         </p>
       </div>
 
+      {!isLoading && !isError && (models?.length ?? 0) > 0 && (
+        <ModelPacks models={models!} hfTokenSet={settings?.hf_token_set ?? false} />
+      )}
+
       {isLoading ? (
         <div className="border-border overflow-hidden rounded-xl border">
           {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -993,5 +1095,92 @@ export function ModelsPage() {
       <AudioCppCatalogSection />
       <LlmSection />
     </div>
+  );
+}
+
+/**
+ * Intent packs: one Install for a sensible model per kind at a chosen point
+ * on the speed/quality line. See `model-packs.ts` for how the picks are made.
+ */
+function ModelPacks({ models, hfTokenSet }: { models: Model[]; hfTokenSet: boolean }) {
+  const { data: health } = useHealth();
+  const { data: catalog } = useAudioCppCatalog();
+  const { download } = useModelAction();
+  const packs = useMemo(
+    () => buildPacks(models, health, catalog, hfTokenSet),
+    [models, health, catalog, hfTokenSet],
+  );
+  const [open, setOpen] = useState(() => models.every((m) => !ON_DISK.has(m.status)));
+  if (packs.length === 0) return null;
+
+  return (
+    <section aria-labelledby="packs" className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 id="packs" className="font-heading text-lg font-semibold tracking-tight">
+            Packs
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            One model each for sound effects, music and voice, picked for this machine. Commercial-use
+            licences only; the list below has the rest.
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          {open ? "Hide packs" : "Show packs"}
+        </Button>
+      </div>
+      {open && (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {packs.map((pack) => {
+            const allHere = pack.toInstall.length === 0;
+            return (
+              <div
+                key={pack.tier}
+                className="bg-card ring-border/70 flex flex-col gap-3 rounded-xl p-4 ring-1"
+              >
+                <div>
+                  <p className="text-sm font-semibold">{pack.name}</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">{pack.blurb}</p>
+                </div>
+                <ul className="space-y-1.5 text-xs">
+                  {pack.picks.map((pick) => (
+                    <li key={pick.intent} className="flex items-baseline justify-between gap-2">
+                      <span className="text-muted-foreground shrink-0">{INTENT_LABEL[pick.intent]}</span>
+                      <span className="min-w-0 truncate text-right" title={pick.model.name}>
+                        {pick.model.name}
+                        <span className="text-muted-foreground ml-1 tabular-nums">
+                          {formatMb(pick.model.vram_estimate_mb)}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-auto space-y-1.5">
+                  <p className="text-muted-foreground text-xs">
+                    {allHere
+                      ? "Everything in this pack is already on this machine."
+                      : `About ${pack.downloadGb} GB to download.${pack.overBudget ? " Some of it is more than your GPU holds." : ""}`}
+                  </p>
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    variant={pack.tier === "balanced" ? "default" : "outline"}
+                    disabled={allHere || download.isPending}
+                    onClick={() => {
+                      for (const m of pack.toInstall) download.mutate(m.id);
+                    }}
+                  >
+                    <DownloadIcon />
+                    {allHere
+                      ? "Installed"
+                      : `Install ${pack.toInstall.length} model${pack.toInstall.length === 1 ? "" : "s"}`}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
