@@ -9,12 +9,17 @@ on:
         required: true
         type: string
       publish_docker:
-        description: "Publish Docker image to GHCR"
+        description: "Publish Docker images to GHCR"
         required: true
         type: boolean
         default: false
+      publish_cuda:
+        description: "Also build the CUDA Docker image"
+        required: true
+        type: boolean
+        default: true
       publish_latest:
-        description: "Also publish the latest tag"
+        description: "Also publish latest and cuda floating tags"
         required: true
         type: boolean
         default: false
@@ -25,8 +30,8 @@ permissions:
 
 jobs:
   docker:
-    runs-on: ubuntu-latest
     name: docker-publish
+    runs-on: ubuntu-latest
 
     steps:
       - name: Validate inputs
@@ -34,6 +39,7 @@ jobs:
         env:
           VERSION_TAG: ${{ inputs.tag }}
           PUBLISH_DOCKER: ${{ inputs.publish_docker }}
+          PUBLISH_CUDA: ${{ inputs.publish_cuda }}
           PUBLISH_LATEST: ${{ inputs.publish_latest }}
         run: |
           if [[ ! "$VERSION_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
@@ -63,6 +69,7 @@ jobs:
           VERSION_TAG: ${{ inputs.tag }}
         run: |
           git fetch --force origin "refs/tags/${VERSION_TAG}:refs/tags/${VERSION_TAG}"
+
           EXPECTED_COMMIT="$(git rev-list -n 1 "refs/tags/${VERSION_TAG}")"
           CURRENT_COMMIT="$(git rev-parse HEAD)"
 
@@ -86,11 +93,20 @@ jobs:
           IMAGE_NAME="ghcr.io/${REPOSITORY}"
 
           {
-            echo "tags<<EOF"
+            echo "cpu<<EOF"
             echo "${IMAGE_NAME}:${VERSION_TAG}"
 
             if [[ "$PUBLISH_LATEST" == "true" ]]; then
               echo "${IMAGE_NAME}:latest"
+            fi
+
+            echo "EOF"
+
+            echo "cuda<<EOF"
+            echo "${IMAGE_NAME}:${VERSION_TAG}-cuda"
+
+            if [[ "$PUBLISH_LATEST" == "true" ]]; then
+              echo "${IMAGE_NAME}:cuda"
             fi
 
             echo "EOF"
@@ -111,6 +127,21 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: ${{ inputs.publish_docker }}
-          tags: ${{ steps.tags.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ steps.tags.outputs.cpu }}
+          cache-from: type=gha,scope=cpu
+          cache-to: type=gha,mode=max,scope=cpu
+
+      - name: Build CUDA Docker image
+        if: ${{ inputs.publish_cuda }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: ${{ inputs.publish_docker }}
+          tags: ${{ steps.tags.outputs.cuda }}
+          build-args: |
+            AUDIOCPP_TAG=full-cuda12
+            AUDIOCPP_BACKEND=cuda
+          cache-from: type=gha,scope=cuda
+          cache-to: type=gha,mode=max,scope=cuda
