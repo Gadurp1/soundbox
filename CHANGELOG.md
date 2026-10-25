@@ -8,6 +8,11 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Composer.** The Generate button keeps one width and names the running
+  job's stage ("Loading model", "Generating 42%"), Cancel keeps its place
+  instead of pushing the pills about, a progress strip runs along the card's
+  bottom edge, and whatever stops a run is said in one sentence with the link
+  that fixes it rather than a greyed-out button.
 - **README.** Shorter and faster to scan: a Make / Arrange / Connect table,
   a hardware table, profiles, an "install with a prompt" block for coding
   agents, and the source, Docker and API sections folded. `docs/INSTALL-AGENT.md`
