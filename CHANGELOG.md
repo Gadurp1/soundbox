@@ -18,6 +18,14 @@ to follow [Semantic Versioning](https://semver.org/).
   `server/src/failure.ts`; jobs carry the result as `failure`. A failed
   generation also stays on the Library page as a card instead of vanishing.
 
+### Changed
+
+- **Composer.** The Generate button keeps one width and names the running
+  job's stage ("Loading model", "Generating 42%"), Cancel keeps its place
+  instead of pushing the pills about, a progress strip runs along the card's
+  bottom edge, and whatever stops a run is said in one sentence with the link
+  that fixes it rather than a greyed-out button.
+
 ## [0.3.0] - 2026-10-24
 
 ### Added

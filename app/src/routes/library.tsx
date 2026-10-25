@@ -132,12 +132,13 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
     settings,
     patch,
     running,
+    job,
     turns,
     jobs,
     cancelTurn,
     retryTurn,
     dismissTurn,
-    canSubmit,
+    blocker,
     submit,
     cancelCurrent,
     estimateS,
@@ -445,7 +446,8 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
             modelsLoading={sessionModelsLoading}
             model={sessionModel}
             running={running}
-            canSubmit={canSubmit}
+            job={job}
+            blocker={blocker}
             onSubmit={submit}
             onCancel={cancelCurrent}
             estimateS={estimateS}
