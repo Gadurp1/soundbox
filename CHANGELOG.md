@@ -35,6 +35,12 @@ to follow [Semantic Versioning](https://semver.org/).
   loads, downloads or unloads from the row. Settings rows appear once you
   type. On a page with a composer the first row is Generate, or Cancel while
   a job runs. `?` opens a keyboard cheatsheet.
+- **Script Builder: paste a script.** Paste a scene or a passage and
+  Auto-cast reads the speaker cues and "said X" attributions, hands each
+  character a voice (a voice of the same name if there is one, otherwise the
+  next unused one) and adds the lines; or split prose into lines by
+  sentence, paragraph or chapter with a longest-line limit. An empty script
+  offers Add first line, Paste a script and Load sample.
 
 ## [0.3.0] - 2026-10-24
 
