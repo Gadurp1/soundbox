@@ -9,10 +9,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { BotIcon, SearchIcon, StarIcon, XIcon } from "lucide-react";
+import { BotIcon, ChevronDownIcon, SearchIcon, SlidersHorizontalIcon, StarIcon, XIcon } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,6 +35,7 @@ import { usePlayerStore } from "@/lib/player-store";
 import { useModels, useProjects, useSounds, useTags } from "@/lib/queries";
 import { clampDuration, preferredModel } from "@/lib/session-store";
 import type { Model, SoundQuery } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const ALL = "__all__";
 
@@ -68,6 +70,10 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
   const [modelId, setModelId] = useState<string>(ALL);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [agentsOnly, setAgentsOnly] = useState(false);
+  /** The filter controls fold away behind a summary line that names what is
+   *  set, so a page with a tag and a model chosen still reads at a glance
+   *  without three dropdowns taking the width. */
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const { data: models } = useModels();
   const { data: tags } = useTags();
@@ -250,14 +256,19 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
       </div>
 
       {/* ------------------------------------------------------------ filters */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="min-w-56 flex-1 space-y-1.5">
-          <Label htmlFor="library-search">Search</Label>
-          <div className="relative">
+      {/* Search stays out in the open: it is the filter people reach for. The
+          rest sit behind a disclosure whose summary lists what is chosen, each
+          value a chip that clears just itself. */}
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen} className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-56 flex-1">
             <SearchIcon
               className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
               aria-hidden="true"
             />
+            <Label htmlFor="library-search" className="sr-only">
+              Search
+            </Label>
             <Input
               id="library-search"
               value={q}
@@ -266,8 +277,47 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
               className="pl-8"
             />
           </div>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant={filtersOpen ? "secondary" : "outline"}
+              aria-expanded={filtersOpen}
+              className="gap-1.5"
+            >
+              <SlidersHorizontalIcon />
+              Filters
+              <ChevronDownIcon
+                className={cn("size-3.5 transition-transform", filtersOpen && "rotate-180")}
+                aria-hidden="true"
+              />
+            </Button>
+          </CollapsibleTrigger>
+          {/* The summary: what is chosen, as chips, each clearing itself. */}
+          {tag !== ALL && (
+            <FilterChip label={`Tag: ${tag}`} onClear={() => setTag(ALL)} />
+          )}
+          {modelId !== ALL && (
+            <FilterChip
+              label={`Model: ${categoryModels.find((m: Model) => m.id === modelId)?.name ?? modelId}`}
+              onClear={() => setModelId(ALL)}
+            />
+          )}
+          {favoritesOnly && <FilterChip label="Favourites" onClear={() => setFavoritesOnly(false)} />}
+          {agentsOnly && <FilterChip label="By agents" onClear={() => setAgentsOnly(false)} />}
+          {project && (
+            <FilterChip
+              label={`Project: ${project.name}`}
+              onClear={() => setSearchParams({}, { replace: true })}
+            />
+          )}
+          {filtered && (
+            <Button variant="ghost" size="sm" onClick={clear} aria-label="Clear all filters">
+              <XIcon />
+              Clear
+            </Button>
+          )}
         </div>
 
+        <CollapsibleContent className="flex flex-wrap items-end gap-3">
         <div className="w-40 space-y-1.5">
           <Label htmlFor="library-tag">Tag</Label>
           <Select value={tag} onValueChange={setTag}>
@@ -321,14 +371,8 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
           <BotIcon />
           By agents
         </Button>
-
-        {filtered && (
-          <Button variant="ghost" onClick={clear} aria-label="Clear all filters">
-            <XIcon />
-            Clear
-          </Button>
-        )}
-      </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* -------------------------------------------------------------- list */}
       {isLoading || !modelsReady ? (
@@ -449,5 +493,22 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** One chosen filter value, as a chip whose × clears only it. */
+function FilterChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="bg-muted text-foreground inline-flex h-8 items-center gap-1 rounded-full pr-1 pl-2.5 text-xs">
+      {label}
+      <button
+        type="button"
+        onClick={onClear}
+        aria-label={`Clear ${label}`}
+        className="text-muted-foreground hover:text-foreground hover:bg-background/60 rounded-full p-0.5"
+      >
+        <XIcon className="size-3" />
+      </button>
+    </span>
   );
 }

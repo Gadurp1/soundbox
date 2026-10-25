@@ -6,6 +6,16 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Library.** Every row carries its recipe (model, length, seed, steps,
+  CFG, and whether it was extended or covered) so two takes of one prompt
+  can be told apart; the sound page has a "How it was made" list with Copy
+  recipe. A sound's menu has Send to: add it to a story, open it in the
+  studio, or make a voice from it in the Voice Lab. The tag, model,
+  favourites and by-agents filters fold behind a Filters button whose
+  summary shows each chosen value as a chip that clears itself.
+
 ## [0.3.0] - 2026-10-24
 
 ### Added
