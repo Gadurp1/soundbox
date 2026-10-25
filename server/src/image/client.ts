@@ -19,8 +19,12 @@
  * Both return raw PNG bytes to the caller. Nothing here writes to disk.
  */
 
+import { apiUrl, NOT_FOUND_HINT } from "../apiUrl.js";
 import { ModelError } from "../errors.js";
 import type { ImageApiKind } from "../config.js";
+import { getLogger } from "../logging.js";
+
+const log = getLogger("soundbox.image");
 
 /** Generous: a cold managed engine loads the checkpoint on the first request,
  *  and a CPU-only machine rendering four steps is slow but not broken. */
@@ -48,8 +52,7 @@ export async function generateImage(
   req: ImageRequest,
   fetchImpl: FetchFn = fetch,
 ): Promise<Buffer> {
-  const base = req.baseUrl.replace(/\/+$/, "");
-  const url = req.kind === "a1111" ? `${base}/sdapi/v1/txt2img` : `${base}/v1/images/generations`;
+  const url = apiUrl(req.baseUrl, req.kind === "a1111" ? "/sdapi/v1/txt2img" : "/v1/images/generations");
   const body =
     req.kind === "a1111"
       ? {
@@ -78,6 +81,11 @@ export async function generateImage(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let resp: Response;
+  const started = Date.now();
+  // URL, API kind, model and size only. Never the key or the prompt.
+  log.debug(
+    `POST ${url} kind=${req.kind} model=${req.model || "(default)"} size=${req.width}x${req.height}`,
+  );
   try {
     resp = await fetchImpl(url, {
       method: "POST",
@@ -90,19 +98,23 @@ export async function generateImage(
     });
   } catch (exc) {
     const aborted = exc instanceof Error && exc.name === "AbortError";
+    log.debug(`POST ${url} failed after ${Date.now() - started}ms: ${aborted ? "timeout" : String(exc)}`);
     throw new ModelError(
       aborted
-        ? `The image endpoint at ${req.baseUrl} did not respond in time.`
-        : `Could not reach the image endpoint at ${req.baseUrl}: ${String(exc)}`,
+        ? `The image endpoint at ${url} did not respond in time.`
+        : `Could not reach the image endpoint at ${url}: ${String(exc)}`,
     );
   } finally {
     clearTimeout(timer);
   }
 
+  log.debug(`POST ${url} -> HTTP ${resp.status} in ${Date.now() - started}ms`);
   if (!resp.ok) {
     const text = await resp.text().catch(() => "");
     throw new ModelError(
-      `Image endpoint returned HTTP ${resp.status}${text ? `: ${text.slice(0, 500)}` : ""}`,
+      `Image endpoint ${url} returned HTTP ${resp.status}` +
+        `${text ? `: ${text.slice(0, 500)}` : ""}` +
+        (resp.status === 404 ? `\n\n${NOT_FOUND_HINT}` : ""),
     );
   }
 
