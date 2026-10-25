@@ -2,7 +2,9 @@
 
 Status: proposal, revision 2. Probed against a live `audiocpp_server`, then
 reviewed by an architecture agent and a code-review agent (two rounds; see
-[Review](#review-2026-10-24)). Nothing is built. Branch `feat/remote-audiocpp`.
+[Review](#review-2026-10-24)). **Re-probed on v0.9.2** (the current release);
+see [Re-probe on v0.9.2](#re-probe-on-v092-2026-10-25), which changes
+sections 3 and 4. Nothing is built. Branch `feat/remote-audiocpp`.
 
 ## Goal
 
@@ -279,9 +281,34 @@ Other things the probe turned up:
 6. **Load a multi-file package as a directory** (PocketTTS or MiniMax) and one
    prefixed package, on a build that knows them.
 
+## Re-probe on v0.9.2 (2026-10-25)
+
+The first probes ran on 0.6.1, the binary this machine happened to pin. The
+current release is **v0.9.2** (git `0097d365`, 2026-10-15), so the same probes
+ran again on its CPU build, plus a read of its server source at that tag.
+
+| Finding (0.6.1) | On v0.9.2 | Effect on this design |
+|---|---|---|
+| `audio_base64` not supported | **Works**, flat or nested in `request`: HTDemucs split an inline clip into 4 stems | §4: send clips **inline** when they fit (the documented voice-reference cap is 5 MiB); upload only larger ones. Small requests leave nothing on the server's disk. |
+| Uploads accumulate, temp folders never cleaned | Upstream **removes** its `audiocpp-ui-*` folder on a clean shutdown (`app/server/runtime.cpp`, server destructor). The ~290 empty folders on this machine come from **Soundbox hard-killing its own child** (`proc.kill()` is TerminateProcess on Windows). | Not an upstream bug. Our fix: stop the managed server gracefully where possible, and sweep stale `audiocpp-ui-*` folders at startup. Remote uploads are still never deleted while a server runs; prefer inline. |
+| Load needs an absolute path; relative resolves against the binary | **Unchanged.** Load by `models_root + "/" + relative` took 0.35 s | §3 unchanged. |
+| `install-status` says "Not started" for unknown ids | **Unchanged** | §3 unchanged: `package-sizes` is the install and skew signal. |
+| `package-sizes`: 145 packages | **373 packages**, now including Kokoro, Chatterbox-Turbo and HTDemucs-6stems | Confirms the earlier "unknown package" cases were version skew. |
+| No auth | **Still none.** `--frontend-listener https|websocket` is new (transport, not auth) | §2 and §6 unchanged: a proxy with auth stays required. |
+| `--ui-management` is all or nothing | **Unchanged**: `browse-directories` listed `C:\` with no credentials | §6's route allowlist stays mandatory. |
+| `/health` has no version | **Unchanged** (`--version` exists on the CLI) | Skew detection stays on `package-sizes`. |
+| — | Uploads are allowed with `--ui` **or** `--ui-management`; the header filename is sanitised (`safe_upload_name`), and the limit is 2 GiB | A config-driven server (`--config` with fixed models, `--ui`, no management) could serve uploads without exposing model management. Worth a v2 "locked-down server" mode. |
+
+**This machine is out of date:** both the managed install
+(`~/.soundbox/bin/audiocpp/release-0.6.1`) and the `SOUNDBOX_AUDIOCPP_BIN` pin
+(`~/tools/audio.cpp`) are 0.6.1. Soundbox installs `latest` only at install
+time and never upgrades, so existing installs stay on whatever they got.
+Separate from this proposal, but it means the app can't run every catalogue
+family it lists.
+
 ## Plan
 
-1. ~~**Probe**~~: done. Review: done.
+1. ~~**Probe**~~: done (0.6.1, then re-probed on v0.9.2). Review: done.
 2. **v1, the smallest useful slice for issue #22:**
    - the `AudioCppHost` interface, with the local host extracted unchanged;
    - the remote host: settings, auth header, fetch helper (redirects,
