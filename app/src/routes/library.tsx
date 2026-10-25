@@ -25,6 +25,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { GenerateComposer } from "@/components/generate-composer";
+import { FailureCard } from "@/components/failure-card";
 import { PendingSoundRow } from "@/components/pending-sound-row";
 import { PLAYER_DOCK_HEIGHT_PX } from "@/components/player-dock";
 import { SoundCard } from "@/components/sound-card";
@@ -131,10 +132,13 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
     settings,
     patch,
     running,
+    job,
     turns,
     jobs,
     cancelTurn,
-    canSubmit,
+    retryTurn,
+    dismissTurn,
+    blocker,
     submit,
     cancelCurrent,
     estimateS,
@@ -177,6 +181,20 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
         ? turns.filter(
             (t) =>
               t.status === "pending" &&
+              modelCategories.get(t.request.model) === category,
+          )
+        : [],
+    [turns, modelCategories, category],
+  );
+  // A turn that failed used to vanish from this page with its pending row
+  // — the only trace was a status pill elsewhere. It stays here as a card
+  // until it is retried or dismissed.
+  const failed = useMemo(
+    () =>
+      category
+        ? turns.filter(
+            (t) =>
+              t.status === "error" &&
               modelCategories.get(t.request.model) === category,
           )
         : [],
@@ -368,6 +386,16 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
         </EmptyState>
       ) : (
         <div className="grid gap-3">
+          {failed.map((turn) => (
+            <FailureCard
+              key={turn.id}
+              failure={turn.failure}
+              error={turn.error}
+              context={`${turn.request.prompt.trim() || "New sound"} · ${modelNames.get(turn.request.model) ?? turn.request.model}`}
+              onRetry={turn.request.edit ? undefined : () => retryTurn(turn)}
+              onDismiss={() => dismissTurn(turn.id)}
+            />
+          ))}
           {pending.map((turn) => (
             <PendingSoundRow
               key={turn.id}
@@ -418,7 +446,8 @@ export function LibraryPage({ category }: { category?: LibraryCategory }) {
             modelsLoading={sessionModelsLoading}
             model={sessionModel}
             running={running}
-            canSubmit={canSubmit}
+            job={job}
+            blocker={blocker}
             onSubmit={submit}
             onCancel={cancelCurrent}
             estimateS={estimateS}

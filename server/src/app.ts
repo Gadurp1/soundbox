@@ -18,6 +18,7 @@ import { ZodError } from "zod";
 
 import { VERSION, type Config } from "./config.js";
 import { ModelError, QueueFull } from "./errors.js";
+import { buildFailure } from "./failure.js";
 import { registerModels } from "./routes/models.js";
 import { registerFiles } from "./routes/files.js";
 import { registerFs } from "./routes/fs.js";
@@ -224,7 +225,7 @@ export function buildApp(config: Config, options: BuildAppOptions = {}): Fastify
     // Any ModelError that reaches the boundary is something the user can act
     // on, so it is a 400 with its own message rather than a 500.
     if (error instanceof ModelError) {
-      return reply.code(400).send({ detail: error.message });
+      return reply.code(400).send({ detail: error.message, failure: buildFailure(error) });
     }
     // 429 rather than 400: nothing about the request was wrong, there is just
     // no room in the queue this second.
