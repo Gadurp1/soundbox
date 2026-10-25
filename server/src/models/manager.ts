@@ -10,6 +10,7 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 
 import { ModelError } from "../errors.js";
+import { buildFailure } from "../failure.js";
 import type { ModelInfo } from "../schemas.js";
 import {
   AudioCppModel,
@@ -247,6 +248,7 @@ export class ModelManager {
         const info = this.instantiate(this.specs.get(id)!, null).describe();
         info.status = "error";
         info.error = String(exc);
+        info.failure = buildFailure(exc, { stage: "status" });
         out.push(info);
       }
     }

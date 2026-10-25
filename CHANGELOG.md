@@ -6,8 +6,25 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Failure cards.** A generation or download that fails now says what
+  happened, why, what to do and what is kept, with up to two fix links, Retry
+  where a retry can help, the raw text under Details and a Copy diagnostic
+  button, in place of a bare red line or a toast. The server classifies the
+  common causes (GPU out of memory, system memory, paging file, missing
+  runtime, model not downloaded, corrupt model file, stalled or truncated
+  download, Hugging Face gated or unreachable, disk full, timeout) in
+  `server/src/failure.ts`; jobs carry the result as `failure`. A failed
+  generation also stays on the Library page as a card instead of vanishing.
+
 ### Changed
 
+- **Composer.** The Generate button keeps one width and names the running
+  job's stage ("Loading model", "Generating 42%"), Cancel keeps its place
+  instead of pushing the pills about, a progress strip runs along the card's
+  bottom edge, and whatever stops a run is said in one sentence with the link
+  that fixes it rather than a greyed-out button.
 - **Sidebar.** Each area's icon carries its own hue, the sidebar folds to an
   icon rail on studio, Music and Voice Lab pages (with a "keep expanded"
   preference in Settings → Interface and on the rail itself), and the device
