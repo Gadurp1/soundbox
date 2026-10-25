@@ -17,10 +17,16 @@
 
 services:
   soundbox:
-    image: soundbox:cpu
-    build:
-      context: .
+    image: ghcr.io/hamsanders/soundbox:latest # or replace latest with v0.3.0
+    # image: ghcr.io/hamsanders/soundbox:cuda # for latest cuda build or replace cuda with v0.3.0-cuda
+    # image: soundbox:cpu
+    # build:
+    #   context: .
     restart: unless-stopped
+    # uncomment if you are using the cuda build
+    # extends:
+    #  file: docker-compose.cuda.yml
+    #  service: soundbox
     ports:
       - "127.0.0.1:17494:17494"
     environment:
