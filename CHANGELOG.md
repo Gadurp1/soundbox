@@ -48,6 +48,13 @@ to follow [Semantic Versioning](https://semver.org/).
   studio, or make a voice from it in the Voice Lab. The tag, model,
   favourites and by-agents filters fold behind a Filters button whose
   summary shows each chosen value as a chip that clears itself.
+- **Models page.** Packs: one Install for a sensible model each for sound
+  effects, music and voice at Fast, Balanced, Quality or Max, with the size
+  to download; the category tabs say how many of each are on this machine;
+  a model whose download stopped shows as Incomplete with Repair, which
+  fetches only what is missing; and a Self-test in a model's details renders
+  one second through the normal path and reports the time and device without
+  saving anything (`POST /api/models/:id/selftest`).
 
 ## [0.3.0] - 2026-10-24
 

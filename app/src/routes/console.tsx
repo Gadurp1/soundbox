@@ -101,6 +101,7 @@ export function ConsolePage() {
     model &&
     (model.status === "not_installed" ||
       model.status === "needs_runtime" ||
+      model.status === "incomplete" ||
       model.status === "downloading");
 
   /* Meter: progress while running, otherwise settles at rest. */

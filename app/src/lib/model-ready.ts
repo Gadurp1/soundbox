@@ -19,6 +19,7 @@ import type { Model } from "@/lib/api";
 export const NOT_READY: ReadonlySet<Model["status"]> = new Set([
   "not_installed",
   "needs_runtime",
+  "incomplete",
   "downloading",
   "error",
 ]);
@@ -44,6 +45,8 @@ export function notReadyReason(model: Model): string {
         : `${model.name} is missing its runtime. See Models for the install command.`;
     case "downloading":
       return `${model.name} is still downloading its weights. Generate will be available once that finishes.`;
+    case "incomplete":
+      return `${model.name}'s download did not finish, so its weights can't be used. Repair it from Models; what is already there is kept.`;
     case "error":
       return model.error || `${model.name} is in an error state and can't generate right now.`;
     default:

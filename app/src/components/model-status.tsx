@@ -11,6 +11,7 @@ const LABEL: Record<ModelStatus, string> = {
   installed: "Installed",
   downloading: "Downloading",
   loaded: "Loaded",
+  incomplete: "Incomplete",
   error: "Error",
 };
 
@@ -23,6 +24,7 @@ const DOT: Record<ModelStatus, string> = {
   installed: "text-ok",
   downloading: "text-warn",
   loaded: "text-signal",
+  incomplete: "text-warn",
   error: "text-danger",
 };
 

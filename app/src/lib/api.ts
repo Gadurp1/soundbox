@@ -17,6 +17,9 @@ export type ModelStatus =
   | "installed"
   | "downloading"
   | "loaded"
+  /** Something of the weights is on disk but not enough to run: a download
+   *  that stopped, or a package missing a file. Repair downloads the rest. */
+  | "incomplete"
   | "error";
 
 /** Where a model runs: weights on this machine ("local"), or a custom
@@ -1020,7 +1023,9 @@ export type JobKind =
   | "speak"
   | "convert"
   | "segment"
-  | "export";
+  | "export"
+  /** A model self-test: one short render, timed, nothing saved. */
+  | "selftest";
 export type JobStatus = "queued" | "running" | "done" | "error" | "cancelled";
 export type JobPhase =
   | "queued"
@@ -1235,6 +1240,17 @@ export interface DirectoryListing {
   /** Subdirectories only — no files, ever. Empty for a folder the server can
    *  see but not open. */
   entries: { name: string; path: string }[];
+}
+
+/** What a model self-test reports: one short render through the normal
+ *  path, timed, nothing saved. */
+export interface ModelSelfTest {
+  model: string;
+  ok: boolean;
+  device: string;
+  elapsed_s: number;
+  rendered_s: number | null;
+  error: string | null;
 }
 
 export interface HealthStatus {
@@ -1474,6 +1490,9 @@ export interface SoundboxApi {
   listAudioCppCatalog(): Promise<AudioCppCatalogEntry[]>;
   getAudioCppRuntime(): Promise<AudioCppRuntimeStatus>;
   downloadModel(id: string): Promise<JobRef>;
+  /** One short render, timed, nothing saved. Resolves even when the render
+   *  fails: the result says so. */
+  selfTestModel(id: string): Promise<ModelSelfTest>;
   loadModel(id: string): Promise<Model>;
   unloadModel(id: string): Promise<Model>;
   deleteModelWeights(id: string): Promise<void>;
@@ -1747,6 +1766,8 @@ export const httpApi: SoundboxApi = {
       method: "POST",
     }),
 
+  selfTestModel: (id) =>
+    request<ModelSelfTest>(`/api/models/${encodeURIComponent(id)}/selftest`, { method: "POST" }),
   loadModel: (id) =>
     request<Model>(`/api/models/${encodeURIComponent(id)}/load`, {
       method: "POST",

@@ -65,6 +65,11 @@ export function composerBlocker(input: {
         sentence: `${model.name} is still downloading. Generate unlocks when it finishes.`,
         link: { to: "/models", label: "Watch progress in Models" },
       };
+    case "incomplete":
+      return {
+        sentence: `${model.name}'s download did not finish, so its weights can't be used yet. What is already there is kept.`,
+        link: { to: "/models", label: "Repair it in Models" },
+      };
     case "error":
       return {
         sentence:
