@@ -7,7 +7,11 @@
  * `baseUrl`.
  */
 
+import { apiUrl, NOT_FOUND_HINT } from "../apiUrl.js";
 import { ModelError } from "../errors.js";
+import { getLogger } from "../logging.js";
+
+const log = getLogger("soundbox.llm");
 
 const REQUEST_TIMEOUT_MS = 60_000;
 
@@ -67,7 +71,7 @@ async function postChatCompletion(
 ): Promise<RawChoice | undefined> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  const url = `${opts.baseUrl.replace(/\/+$/, "")}/v1/chat/completions`;
+  const url = apiUrl(opts.baseUrl, "/v1/chat/completions");
   const body: Record<string, unknown> = {
     model: opts.model,
     messages: opts.messages,
@@ -80,6 +84,10 @@ async function postChatCompletion(
   if (thinkingDisabled(opts)) body.reasoning_effort = "none";
 
   let resp: Response;
+  const started = Date.now();
+  // URL, model and outcome only. Never the key, and never the messages: they
+  // are the user's prompts.
+  log.debug(`POST ${url} model=${opts.model || "(none)"} max_tokens=${maxTokens}`);
   try {
     resp = await fetchImpl(url, {
       method: "POST",
@@ -92,19 +100,23 @@ async function postChatCompletion(
     });
   } catch (exc) {
     const aborted = exc instanceof Error && exc.name === "AbortError";
+    log.debug(`POST ${url} failed after ${Date.now() - started}ms: ${aborted ? "timeout" : String(exc)}`);
     throw new ModelError(
       aborted
-        ? `The prompt-assistant endpoint at ${opts.baseUrl} did not respond in time.`
-        : `Could not reach the prompt-assistant endpoint at ${opts.baseUrl}: ${String(exc)}`,
+        ? `The prompt-assistant endpoint at ${url} did not respond in time.`
+        : `Could not reach the prompt-assistant endpoint at ${url}: ${String(exc)}`,
     );
   } finally {
     clearTimeout(timer);
   }
 
+  log.debug(`POST ${url} -> HTTP ${resp.status} in ${Date.now() - started}ms`);
   if (!resp.ok) {
     const text = await resp.text().catch(() => "");
     throw new ModelError(
-      `Prompt-assistant endpoint returned HTTP ${resp.status}${text ? `: ${text.slice(0, 500)}` : ""}`,
+      `Prompt-assistant endpoint ${url} returned HTTP ${resp.status}` +
+        `${text ? `: ${text.slice(0, 500)}` : ""}` +
+        (resp.status === 404 ? `\n\n${NOT_FOUND_HINT}` : ""),
     );
   }
 

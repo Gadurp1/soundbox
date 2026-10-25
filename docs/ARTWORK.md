@@ -135,6 +135,10 @@ explicitly:
 - **OpenAI-compatible:** `POST /v1/images/generations`. OpenAI, LocalAI, most
   proxies.
 
+Soundbox adds that path to the base URL without doubling it, so
+`http://ai.lan:8080` and `http://ai.lan:8080/v1` (or `…/sdapi/v1` for
+Automatic1111) all work. An error names the full URL it tried.
+
 An API key is optional and write-only, like the Hugging Face token. The server
 never returns it.
 

@@ -6,6 +6,26 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`SOUNDBOX_LOG_LEVEL`.** Sets the server's log level (`debug`, `info`,
+  `warning`, `error`, `critical`) when `--log-level` isn't given. Unlike the
+  flag, it reaches `npm run dev`, Docker and the desktop app. The startup banner
+  shows the level in force, and an unknown value warns instead of being
+  silently ignored. `debug` now logs each request to the prompt assistant,
+  artwork and custom endpoints (URL, status, timing; never keys or prompts).
+  Before this there were no debug lines at all, so `--log-level debug` showed
+  nothing extra. (#22)
+
+### Fixed
+
+- **Prompt assistant and artwork base URLs ending in `/v1`.** Soundbox added
+  `/v1/chat/completions` or `/v1/images/generations` to the base URL as typed,
+  so the `…/v1` form most servers document became `/v1/v1/…` and a 404. The
+  path is now joined without doubling, so a root, `…/v1`, `…/sdapi/v1` or the
+  full endpoint all work. Errors name the full URL tried, and a 404 explains
+  what to check. (#22)
+
 ## [0.4.0] - 2026-10-25
 
 ### Added
