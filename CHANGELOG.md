@@ -6,6 +6,13 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Soundbox starts again on libraries from the voice-profiles era. Their old
+  `voice_samples` table stopped the server with "no such column: voice_id"
+  before it could write a log. The table is now renamed to
+  `voice_samples_legacy` and kept, not dropped.
+
 ## [0.3.0] - 2026-10-24
 
 ### Added
