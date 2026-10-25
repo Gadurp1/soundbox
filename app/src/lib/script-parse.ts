@@ -56,7 +56,8 @@ export function splitSentences(text: string): string[] {
       last &&
       (/\b(?:[A-Z][a-z]?|Mr|Mrs|Ms|Dr|St|No|vs|etc)\.$/.test(last) ||
         /\d\.$/.test(last) ||
-        (/["”’']$/.test(last) && /^[a-z]/.test(s)))
+        (/["”’']$/.test(last) &&
+          (/^[a-z]/.test(s) || /^[A-Z][a-z]+(?:\s[A-Z][a-z]+)?\s(?:said|asked|replied|whispered|shouted|muttered|called|answered|cried|added|went on)\b/.test(s))))
     ) {
       out[out.length - 1] = `${last} ${s}`;
     } else {
