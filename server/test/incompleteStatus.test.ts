@@ -7,10 +7,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AudioCppModel, catalogById } from "../src/models/audiocpp.js";
 
 /**
- * "Incomplete" is decided from the package folder alone: something there,
- * nothing runnable. It must stay distinct from "not installed" (nothing at
- * all), because the two have different fixes and the Models page offers
- * Repair for one and Download for the other.
+ * "Incomplete" means this entry's own weights are partly on disk. It must
+ * stay distinct from "not installed", and must not be triggered by another
+ * entry's files in a shared package folder.
  */
 
 let root: string;
@@ -29,10 +28,17 @@ function model(id: string): AudioCppModel {
   return new AudioCppModel(spec, join(root, "unused"), null, root);
 }
 
+/** Where `model`'s single weights file would land, relative to its folder. */
+function fileTarget(m: AudioCppModel): string {
+  const spec = catalogById().get(m.describe().id)!;
+  const glob = spec.weights_glob[0]!;
+  const prefix = spec.audiocpp_strip_prefix;
+  return prefix && glob.startsWith(`${prefix}/`) ? glob.slice(prefix.length + 1) : glob;
+}
+
 describe("incomplete weights", () => {
   it("reports not_installed with no package folder", async () => {
-    const m = model("audiocpp-stable-audio-3-sfx");
-    expect((await m.status()).status).toBe("not_installed");
+    expect((await model("audiocpp-stable-audio-3-sfx").status()).status).toBe("not_installed");
   });
 
   it("reports not_installed for an empty package folder", async () => {
@@ -41,10 +47,21 @@ describe("incomplete weights", () => {
     expect((await m.status()).status).toBe("not_installed");
   });
 
-  it("reports incomplete when a transfer left a .part behind", async () => {
+  it("reports incomplete when its own file was left as a .part", async () => {
     const m = model("audiocpp-stable-audio-3-sfx");
-    await mkdir(m.weightsDir(), { recursive: true });
-    await writeFile(join(m.weightsDir(), "model.gguf.part"), "x");
+    const target = join(m.weightsDir(), ...fileTarget(m).split("/"));
+    await mkdir(join(target, ".."), { recursive: true });
+    await writeFile(`${target}.part`, "x");
     expect((await m.status()).status).toBe("incomplete");
+  });
+
+  it("ignores another entry's files in a shared package folder", async () => {
+    const turbo = model("audiocpp-ace-step");
+    const base = model("audiocpp-ace-step-base");
+    expect(turbo.weightsDir()).toBe(base.weightsDir());
+    const target = join(turbo.weightsDir(), ...fileTarget(turbo).split("/"));
+    await mkdir(join(target, ".."), { recursive: true });
+    await writeFile(target, "x");
+    expect((await base.status()).status).toBe("not_installed");
   });
 });

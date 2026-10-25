@@ -308,7 +308,7 @@ export function originLabel(origin: Origin | null | undefined): string | null {
 
 export interface Job {
   id: string;
-  kind: "generate" | "download" | "separate" | "speak" | "convert" | "segment" | "export";
+  kind: "generate" | "download" | "separate" | "speak" | "convert" | "segment" | "export" | "selftest";
   status: JobStatus;
   phase: JobPhase;
   progress: number;

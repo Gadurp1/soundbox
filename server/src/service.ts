@@ -367,45 +367,73 @@ export class SoundboxService {
    * resident, which is part of what is being measured.
    */
   async selfTestModel(modelId: string): Promise<ModelSelfTest> {
-    const model = this.models.get(modelId);
+    const model = this.models.get(modelId); // throws ModelError on an unknown id
     const info = model.describe();
-    const started = Date.now();
-    const base = { model: modelId, device: (await this.health()).device };
-    try {
-      if (!model.loaded) await this.models.load(modelId);
-      this.models.touch();
-      let rendered: { audio: dsp.Audio; sampleRate: number };
-      if (info.task === "gen") {
-        rendered = await model.generate("a single short wooden click", 1, {
-          steps: info.defaults.steps ?? null,
+    const device = (await this.health()).device;
+    const fail = (error: string, elapsedS = 0): ModelSelfTest => ({
+      model: modelId,
+      device,
+      ok: false,
+      elapsed_s: elapsedS,
+      rendered_s: null,
+      error,
+    });
+    if (info.task !== "gen" && info.task !== "tts") {
+      return fail(
+        `${info.name} is a ${info.task} model: the self-test renders a one-second clip from a ` +
+          `prompt and has nothing to feed it. Run it on a real sound instead.`,
+      );
+    }
+    if (info.requires_voice_reference) {
+      return fail(
+        `${info.name} only reads with a cloned voice, so it has no voice of its own to test ` +
+          `with. Try it from the Voice Lab instead.`,
+      );
+    }
+
+    // Through the queue, like any render: running beside a job could load
+    // this model over one that is mid-render. The route waits for the job,
+    // which the runner settles; a job cancelled before it starts settles it
+    // from the poll below instead.
+    let settle!: (result: ModelSelfTest) => void;
+    const result = new Promise<ModelSelfTest>((resolve) => (settle = resolve));
+    const job = this.jobs.submit("selftest", { model: modelId }, async (handle) => {
+      const started = Date.now();
+      try {
+        if (!model.loaded) {
+          handle.phase("loading", `Loading ${info.name}`);
+          await this.models.load(modelId);
+        }
+        this.models.touch();
+        handle.phase("generating", "Self-test");
+        const rendered =
+          info.task === "gen"
+            ? await model.generate("a single short wooden click", 1, {
+                steps: info.defaults.steps ?? null,
+              })
+            : await model.speak("Soundbox self test.", {});
+        const samples = rendered.audio[0]?.length ?? 0;
+        settle({
+          model: modelId,
+          device,
+          ok: true,
+          elapsed_s: round3((Date.now() - started) / 1000),
+          rendered_s: round3(samples / rendered.sampleRate),
+          error: null,
         });
-      } else if (info.task === "tts") {
-        rendered = await model.speak("Soundbox self test.", {});
-      } else {
-        return {
-          ...base,
-          ok: false,
-          elapsed_s: 0,
-          rendered_s: null,
-          error: `${info.name} is a ${info.task} model: the self-test renders a one-second clip from a prompt and has nothing to feed it. Run it on a real sound instead.`,
-        };
+      } catch (exc) {
+        settle(fail(exc instanceof Error ? exc.message : String(exc), round3((Date.now() - started) / 1000)));
       }
-      const samples = rendered.audio[0]?.length ?? 0;
-      return {
-        ...base,
-        ok: true,
-        elapsed_s: round3((Date.now() - started) / 1000),
-        rendered_s: round3(samples / rendered.sampleRate),
-        error: null,
-      };
-    } catch (exc) {
-      return {
-        ...base,
-        ok: false,
-        elapsed_s: round3((Date.now() - started) / 1000),
-        rendered_s: null,
-        error: exc instanceof Error ? exc.message : String(exc),
-      };
+      return { sounds: [] };
+    });
+    const watch = setInterval(() => {
+      const status = this.jobs.get(job.id)?.status;
+      if (status === "cancelled") settle(fail("Cancelled before it ran."));
+    }, 500);
+    try {
+      return await result;
+    } finally {
+      clearInterval(watch);
     }
   }
 

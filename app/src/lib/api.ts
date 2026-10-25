@@ -1021,7 +1021,9 @@ export type JobKind =
   | "speak"
   | "convert"
   | "segment"
-  | "export";
+  | "export"
+  /** A model self-test: one short render, timed, nothing saved. */
+  | "selftest";
 export type JobStatus = "queued" | "running" | "done" | "error" | "cancelled";
 export type JobPhase =
   | "queued"
