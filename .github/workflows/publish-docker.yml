@@ -1,0 +1,116 @@
+
+name: docker-publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to build and publish (e.g. v0.3.0)"
+        required: true
+        type: string
+      publish_docker:
+        description: "Publish Docker image to GHCR"
+        required: true
+        type: boolean
+        default: false
+      publish_latest:
+        description: "Also publish the latest tag"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    name: docker-publish
+
+    steps:
+      - name: Validate inputs
+        shell: bash
+        env:
+          VERSION_TAG: ${{ inputs.tag }}
+          PUBLISH_DOCKER: ${{ inputs.publish_docker }}
+          PUBLISH_LATEST: ${{ inputs.publish_latest }}
+        run: |
+          if [[ ! "$VERSION_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "::error::Invalid version tag: $VERSION_TAG"
+            exit 1
+          fi
+
+          if [[ "$PUBLISH_LATEST" == "true" && "$PUBLISH_DOCKER" != "true" ]]; then
+            echo "::error::publish_latest requires publish_docker"
+            exit 1
+          fi
+
+          if [[ "$PUBLISH_LATEST" == "true" && "$VERSION_TAG" == *-* ]]; then
+            echo "::error::Pre-release versions cannot be published as latest"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Verify checked out tag
+        shell: bash
+        env:
+          VERSION_TAG: ${{ inputs.tag }}
+        run: |
+          git fetch --force origin "refs/tags/${VERSION_TAG}:refs/tags/${VERSION_TAG}"
+          EXPECTED_COMMIT="$(git rev-list -n 1 "refs/tags/${VERSION_TAG}")"
+          CURRENT_COMMIT="$(git rev-parse HEAD)"
+
+          if [[ "$EXPECTED_COMMIT" != "$CURRENT_COMMIT" ]]; then
+            echo "::error::Checkout does not match ${VERSION_TAG}"
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Set Docker image tags
+        id: tags
+        shell: bash
+        env:
+          VERSION_TAG: ${{ inputs.tag }}
+          PUBLISH_LATEST: ${{ inputs.publish_latest }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          REPOSITORY="${REPOSITORY,,}"
+          IMAGE_NAME="ghcr.io/${REPOSITORY}"
+
+          {
+            echo "tags<<EOF"
+            echo "${IMAGE_NAME}:${VERSION_TAG}"
+
+            if [[ "$PUBLISH_LATEST" == "true" ]]; then
+              echo "${IMAGE_NAME}:latest"
+            fi
+
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate with GHCR
+        if: ${{ inputs.publish_docker }}
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: ${{ inputs.publish_docker }}
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
