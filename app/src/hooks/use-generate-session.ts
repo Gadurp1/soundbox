@@ -28,7 +28,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useJobStreams } from "@/hooks/use-job-stream";
-import {
+import { ApiError,
   api,
   errorMessage,
   type EditKind,
@@ -234,6 +234,11 @@ export interface GenerateSessionOptions {
  *  out which session the server opened for it. Module-level because every
  *  page's composer drives the same thread. */
 let openingSession: Promise<string | null> | null = null;
+
+/** Dispatched on `window` by anything that wants the mounted composer to
+ *  submit — the command palette's Generate row. Ignored when no composer is
+ *  mounted with its hotkey on, same as Ctrl+Enter would be. */
+export const GENERATE_EVENT = "soundbox:generate";
 
 export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {}) {
   const qc = useQueryClient();
@@ -593,7 +598,12 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
           setJobId(ref.job_id);
           patchTurn(turnId, { jobId: ref.job_id });
         },
-        (err: Error) => patchTurn(turnId, { status: "error", error: err.message }),
+        (err: Error) =>
+          patchTurn(turnId, {
+            status: "error",
+            error: err.message,
+            failure: err instanceof ApiError ? err.failure : null,
+          }),
       );
     },
     [
@@ -627,8 +637,16 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
         submitRef.current();
       }
     };
+    // The command palette's "Generate" row. A window event rather than a
+    // second copy of this hook in the palette, which would register a second
+    // Ctrl+Enter listener and submit every prompt twice.
+    const onEvent = () => submitRef.current();
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener(GENERATE_EVENT, onEvent);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(GENERATE_EVENT, onEvent);
+    };
   }, [hotkey]);
 
   /* Learn which session this thread belongs to. The server resolves (or
@@ -652,6 +670,7 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
         patchTurnByJob(jid, {
           status: j.status === "error" ? "error" : "cancelled",
           error: j.error ?? null,
+          failure: j.failure ?? null,
         });
       }
     }
@@ -711,6 +730,24 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
       document.getElementById("prompt")?.focus();
     },
     [setSettings],
+  );
+
+  const removeTurn = useSessionStore((s) => s.removeTurn);
+
+  /** Run a failed turn again, unchanged: its request goes back into the
+   *  controls and straight out, and the failed turn makes way for the new
+   *  one so the thread does not show the same prompt twice. */
+  const retryTurn = useCallback(
+    (turn: Turn) => {
+      // An edit (extend, cover, repaint) needs its source sound, which the
+      // turn does not carry; resubmitting would quietly become a plain
+      // generation of the same prompt. Callers hide Retry for those.
+      if (turn.request.edit) return;
+      reuseTurn(turn);
+      removeTurn(turn.id);
+      submitWith();
+    },
+    [reuseTurn, removeTurn, submitWith],
   );
 
   /**
@@ -925,6 +962,9 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
     clearEdit,
     cancelTurn,
     reuseTurn,
+    retryTurn,
+    /** Drop a failed turn once it has been read. */
+    dismissTurn: removeTurn,
     /** Whether the composer should show the enhance affordance at all. */
     llmEnabled: (llmStatus?.mode ?? "off") !== "off",
     enhance,

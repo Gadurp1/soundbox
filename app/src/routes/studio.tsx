@@ -1366,7 +1366,7 @@ export function StudioEditor({
   const panelCommands: Command[] = panels.map((panel) => ({
     id: panel.id,
     label: panel.label,
-    hint: `${MOD_LABEL}${panel.key.toUpperCase()}`,
+    hint: ["mod", panel.key.toUpperCase()],
     // An unavailable panel is not "on", whatever `closedPanels` happens to
     // say about it — a tick beside a row you cannot choose is just confusing.
     active: !closedPanels.has(panel.id),
@@ -2331,6 +2331,26 @@ export function StudioEditor({
                         onSelect={setSelectedId}
                         onPatch={(id, patch) => updateSegment.mutate({ id, patch })}
                         onCreate={(values) => createSegment.mutate(values)}
+                        onCreateMany={async (values) => {
+                          // One at a time, awaited: the server appends each
+                          // after the last, so firing them together would
+                          // leave the order to the network.
+                          // Stops at the first line the server refuses and
+                          // says how far it got: the rest would only land
+                          // out of order, and the paste panel has closed.
+                          // useCreateSegment already toasts the error itself.
+                          let added = 0;
+                          try {
+                            for (const v of values) {
+                              await createSegment.mutateAsync(v);
+                              added++;
+                            }
+                          } catch {
+                            toast.error(
+                              `Added ${added} of ${values.length} lines. The rest were not added; paste them again to continue.`,
+                            );
+                          }
+                        }}
                         onDelete={removeLine}
                         onGenerate={speakLine}
                         generating={generatingIds}
