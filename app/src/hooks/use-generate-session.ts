@@ -235,6 +235,11 @@ export interface GenerateSessionOptions {
  *  page's composer drives the same thread. */
 let openingSession: Promise<string | null> | null = null;
 
+/** Dispatched on `window` by anything that wants the mounted composer to
+ *  submit — the command palette's Generate row. Ignored when no composer is
+ *  mounted with its hotkey on, same as Ctrl+Enter would be. */
+export const GENERATE_EVENT = "soundbox:generate";
+
 export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {}) {
   const qc = useQueryClient();
   const { data: allModels, isLoading: modelsLoading } = useModels();
@@ -632,8 +637,16 @@ export function useGenerateSession({ hotkey = true }: GenerateSessionOptions = {
         submitRef.current();
       }
     };
+    // The command palette's "Generate" row. A window event rather than a
+    // second copy of this hook in the palette, which would register a second
+    // Ctrl+Enter listener and submit every prompt twice.
+    const onEvent = () => submitRef.current();
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener(GENERATE_EVENT, onEvent);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(GENERATE_EVENT, onEvent);
+    };
   }, [hotkey]);
 
   /* Learn which session this thread belongs to. The server resolves (or

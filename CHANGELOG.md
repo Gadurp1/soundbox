@@ -30,6 +30,11 @@ to follow [Semantic Versioning](https://semver.org/).
   preference in Settings → Interface and on the rail itself), and the device
   row in the footer opens a panel with the GPU, VRAM in use, the loaded model
   and an Unload button that frees the memory without a trip to Models.
+- **Command palette.** Ctrl/⌘+K now finds sounds, stories, voices and models
+  as well as pages: a sound opens, a story opens in its builder, a model
+  loads, downloads or unloads from the row. Settings rows appear once you
+  type. On a page with a composer the first row is Generate, or Cancel while
+  a job runs. `?` opens a keyboard cheatsheet.
 
 ## [0.3.0] - 2026-10-24
 
