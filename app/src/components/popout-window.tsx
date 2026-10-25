@@ -19,6 +19,7 @@ import { PanelLeftCloseIcon, XIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { closePopoutWindow } from "@/lib/popout";
 import { PortalContainerContext } from "@/lib/portal-container";
 
 /** How often to check that the window is still there. `pagehide` is the real
@@ -155,7 +156,7 @@ export function PopoutWindow({
     }, CLOSED_POLL_MS);
     // The studio reloading or navigating away takes its panels with it; a
     // window left behind would be a frame with nothing driving it.
-    const closeAll = (): void => win.close();
+    const closeAll = (): void => closePopoutWindow(win);
     window.addEventListener("pagehide", closeAll);
     return () => {
       done = true;
@@ -179,7 +180,7 @@ export function PopoutWindow({
         win,
         window.setTimeout(() => {
           pendingClose.delete(win);
-          win.close();
+          closePopoutWindow(win);
         }, 0),
       );
     };

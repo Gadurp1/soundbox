@@ -146,6 +146,9 @@ fn find_checkout() -> Option<PathBuf> {
 ///
 /// Anything else (a link with `target="_blank"`) keeps the default
 /// behaviour; this exists for the panels, not as a general browser.
+/// Must match `POPOUT_CLOSE_TITLE` in app/src/lib/popout.ts.
+const POPOUT_CLOSE_TITLE: &str = "soundbox:close-popout";
+
 fn popout_handler(
     app: tauri::AppHandle,
 ) -> impl Fn(Url, NewWindowFeatures) -> NewWindowResponse<tauri::Wry> + Send + 'static {
@@ -161,6 +164,16 @@ fn popout_handler(
             // The page names itself after the panel ("Timeline · My story"),
             // and the taskbar is where you find which window is which.
             .on_document_title_changed(|window, title| {
+                // The studio's way of saying "this panel went back". A script's
+                // `window.close()` on a window built here only tears down the
+                // webview inside it and leaves an empty native frame, so the
+                // page sets this title instead and the window is closed from
+                // here, frame and all. See `closePopoutWindow` in
+                // app/src/lib/popout.ts.
+                if title == POPOUT_CLOSE_TITLE {
+                    let _ = window.close();
+                    return;
+                }
                 let _ = window.set_title(&title);
             })
             .build();
