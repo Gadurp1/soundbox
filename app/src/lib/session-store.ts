@@ -19,6 +19,7 @@
 import { create } from "zustand";
 import type {
   EditKind,
+  Failure,
   EditOptions,
   GenerateRequest,
   Model,
@@ -89,6 +90,8 @@ export interface Turn {
   status: "pending" | "done" | "error" | "cancelled";
   sounds: Sound[];
   error: string | null;
+  /** The server's classified failure, when the job reported one. */
+  failure?: Failure | null;
   insert?: TurnInsert;
 }
 
@@ -174,6 +177,8 @@ interface SessionState {
   addTurn: (turn: Turn) => void;
   patchTurn: (id: string, p: Partial<Turn>) => void;
   patchTurnByJob: (jobId: string, p: Partial<Turn>) => void;
+  /** Drop one turn: a failed one the user has read and dismissed. */
+  removeTurn: (id: string) => void;
   /** "New sound": empty conversation, empty prompt, model choice kept. */
   reset: () => void;
 }
@@ -283,6 +288,7 @@ export const useSessionStore = create<SessionState>((set) => ({
     set((s) => ({
       turns: s.turns.map((t) => (t.jobId === jobId ? { ...t, ...p } : t)),
     })),
+  removeTurn: (id) => set((s) => ({ turns: s.turns.filter((t) => t.id !== id) })),
   reset: () =>
     set((s) => ({
       sessionId: null,

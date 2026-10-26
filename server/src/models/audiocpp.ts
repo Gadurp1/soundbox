@@ -937,10 +937,41 @@ export class AudioCppModel {
       info.status = "installed";
     } else if (downloaded) {
       info.status = "needs_runtime";
+    } else if (await this.hasPartialWeights()) {
+      info.status = "incomplete";
     } else {
       info.status = "not_installed";
     }
     return info;
+  }
+
+  /**
+   * Whether this entry's own weights are partly on disk while `weightsFile()`
+   * still finds nothing to run. Only this entry's files count: several
+   * catalog entries can share one package folder (ACE-Step Turbo and Base
+   * both live in ACE-Step1.5-GGUF), so "the folder is not empty" would mark
+   * Base incomplete the moment Turbo is installed.
+   *
+   * - A directory package with some, but not all, of its required files.
+   * - A file package with a leftover `.part` of a file matching its glob,
+   *   which a transfer that was killed rather than failed leaves behind.
+   */
+  private async hasPartialWeights(): Promise<boolean> {
+    if (this.spec.weights_path) return false;
+    const root = this.weightsDir();
+    if (!existsSync(root)) return false;
+    if (this.spec.weights_layout === "directory") {
+      const required = this.spec.weights_required
+        .map((rel) => this.onDisk(rel))
+        .filter((rel): rel is string => Boolean(rel));
+      const present = required.filter((rel) => existsSync(join(root, ...rel.split("/"))));
+      return present.length > 0 && present.length < required.length;
+    }
+    const match = rglobMatcher(this.spec.weights_glob.map((g) => this.onDisk(g)));
+    for (const rel of await walkFiles(root)) {
+      if (rel.endsWith(".part") && match(rel.slice(0, -".part".length))) return true;
+    }
+    return false;
   }
 
   /* ---------------------------------------------------------- weights */

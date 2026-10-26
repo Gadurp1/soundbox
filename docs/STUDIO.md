@@ -39,6 +39,58 @@ between two open panels to trade height between them, or focus it and use the
 arrow keys. The chevron collapses a panel's body but keeps it mounted. The
 timeline owns the audio graph, so collapsing it does not stop playback.
 
+### Canvas layout
+
+The columns are one way to arrange the studio. The other is a **canvas**: every
+open panel is a card you can put anywhere and make any size. Switch with the
+button beside **Panels** in the header, or under **Layout** in the Panels menu.
+The choice applies to every story.
+
+| Gesture                           | What it does                                   |
+| --------------------------------- | ---------------------------------------------- |
+| Drag a card's header              | Move it. Edges snap to a 16px grid             |
+| Hold `Alt` while dragging         | Move or resize it without snapping             |
+| Drag a card's right or bottom edge, or its corner | Resize it                      |
+| Focus a header, then arrow keys   | Move it one grid step                          |
+| `Shift` + arrow keys on a header  | Resize it one grid step                        |
+| Click anywhere on a card          | Bring it to the front                          |
+| Panels → **Tidy the canvas**      | Put every open card back in the column layout  |
+
+The first time you open the canvas, it is laid out like the columns. A panel
+you open later appears near the top left of what you are looking at. Positions
+are remembered per builder in this browser, including for panels you close, so
+a panel you reopen returns to where you left it. Cards keep their contents
+mounted while you move them, so dragging the timeline does not stop playback.
+
+### Panels in their own windows
+
+Any panel can leave the studio for a window of its own. You can then put it on
+another monitor, for example the mixer and the library on one screen and the
+timeline on the other.
+
+- **Drag it out.** Drag a panel's header past the edge of the browser window
+  and let go. While the pointer is outside the window, the panel is
+  highlighted and says *Release to open in a new window*. The new window opens
+  where you let go, at the size the panel had. This works in both layouts.
+- **Or press the pop-out button** (↗) in the panel's header.
+
+A popped-out panel is the same panel, not a copy. It shares the studio's state,
+so a clip you move in a popped-out timeline moves in the script beside the main
+window too. Its menus open in its own window. Keyboard shortcuts pressed in it
+work as they do in the main window: `Space` plays, `⌘/Ctrl + Z` undoes, and the
+panel shortcuts toggle panels.
+
+To put a panel back, press the button in its window's header, close the
+window, or choose **Put every window back** from the Panels menu. Closing the
+panel from anywhere (its X, its shortcut, the Panels menu) also closes its
+window. Popped-out panels are marked ↗ in the Panels menu.
+
+Pop-out windows do not survive a reload. Browsers only open windows in
+response to a click or a drag, so when the studio reloads every panel comes
+back into the page. In a browser, a pop-up blocker can refuse the window. If
+it does, the studio says so: allow pop-ups for Soundbox and try again. The
+desktop app opens them as native windows.
+
 ## The panels
 
 Every panel is available in every story. Which ones start open depends on the

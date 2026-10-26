@@ -31,7 +31,7 @@ const mcpCallSchema = z.object({
   client_version: z.string().nullish(),
   session_id: z.string().nullish(),
   transport: z.enum(["http", "stdio"]).default("http"),
-  args: z.record(z.unknown()).default({}),
+  args: z.record(z.string(), z.unknown()).default({}),
   duration_ms: z.number().int().nullish(),
   error: z.string().nullish(),
   job_id: z.string().nullish(),

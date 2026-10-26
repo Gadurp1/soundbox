@@ -96,6 +96,11 @@ export function uniqueId(name: string, taken: Iterable<string>): string {
 /** The directory a profile's library lives in. The default profile is the
  *  install root itself — see the module comment. */
 export function profileRoot(base: string, id: string): string {
+  // Ids are slugs (see `slugify`). Refuse anything else before it is joined
+  // into a path that `deleteProfile` may remove recursively.
+  if (id !== DEFAULT_PROFILE_ID && !/^[a-z0-9][a-z0-9-]*$/.test(id)) {
+    throw new Error(`Invalid profile id: ${id}`);
+  }
   return id === DEFAULT_PROFILE_ID ? base : join(base, PROFILES_DIR, id);
 }
 

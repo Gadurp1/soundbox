@@ -29,6 +29,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ChevronDownIcon,
+  ClipboardPasteIcon,
   MicIcon,
   SlidersHorizontalIcon,
   PauseIcon,
@@ -40,6 +41,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DeliveryControls } from "@/components/delivery-controls";
+import { EmptyState } from "@/components/empty-state";
+import { ScriptImportPanel } from "@/components/script-import-panel";
+import { autoCast, castVoices, SAMPLE_SCRIPT } from "@/lib/script-parse";
 import { PeakScrubber } from "@/components/peak-scrubber";
 import { VoiceAvatar } from "@/components/voice-avatar";
 import { cn } from "@/lib/utils";
@@ -64,6 +68,9 @@ export interface StoryScriptProps {
   onSelect: (id: string) => void;
   onPatch: (id: string, patch: SegmentPatch) => void;
   onCreate: (values: SegmentCreate) => void;
+  /** Append several lines at once, in order — a pasted script. Falls back to
+   *  one `onCreate` per line when the studio does not provide it. */
+  onCreateMany?: (values: SegmentCreate[]) => void;
   onDelete: (id: string) => void;
   onGenerate: (id: string) => void;
   /** The story's default delivery, and the setter for it. Every line without
@@ -102,6 +109,7 @@ export function StoryScript({
   onSelect,
   onPatch,
   onCreate,
+  onCreateMany,
   onDelete,
   onGenerate,
   generating,
@@ -126,13 +134,81 @@ export function StoryScript({
 
   const params = model?.params ?? [];
 
+  /** The paste panel, above the lines. */
+  const [importOpen, setImportOpen] = useState(false);
+
+  const addMany = (values: SegmentCreate[]): void => {
+    if (values.length === 0) return;
+    if (onCreateMany) onCreateMany(values);
+    else for (const v of values) onCreate(v);
+  };
+
+  /** The sample scene: cast through the same parser a paste goes through, so
+   *  "Load sample" is a demonstration of Auto-cast and not a special case. */
+  const loadSample = (): void => {
+    const { lines, characters } = autoCast(SAMPLE_SCRIPT);
+    const cast = castVoices(characters, voices);
+    addMany(
+      lines.map((l) => ({
+        text: l.text,
+        speaker: l.speaker,
+        voice_id: l.speaker ? (cast.get(l.speaker) ?? null) : null,
+      })),
+    );
+  };
+
+  if (segments.length === 0 && !importOpen) {
+    return (
+      <EmptyState
+        icon={ClipboardPasteIcon}
+        title="No lines yet"
+        size="sm"
+        action={
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button size="sm" disabled={readOnly} onClick={() => onCreate({})}>
+              Add first line
+            </Button>
+            <Button size="sm" variant="outline" disabled={readOnly} onClick={() => setImportOpen(true)}>
+              Paste a script
+            </Button>
+            <Button size="sm" variant="ghost" disabled={readOnly} onClick={loadSample}>
+              Load sample
+            </Button>
+          </div>
+        }
+      >
+        Write a line, paste a scene and let Auto-cast hand out the voices, or load a short
+        sample to hear how it works.
+      </EmptyState>
+    );
+  }
+
   return (
     <div className="space-y-1">
+      {importOpen && (
+        <ScriptImportPanel
+          voices={voices}
+          onAdd={addMany}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
       <div className="flex items-start justify-between gap-2 px-1 pb-1">
         <p className="text-muted-foreground text-xs">
           Type <Key>/</Key> to set a voice, <Key>#</Key> for a pause, <Key>Enter</Key> for a
           new line.
         </p>
+        {!importOpen && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={readOnly}
+            onClick={() => setImportOpen(true)}
+            className="text-muted-foreground hover:text-foreground h-6 shrink-0 gap-1 px-1.5 text-xs"
+          >
+            <ClipboardPasteIcon className="size-3.5" aria-hidden="true" />
+            Paste a script
+          </Button>
+        )}
         {onStoryOptions && (
           <DeliveryButton
             label="Delivery"

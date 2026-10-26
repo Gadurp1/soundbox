@@ -19,6 +19,16 @@ import { SearchIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+/** Strip tags until none are left: one pass turns `<<b>script>` into `<script>`. */
+function stripTags(html: string): string {
+  let text = html;
+  for (let prev = ""; prev !== text; ) {
+    prev = text;
+    text = text.replace(/<[^>]*>/g, "");
+  }
+  return text;
+}
+
 interface PagefindResult {
   id: string;
   data: () => Promise<{
@@ -78,7 +88,7 @@ export function DocSearch() {
           title: d.meta.title ?? d.url,
           // Pagefind marks the matched words with <mark>; the excerpt is
           // rendered as text, so those tags are stripped rather than shown.
-          excerpt: d.excerpt.replace(/<[^>]+>/g, ""),
+          excerpt: stripTags(d.excerpt),
         })),
       );
     }, 150);

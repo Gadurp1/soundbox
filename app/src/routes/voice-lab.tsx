@@ -20,7 +20,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   AudioLinesIcon,
   DownloadIcon,
@@ -702,6 +702,14 @@ export function VoiceLabPage() {
   const imageReady = useImageStatus().data?.ready ?? false;
 
   const [addOpen, setAddOpen] = useState(false);
+  // "Make a voice from this" on a library sound arrives as ?from=<id>: the
+  // add dialog opens on that sound and the parameter goes once it closes.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const fromId = searchParams.get("from");
+  const fromSound = useSound(fromId);
+  useEffect(() => {
+    if (fromId && fromSound.data) setAddOpen(true);
+  }, [fromId, fromSound.data]);
   const [editing, setEditing] = useState<Voice | null>(null);
   const [nameDraft, setNameDraft] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
@@ -978,7 +986,15 @@ export function VoiceLabPage() {
 
       <VoiceConvertPanel models={vcModels} voices={all} />
 
-      <AddVoiceDialog open={addOpen} onOpenChange={setAddOpen} ttsModels={ttsModels} />
+      <AddVoiceDialog
+        open={addOpen}
+        onOpenChange={(next) => {
+          setAddOpen(next);
+          if (!next && fromId) setSearchParams({}, { replace: true });
+        }}
+        ttsModels={ttsModels}
+        sourceSound={fromId ? (fromSound.data ?? null) : null}
+      />
 
       <VoiceClipsDialog
         voice={all.find((v) => v.id === clipsFor) ?? null}

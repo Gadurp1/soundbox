@@ -50,6 +50,40 @@ function parseLevel(name: string): number {
   return LEVELS[name.toLowerCase() as LogLevel] ?? LEVELS.info;
 }
 
+export const LOG_LEVELS = Object.keys(LEVELS) as LogLevel[];
+
+/**
+ * The level to run at: `--log-level` if given, else `SOUNDBOX_LOG_LEVEL`, else
+ * info.
+ *
+ * The environment variable exists because nothing that starts the server
+ * passes the flag: not `npm run dev`, the Docker image or the desktop app.
+ * All of them inherit the environment, so one variable reaches every one.
+ * `"warn"` is accepted for `"warning"`, since that's what people type. An
+ * unknown value is reported rather than silently treated as info, so a typo
+ * doesn't look like "debug logging shows nothing new".
+ */
+export function resolveLogLevel(
+  flag: string | undefined,
+  env: string | undefined = process.env.SOUNDBOX_LOG_LEVEL,
+): { level: LogLevel; source: "flag" | "env" | "default"; invalid: string | null } {
+  const pick = (raw: string | undefined): LogLevel | null => {
+    const v = raw?.trim().toLowerCase();
+    if (!v) return null;
+    if (v === "warn") return "warning";
+    return (LOG_LEVELS as string[]).includes(v) ? (v as LogLevel) : null;
+  };
+  for (const [raw, source] of [
+    [flag, "flag"],
+    [env, "env"],
+  ] as const) {
+    if (raw === undefined || !raw.trim()) continue;
+    const level = pick(raw);
+    return level ? { level, source, invalid: null } : { level: "info", source, invalid: raw };
+  }
+  return { level: "info", source: "default", invalid: null };
+}
+
 function stamp(): string {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");

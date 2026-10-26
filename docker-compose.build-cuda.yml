@@ -1,0 +1,9 @@
+# The CUDA build arguments for docker-compose.build.yml. Use it after that one;
+# see the header there.
+
+services:
+  soundbox:
+    build:
+      args:
+        AUDIOCPP_TAG: full-cuda12
+        AUDIOCPP_BACKEND: cuda

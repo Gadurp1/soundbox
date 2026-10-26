@@ -6,12 +6,113 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Prebuilt Docker images.** `ghcr.io/hamsanders/soundbox` is published per
+  release (`:vX.Y.Z`, `:vX.Y.Z-cuda`, plus `:latest` and `:cuda`) by a manual
+  `docker-publish` workflow. `docker compose up -d` now pulls the image instead
+  of building; to build from the checkout, add `-f docker-compose.build.yml`
+  (see docs/INSTALL.md). amd64 only.
+- **`SOUNDBOX_LOG_LEVEL`.** Sets the server's log level (`debug`, `info`,
+  `warning`, `error`, `critical`) when `--log-level` isn't given. Unlike the
+  flag, it reaches `npm run dev`, Docker and the desktop app. The startup banner
+  shows the level in force, and an unknown value warns instead of being
+  silently ignored. `debug` now logs each request to the prompt assistant,
+  artwork and custom endpoints (URL, status, timing; never keys or prompts).
+  Before this there were no debug lines at all, so `--log-level debug` showed
+  nothing extra. (#22)
+
+### Security
+
+- **Dependency updates for the open Dependabot alerts.** Vite, the MCP SDK,
+  Fastify, Hono, js-yaml, brace-expansion, proxy-addr, source-map-js,
+  postcss-selector-parser and the app's react-router move to patched releases.
+  The server's zod moves to 4.6.7 (the 3.x line has no fix for the
+  oversized-collection memory issue).
+- **Code-scanning fixes.** The MCP endpoint's trailing-slash trim no longer
+  backtracks on a long run of slashes, profile ids are checked before they are
+  joined into a path that delete can remove recursively, HTML-tag stripping in
+  the docs search and heading plugin repeats until nothing is left, and the
+  release scripts escape every regular-expression character.
+
 ### Fixed
 
 - Soundbox starts again on libraries from the voice-profiles era. Their old
   `voice_samples` table stopped the server with "no such column: voice_id"
   before it could write a log. The table is now renamed to
   `voice_samples_legacy` and kept, not dropped.
+- **Prompt assistant and artwork base URLs ending in `/v1`.** Soundbox added
+  `/v1/chat/completions` or `/v1/images/generations` to the base URL as typed,
+  so the `…/v1` form most servers document became `/v1/v1/…` and a 404. The
+  path is now joined without doubling, so a root, `…/v1`, `…/sdapi/v1` or the
+  full endpoint all work. Errors name the full URL tried, and a 404 explains
+  what to check. (#22)
+
+## [0.4.0] - 2026-10-25
+
+### Added
+
+- **Studio: canvas layout and pop-out windows.** The studio can lay its
+  panels out as free cards on a grid instead of three columns: drag a card's
+  header to move it, drag its edges to resize it, and Panels → Tidy puts it
+  back. Positions are remembered per builder. Any panel can also leave the
+  studio for a window of its own, so you can put it on another monitor. Drag
+  its header past the edge of the window, or press its pop-out button. A
+  popped-out panel shares the studio's state, opens its menus in its own
+  window and passes keyboard shortcuts through. Closing the window puts the
+  panel back, and docking or closing the panel, or leaving the studio, closes
+  the window. The desktop app opens these as native windows.
+- **Failure cards.** A generation or download that fails now says what
+  happened, why, what to do and what is kept, with up to two fix links, Retry
+  where a retry can help, the raw text under Details and a Copy diagnostic
+  button, in place of a bare red line or a toast. The server classifies the
+  common causes (GPU out of memory, system memory, paging file, missing
+  runtime, model not downloaded, corrupt model file, stalled or truncated
+  download, Hugging Face gated or unreachable, disk full, timeout) in
+  `server/src/failure.ts`; jobs carry the result as `failure`. A failed
+  generation also stays on the Library page as a card instead of vanishing.
+- **Command palette.** Ctrl/⌘+K now finds sounds, stories, voices and models
+  as well as pages: a sound opens, a story opens in its builder, a model
+  loads, downloads or unloads from the row. Settings rows appear once you
+  type. On a page with a composer the first row is Generate, or Cancel while
+  a job runs. `?` opens a keyboard cheatsheet.
+- **Script Builder: paste a script.** Paste a scene or a passage and
+  Auto-cast reads the speaker cues and "said X" attributions, hands each
+  character a voice (a voice of the same name if there is one, otherwise the
+  next unused one) and adds the lines; or split prose into lines by
+  sentence, paragraph or chapter with a longest-line limit. An empty script
+  offers Add first line, Paste a script and Load sample.
+- **Library.** Every row carries its recipe (model, length, seed, steps,
+  CFG, and whether it was extended or covered) so two takes of one prompt
+  can be told apart; the sound page has a "How it was made" list with Copy
+  recipe. A sound's menu has Send to: add it to a story, open it in the
+  studio, or make a voice from it in the Voice Lab. The tag, model,
+  favourites and by-agents filters fold behind a Filters button whose
+  summary shows each chosen value as a chip that clears itself.
+- **Models page.** Packs: one Install for a sensible model each for sound
+  effects, music and voice at Fast, Balanced, Quality or Max, with the size
+  to download; the category tabs say how many of each are on this machine;
+  a model whose download stopped shows as Incomplete with Repair, which
+  fetches only what is missing; and a Self-test in a model's details renders
+  one second through the normal path and reports the time and device without
+  saving anything (`POST /api/models/:id/selftest`).
+- **README.** Shorter and faster to scan: a Make / Arrange / Connect table,
+  a hardware table, profiles, an "install with a prompt" block for coding
+  agents, and the source, Docker and API sections folded. `docs/INSTALL-AGENT.md`
+  is the runbook that prompt points at.
+
+### Changed
+
+- **Composer.** The Generate button keeps one width and names the running
+  job's stage ("Loading model", "Generating 42%"), Cancel keeps its place
+  instead of pushing the pills about, a progress strip runs along the card's
+  bottom edge, and whatever stops a run is said in one sentence with the link
+  that fixes it rather than a greyed-out button.
+- **Sidebar.** Each area's icon carries its own hue, the sidebar folds to an
+  icon rail on studio, Music and Voice Lab pages (with a "keep expanded"
+  preference in Settings → Interface and on the rail itself), and the device
+  row in the footer opens a panel with the GPU, VRAM in use, the loaded model
+  and an Unload button that frees the memory without a trip to Models.
 
 ## [0.3.0] - 2026-10-24
 
@@ -139,7 +240,8 @@ Initial public release, MIT-licensed. Everything below is new.
   `SOUNDBOX_ALLOWED_HOSTS`), and requires JSON or an `X-Soundbox` header on
   mutating API requests.
 
-[Unreleased]: https://github.com/HamSanders/soundbox/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/HamSanders/soundbox/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/HamSanders/soundbox/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/HamSanders/soundbox/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/HamSanders/soundbox/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/HamSanders/soundbox/releases/tag/v0.1.0

@@ -20,15 +20,28 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Keys } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 
 export interface Command {
   id: string;
   label: string;
-  /** The shortcut that also runs it, pre-formatted for this platform. Shown
-   *  on the right so the palette teaches the keys rather than replacing
-   *  them. */
-  hint?: string;
+  /** A second line under the label: the model a sound was made with, the
+   *  builder a story opens in. Searched as well as shown. */
+  detail?: string;
+  /** Words the filter should also match, beyond the label and detail — a
+   *  sound's prompt, a setting's old name. Never shown. */
+  keywords?: string;
+  /** Rows with the same group render under one heading, in the order the
+   *  group first appears. Ungrouped rows come first. */
+  group?: string;
+  /** Searchable but kept out of the default list — settings rows, say, which
+   *  would otherwise bury the pages and the actions under twenty entries. */
+  hidden?: boolean;
+  /** The shortcut that also runs it, as keys ("mod" for the platform's
+   *  modifier). Shown on the right so the palette teaches the keys rather
+   *  than replacing them. */
+  hint?: string[];
   /** Rendered as a check. For commands that toggle something, so the list
    *  reads as state rather than as a menu of verbs. */
   active?: boolean;
@@ -74,8 +87,14 @@ export function CommandPalette({
 
   const matches = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return commands;
-    return commands.filter((c) => c.label.toLowerCase().includes(needle));
+    if (!needle) return commands.filter((c) => !c.hidden);
+    // Every word typed must appear somewhere in the row: "ada voice" finds
+    // the voice called Ada without also listing every sound she has read.
+    const words = needle.split(/\s+/).filter(Boolean);
+    return commands.filter((c) => {
+      const hay = `${c.label} ${c.detail ?? ""} ${c.keywords ?? ""}`.toLowerCase();
+      return words.every((w) => hay.includes(w));
+    });
   }, [commands, query]);
 
   // Clamp rather than reset: typing narrows the list under a selection that
@@ -141,8 +160,13 @@ export function CommandPalette({
             <p className="text-muted-foreground px-3 py-6 text-center text-sm">No matches.</p>
           ) : (
             matches.map((command, i) => (
+              <div key={command.id} className="contents">
+              {command.group && (i === 0 || matches[i - 1]?.group !== command.group) && (
+                <p className="text-muted-foreground px-3 pt-2 pb-1 text-[10px] font-semibold tracking-wide uppercase">
+                  {command.group}
+                </p>
+              )}
               <button
-                key={command.id}
                 type="button"
                 data-index={i}
                 disabled={command.disabled}
@@ -165,13 +189,17 @@ export function CommandPalette({
                 >
                   ✓
                 </span>
-                <span className="min-w-0 flex-1 truncate">{command.label}</span>
-                {command.hint && (
-                  <kbd className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 font-mono text-[10px]">
-                    {command.hint}
-                  </kbd>
-                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{command.label}</span>
+                  {command.detail && (
+                    <span className="text-muted-foreground block truncate text-xs">
+                      {command.detail}
+                    </span>
+                  )}
+                </span>
+                {command.hint && <Keys keys={command.hint} className="shrink-0" />}
               </button>
+              </div>
             ))
           )}
         </div>

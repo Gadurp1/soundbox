@@ -32,7 +32,7 @@ try {
   process.exit(0);
 }
 
-const cell = (s) => String(s).replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+const cell = (s) => String(s).replace(/[\\|]/g, "\\$&").replace(/\r?\n/g, " ");
 const seconds = (ms) => `${(ms / 1000).toFixed(1)} s`;
 const root = process.cwd();
 

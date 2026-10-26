@@ -37,6 +37,7 @@ const KIND_LABEL: Record<string, string> = {
   speak: "Spoken read",
   convert: "Voice conversion",
   separate: "Stem separation",
+  selftest: "Model self-test",
 };
 
 function isActive(job: Job): boolean {

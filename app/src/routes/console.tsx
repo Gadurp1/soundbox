@@ -27,6 +27,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { FailureCard } from "@/components/failure-card";
 import { SoundCard } from "@/components/sound-card";
 import { Knob } from "@/components/console/knob";
 import { Fader } from "@/components/console/fader";
@@ -100,6 +101,7 @@ export function ConsolePage() {
     model &&
     (model.status === "not_installed" ||
       model.status === "needs_runtime" ||
+      model.status === "incomplete" ||
       model.status === "downloading");
 
   /* Meter: progress while running, otherwise settles at rest. */
@@ -677,9 +679,9 @@ function TakeRow({
           </p>
         </div>
       ) : turn.status === "error" ? (
-        <p className="px-3 pb-3 text-[12px]" style={{ color: "var(--cx-red)" }}>
-          {turn.error ?? "The job failed."}
-        </p>
+        <div className="px-3 pb-3">
+          <FailureCard compact failure={turn.failure} error={turn.error ?? "The job failed."} />
+        </div>
       ) : turn.status === "cancelled" ? (
         <p className="cx-label px-3 pb-3" style={{ color: "var(--cx-engrave-dim)" }}>
           Cancelled

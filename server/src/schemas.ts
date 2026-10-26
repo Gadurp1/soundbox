@@ -35,7 +35,24 @@ export type ModelStatus =
   | "installed"
   | "downloading"
   | "loaded"
+  /** Something of the weights is on disk but not enough to run: a download
+   *  that stopped, or a package missing a file. Repair downloads the rest. */
+  | "incomplete"
   | "error";
+
+/** What `POST /api/models/:id/selftest` reports: one short render through
+ *  the normal path, timed, nothing saved. */
+export interface ModelSelfTest {
+  model: string;
+  ok: boolean;
+  /** Where it ran, as the health endpoint names it. */
+  device: string;
+  /** Wall time including any load. */
+  elapsed_s: number;
+  /** Seconds of audio that came back, or null when it failed. */
+  rendered_s: number | null;
+  error: string | null;
+}
 
 export type JobStatus = "queued" | "running" | "done" | "error" | "cancelled";
 
@@ -186,6 +203,8 @@ export interface ModelInfo {
   manual_install_reason?: string | null;
   install_command?: string | null;
   error?: string | null;
+  /** Set alongside `error` when the adapter could not report its status. */
+  failure?: Failure | null;
   active_job_id?: string | null;
   avg_duration_s?: number | null;
 }
@@ -289,14 +308,62 @@ export function originLabel(origin: Origin | null | undefined): string | null {
   return `${origin.client_name} ${origin.client_version ?? ""}`.trim();
 }
 
+/** A stable name for a class of failure. See `failure.ts` for the rules. */
+export type FailureTopic =
+  | "gpu_oom"
+  | "host_memory"
+  | "paging_file"
+  | "backend_mismatch"
+  | "runtime_missing"
+  | "disk_full"
+  | "hf_gated"
+  | "hf_unreachable"
+  | "download_stalled"
+  | "download_truncated"
+  | "model_not_installed"
+  | "model_file_corrupt"
+  | "timeout"
+  | "no_audio"
+  | "queue_full";
+
+/** One way out of a failure: a label that states its effect and an app route. */
+export interface FailureFix {
+  label: string;
+  to: string;
+}
+
+/**
+ * What went wrong, in the user's terms, with the raw text kept whole.
+ * Built by `buildFailure()` in `failure.ts` and rendered by the app's
+ * `FailureCard`. `error` on the same record stays the plain message for
+ * callers that only want a string.
+ */
+export interface Failure {
+  topic: FailureTopic | null;
+  /** What happened, one line. */
+  title: string;
+  /** Why, what to do, and what is kept. Null when unclassified. */
+  hint: string | null;
+  /** Up to two. */
+  fixes: FailureFix[];
+  /** A retry with nothing changed would fail the same way. */
+  terminal: boolean;
+  /** The job phase or step it failed in, when known. */
+  stage: string | null;
+  /** Exactly what the runtime or server said. */
+  detail: string;
+}
+
 export interface Job {
   id: string;
-  kind: "generate" | "download" | "separate" | "speak" | "convert" | "segment" | "export";
+  kind: "generate" | "download" | "separate" | "speak" | "convert" | "segment" | "export" | "selftest";
   status: JobStatus;
   phase: JobPhase;
   progress: number;
   message: string;
   error?: string | null;
+  /** Set alongside `error` when the job failed. */
+  failure?: Failure | null;
   request: Record<string, unknown>;
   result?: Record<string, unknown> | null;
   created_at: string;

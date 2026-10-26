@@ -1,0 +1,155 @@
+
+name: docker-publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to build and publish (e.g. v0.3.0)"
+        required: true
+        type: string
+      publish_docker:
+        description: "Publish Docker images to GHCR"
+        required: true
+        type: boolean
+        default: false
+      publish_cuda:
+        description: "Also build the CUDA Docker image"
+        required: true
+        type: boolean
+        default: true
+      publish_latest:
+        description: "Also publish latest and cuda floating tags"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  docker:
+    name: docker-publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate inputs
+        shell: bash
+        env:
+          VERSION_TAG: ${{ inputs.tag }}
+          PUBLISH_DOCKER: ${{ inputs.publish_docker }}
+          PUBLISH_CUDA: ${{ inputs.publish_cuda }}
+          PUBLISH_LATEST: ${{ inputs.publish_latest }}
+        run: |
+          if [[ ! "$VERSION_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "::error::Invalid version tag: $VERSION_TAG"
+            exit 1
+          fi
+
+          if [[ "$PUBLISH_LATEST" == "true" && "$PUBLISH_DOCKER" != "true" ]]; then
+            echo "::error::publish_latest requires publish_docker"
+            exit 1
+          fi
+
+          if [[ "$PUBLISH_LATEST" == "true" && "$VERSION_TAG" == *-* ]]; then
+            echo "::error::Pre-release versions cannot be published as latest"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Verify checked out tag
+        shell: bash
+        env:
+          VERSION_TAG: ${{ inputs.tag }}
+        run: |
+          git fetch --force origin "refs/tags/${VERSION_TAG}:refs/tags/${VERSION_TAG}"
+
+          EXPECTED_COMMIT="$(git rev-list -n 1 "refs/tags/${VERSION_TAG}")"
+          CURRENT_COMMIT="$(git rev-parse HEAD)"
+
+          if [[ "$EXPECTED_COMMIT" != "$CURRENT_COMMIT" ]]; then
+            echo "::error::Checkout does not match ${VERSION_TAG}"
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Set Docker image tags
+        id: tags
+        shell: bash
+        env:
+          VERSION_TAG: ${{ inputs.tag }}
+          PUBLISH_LATEST: ${{ inputs.publish_latest }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          REPOSITORY="${REPOSITORY,,}"
+          IMAGE_NAME="ghcr.io/${REPOSITORY}"
+
+          {
+            echo "cpu<<EOF"
+            echo "${IMAGE_NAME}:${VERSION_TAG}"
+
+            if [[ "$PUBLISH_LATEST" == "true" ]]; then
+              echo "${IMAGE_NAME}:latest"
+            fi
+
+            echo "EOF"
+
+            echo "cuda<<EOF"
+            echo "${IMAGE_NAME}:${VERSION_TAG}-cuda"
+
+            if [[ "$PUBLISH_LATEST" == "true" ]]; then
+              echo "${IMAGE_NAME}:cuda"
+            fi
+
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate with GHCR
+        if: ${{ inputs.publish_docker }}
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ inputs.tag }}
+            org.opencontainers.image.licenses=MIT
+          push: ${{ inputs.publish_docker }}
+          tags: ${{ steps.tags.outputs.cpu }}
+          cache-from: type=gha,scope=cpu
+          cache-to: type=gha,mode=max,scope=cpu
+
+      - name: Build CUDA Docker image
+        if: ${{ inputs.publish_cuda }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ inputs.tag }}
+            org.opencontainers.image.licenses=MIT
+          push: ${{ inputs.publish_docker }}
+          tags: ${{ steps.tags.outputs.cuda }}
+          build-args: |
+            AUDIOCPP_TAG=full-cuda12
+            AUDIOCPP_BACKEND=cuda
+          cache-from: type=gha,scope=cuda
+          cache-to: type=gha,mode=max,scope=cuda

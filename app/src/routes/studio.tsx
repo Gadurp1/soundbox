@@ -44,10 +44,12 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   AudioWaveformIcon,
   ChartNoAxesGanttIcon,
+  Columns3Icon,
   DownloadIcon,
   ExternalLinkIcon,
   Grid3x3Icon,
   HistoryIcon,
+  LayoutDashboardIcon,
   LibraryBigIcon,
   Loader2Icon,
   MessageSquareIcon,
@@ -79,6 +81,9 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -93,7 +98,11 @@ import { StoryHistory, useHistoryCount } from "@/components/story-history";
 import { useAppendHistory, useAssistantEnabled } from "@/lib/queries";
 import { PHASE_LABEL, ordinal } from "@/components/pending-sound-row";
 import { DeviceCards, DeviceLanes } from "@/components/device-rack";
-import { ArtifactStack } from "@/components/artifact-stack";
+import { ArtifactStack, type Artifact } from "@/components/artifact-stack";
+import { PanelCanvas, type CanvasColumn } from "@/components/panel-canvas";
+import { PopoutPanelFrame, PopoutWindow } from "@/components/popout-window";
+import { openPopoutWindow, type PopOutAt } from "@/lib/popout";
+import { useUiPrefs } from "@/lib/ui-prefs";
 import { CommandPalette } from "@/components/command-palette";
 import { AssistantChat } from "@/components/assistant-chat";
 import { LogTail } from "@/components/log-tail";
@@ -545,11 +554,47 @@ export function StudioEditor({
     usePrefillStore.getState().prefill !== null ? "insert" : "chat",
   );
 
+  /**
+   * Panels living in a window of their own, and the window.
+   *
+   * Still open — a popped-out panel is in `closedPanels` no more than a docked
+   * one — but drawn by `PopoutWindow` instead of the columns or the canvas.
+   * Closing the panel closes its window; closing the window puts the panel
+   * back where it was.
+   */
+  const [popped, setPopped] = useState<ReadonlyMap<string, Window>>(() => new Map());
+  const popOut = (id: string, at: PopOutAt): void => {
+    const win = openPopoutWindow(id, at);
+    if (win === null) {
+      toast.error("The browser blocked the new window. Allow pop-ups for Soundbox and try again.");
+      return;
+    }
+    win.focus();
+    setPopped((prev) => new Map(prev).set(id, win));
+  };
+  const dock = useCallback((id: string): void => {
+    setPopped((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Map(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+  /** On this page, in the columns or on the canvas: open and not popped out. */
+  const inPage = (id: string): boolean => !closedPanels.has(id) && !popped.has(id);
+  const layoutMode = useUiPrefs((s) => s.studioLayout);
+  const setUiPrefs = useUiPrefs((s) => s.set);
+  /** Bumped by "Tidy the canvas"; see `PanelCanvas`. */
+  const [tidyRequest, setTidyRequest] = useState(0);
+
   const showPanel = (id: string, show: boolean): void => {
     // Opening one of the tabs brings it to the front. Otherwise Ctrl/⌘P on a
     // studio with the chat in front un-hides a panel behind another one and
     // looks like the shortcut did nothing.
     if (show && (id === "chat" || id === "insert")) setLeftTab(id);
+    // A panel closed from anywhere takes its window with it, and opens docked
+    // next time: a window that reappears on its own is one you did not ask for.
+    if (!show) dock(id);
     setClosedPanels((prev) => {
       const next = new Set(prev);
       if (show) next.delete(id);
@@ -1051,10 +1096,12 @@ export function StudioEditor({
    *  own `submitRef`, so effects can call the latest without watching it. */
   const recordRef = useRef(recordHistory);
   recordRef.current = recordHistory;
-  const chatOpen = assistantEnabled && !closedPanels.has("chat");
-  const timelineOpen = !closedPanels.has("timeline");
-  const scriptOpen = scriptAvailable && !closedPanels.has("script");
-  const insertOpen = !closedPanels.has("insert");
+  // "Open" below means open *on this page*: a panel in a window of its own
+  // leaves its column just as a closed one does.
+  const chatOpen = assistantEnabled && inPage("chat");
+  const timelineOpen = inPage("timeline");
+  const scriptOpen = scriptAvailable && inPage("script");
+  const insertOpen = inPage("insert");
   /** The column you ask in: the conversation and the request form. */
   const leftOpen = chatOpen || insertOpen;
   /**
@@ -1084,10 +1131,9 @@ export function StudioEditor({
    * because it was not in this column yet, the rack because it is. Shutting
    * the timeline to make room for the script did the opposite.
    */
-  const centreOpen = scriptOpen || timelineOpen || !closedPanels.has("devices");
-  const panelsOpen = ["library", "sample", "history", "logs"].some(
-    (id) => !closedPanels.has(id),
-  );
+  const centreOpen =
+    scriptOpen || timelineOpen || ["devices", "midi", "roll"].some((id) => inPage(id));
+  const panelsOpen = ["library", "sample", "history", "logs"].some((id) => inPage(id));
   /**
    * Nothing open but the conversation.
    *
@@ -1346,8 +1392,11 @@ export function StudioEditor({
   useEffect(() => {
     if (focusPanel === null) return;
     // One frame, so the panel that was just un-hidden exists to be found.
+    // In whichever window the panel is in.
+    const id = panels.find((p) => p.label === focusPanel)?.id;
+    const doc = (id !== undefined ? popped.get(id)?.document : undefined) ?? document;
     const frame = requestAnimationFrame(() => {
-      document
+      doc
         .querySelector<HTMLElement>(
           `section[aria-label="${focusPanel}"] textarea, section[aria-label="${focusPanel}"] input`,
         )
@@ -1355,6 +1404,7 @@ export function StudioEditor({
       setFocusPanel(null);
     });
     return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per request
   }, [focusPanel]);
 
   /** Open a panel and land the cursor in whatever it is you type into. */
@@ -1366,7 +1416,7 @@ export function StudioEditor({
   const panelCommands: Command[] = panels.map((panel) => ({
     id: panel.id,
     label: panel.label,
-    hint: `${MOD_LABEL}${panel.key.toUpperCase()}`,
+    hint: ["mod", panel.key.toUpperCase()],
     // An unavailable panel is not "on", whatever `closedPanels` happens to
     // say about it — a tick beside a row you cannot choose is just confusing.
     active: !closedPanels.has(panel.id),
@@ -1953,273 +2003,9 @@ export function StudioEditor({
     );
   }
 
-  return (
-    // Container queries rather than viewport ones: this page sits inside the
-    // shell's padded column, so what decides whether the timeline can sit
-    // beside the script is how much room *this* element got, not how wide the
-    // window happens to be. The @container and the flex row have to be two
-    // elements — an element cannot query its own size, so a `@3xl:` class on
-    // the container itself would never match.
-    // Height from the layout rather than from a viewport calculation: the
-    // studio is a fixed frame whose panels scroll inside it, and a magic
-    // `100vh - 4.5rem` was 24px out — enough to give the whole document a
-    // scrollbar and let the page drift under the header. `flex-1` inside the
-    // shell's own column is exactly the space that is left, whatever the
-    // header and the padding turn out to be.
-    <div className="@container flex min-h-0 w-full flex-1 flex-col overflow-hidden">
-      {/* The story's own controls, in the app's top bar beside the
-          breadcrumbs — see `header-slot`. There is no back button: the crumb
-          that names this builder is one, and it is where you would look for
-          it. The title sits first because it names what the tools act on, and
-          the tools are pushed right, away from it. */}
-      <PageHeader>
-        <Input
-          // Keyed on the server's title so a rename from elsewhere — an agent,
-          // another tab — actually appears. The field is uncontrolled so that
-          // typing does not fight a refetch, and this is what stops that
-          // costing us external changes. Safe while typing: the title is only
-          // written on blur, so the key cannot change mid-edit.
-          key={story.data.title}
-          className="focus-visible:border-input focus-visible:bg-background @3xl:w-72 @5xl:w-96 h-7 w-40 min-w-0 border-transparent bg-transparent px-1.5 text-sm font-medium shadow-none"
-          defaultValue={story.data.title}
-          aria-label="Story title"
-          onBlur={(e) => {
-            const title = e.target.value.trim();
-            if (title && title !== story.data!.title) {
-              renameStory.mutate({ id: storyId, title });
-            }
-          }}
-        />
-
-        <div className="ml-auto flex items-center gap-2">
-          {/* The voice every line is read with, in the bar because it applies
-              to the whole script. The Music Builder has no script to read, and
-              its model — the one that renders a take — is picked in the Prompt
-              panel beside the prompt it renders, so a TTS picker here would be
-              a control with nothing to act on. */}
-          {/* No voice or model picker here: a voice is cast per line, in the
-              script, and the model comes with it. */}
-          <Button
-            size="sm"
-            disabled={
-              agent.active || generated === 0 || exportStory.isPending || exportJob.active
-            }
-            onClick={runExport}
-          >
-            <DownloadIcon />
-            Export
-          </Button>
-          {/* Everything the studio can show, in one menu — which is also the
-              only way back for a panel you have X'd out of. The timeline is
-              not in here: it is the one panel with no X, and closing every
-              panel that has one already gives it the whole page. */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <PanelRightOpenIcon />
-                Panels
-              </Button>
-            </DropdownMenuTrigger>
-            {/* Drawn from `panels`, the same list the shortcuts and the
-                palette read — a panel cannot appear in one and be missing
-                from another, and its key is printed here so the menu is
-                where you learn the shortcut. */}
-            <DropdownMenuContent align="end" className="w-52">
-              {panels.map((panel) => (
-                <DropdownMenuCheckboxItem
-                  key={panel.id}
-                  checked={!closedPanels.has(panel.id)}
-                  onCheckedChange={(on) => showPanel(panel.id, Boolean(on))}
-                >
-                  {/* The same glyph the panel's own header wears, so the menu
-                      row and the thing it opens are recognisably one panel. */}
-                  <panel.icon className="text-muted-foreground" aria-hidden="true" />
-                  <span className="flex-1">{panel.label}</span>
-                  <kbd className="text-muted-foreground ml-2 font-mono text-[10px]">
-                    {MOD_LABEL}
-                    {panel.key.toUpperCase()}
-                  </kbd>
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <StoryMenu
-            onDelete={(deleteSounds) =>
-              deleteStory.mutate(
-                { id: storyId, deleteSounds },
-                { onSuccess: () => navigate(shelfHref, { replace: true }) },
-              )
-            }
-          />
-        </div>
-      </PageHeader>
-
-      {agent.active && (
-        /* Shown, not hidden: you can still read the script and hear it while an
-           agent works. What is withheld is editing, because two writers on one
-           line is a race nobody wins — and the work is usually seconds, not
-           minutes. */
-        <div className="border-primary/30 bg-primary/5 mb-3 flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2">
-          <Loader2Icon className="text-primary size-4 shrink-0 animate-spin" />
-          <p className="text-sm">
-            An agent is {agent.label ?? "working on this story"}
-            {agent.count > 1 ? ` (${agent.count} in flight)` : ""}. Editing is paused until
-            it finishes.
-          </p>
-        </div>
-      )}
-
-      {exportJobId && (
-        <div className="shrink-0 pb-3">
-          <JobResult job={exportJob.job} />
-        </div>
-      )}
-      {soloChat ? (
-        /* A new studio, before it has anything in it: the conversation, on
-           its own, in the middle. Same component and same store as the
-           panel — opening the timeline or the script simply puts it back in
-           the column beside them. */
-        <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
-          <AssistantChat threadKey={studioThread(storyId)} />
-        </div>
-      ) : (
-      <div ref={rowRef} className="flex min-h-0 flex-1 flex-col gap-4 @3xl:flex-row">
-      {/* Three columns: what the story says, what it is, and what you are
-          working on it with. The timeline takes the middle and the larger
-          share, because it is the one you are always looking at; the script
-          and the panels are quarters either side of it, each draggable.
-
-          Below @3xl they stack — script, timeline, panels — rather than any of
-          them disappearing. Arranging is half the job on a narrow window too.
-
-          A column with nothing in it is not rendered at all: close the script
-          and the timeline simply moves left. */}
-
-      {/* Every panel closed. Reachable before this state was drawn, and more
-          reachable now that the chat is not always there to be the last one
-          standing — the studio was simply blank, with the way back hidden in
-          a menu. */}
-      {!leftOpen && !centreOpen && !panelsOpen && (
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center">
-          <p className="text-muted-foreground text-sm">
-            Every panel is closed. {MOD_LABEL}L brings the timeline back.
-          </p>
-          <Button variant="outline" size="sm" onClick={() => showPanel("timeline", true)}>
-            <PanelRightOpenIcon /> Open the timeline
-          </Button>
-        </div>
-      )}
-
-      {/* -------------------------------------------- left: chat and prompt */}
-      {/* The column you *ask* in — the two places you describe something that
-          does not exist yet, as tabs of one panel rather than a stack of two.
-
-          They were stacked, and the stack was the problem: a fifth of the
-          window split three-to-two gave you a conversation four messages tall
-          above a form you had to scroll to fill, and both were the *same
-          request* at two levels of precision. You are never writing in one
-          while reading the other; you pick how you want to say it. So one
-          frame, one body, and a tab strip that says which.
-
-          The chat used to be deliberately un-framed — everything else in the
-          studio is a bordered artifact because everything else is a view *of
-          the story*, and the chat is the thing you are talking to. That still
-          holds for `soloChat`, which is bare. But a tab is a frame by
-          definition, and a frame the Prompt shares is not a label saying
-          "this box contains a chat" — it is the seam between two ways of
-          asking. The close button belongs to the strip for the same reason,
-          so the chat no longer needs its own ghost X floating over the
-          thread.
-
-          The script is not here: it is a view of the story, like the
-          timeline, so it lives in the middle with it. */}
-      {leftOpen && (
-        <div
-          className="flex h-[18rem] min-h-0 w-full min-w-0 flex-col @3xl:h-auto @3xl:flex-none"
-          // `flexBasis` alone loses to the panels' own content width — the
-          // column cannot shrink past what its header needs — so the cap is
-          // what actually makes a fifth a fifth.
-          style={{ flexBasis: `${leftPct}%`, maxWidth: `${leftPct}%` }}
-        >
-          <div className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
-            {/* One tab per panel that is *open*, not one per panel that
-                exists: closing the Prompt should leave the chat filling the
-                column, not a dead tab beside it. With one open the strip is a
-                single tab — still worth drawing, because it is where the icon
-                and the close control live, and a header that appears only
-                sometimes is a layout that jumps. */}
-            <div
-              role="tablist"
-              aria-label="Chat and prompt"
-              className="border-border/60 flex shrink-0 items-center gap-0.5 border-b px-1.5 py-1"
-            >
-              {leftTabs.map((tab) => (
-                <Button
-                  key={tab.id}
-                  role="tab"
-                  aria-selected={activeLeftTab === tab.id}
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "h-7 gap-1.5 rounded-md px-2 text-xs",
-                    activeLeftTab === tab.id
-                      ? "bg-muted text-foreground"
-                      : "text-muted-foreground",
-                  )}
-                  onClick={() => setLeftTab(tab.id)}
-                >
-                  <tab.icon aria-hidden="true" />
-                  {tab.label}
-                </Button>
-              ))}
-              <div className="flex-1" />
-              {/* Closes the tab you are looking at, which is the one the X is
-                  beside. Ctrl/⌘T and Ctrl/⌘P bring it back, as does the
-                  Panels menu. */}
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={`Close ${activeLeftTab === "chat" ? "Chat" : "Prompt"}`}
-                className="text-muted-foreground"
-                onClick={() => showPanel(activeLeftTab, false)}
-              >
-                <XIcon />
-              </Button>
-            </div>
-
-            {/* Both bodies stay mounted, hidden rather than removed — the
-                same rule the artifact stack keeps for a collapsed panel.
-                Switching to the Prompt and back must not lose where you were
-                in the thread, and switching away from a half-written prompt
-                must not empty the field. */}
-            {chatOpen && (
-              <section
-                aria-label="Chat"
-                className={cn(
-                  "min-h-0 flex-1 flex-col",
-                  activeLeftTab === "chat" ? "flex" : "hidden",
-                )}
-              >
-                {/* No scroller here: the chat scrolls its own thread and keeps
-                    its composer at the bottom of the column (see
-                    `assistant-chat`). Wrapping it in one put the box you type
-                    in at the bottom of the *conversation* instead, which is
-                    somewhere off-screen after a few turns. */}
-                <AssistantChat
-                  threadKey={studioThread(storyId)}
-                  className="min-h-0 flex-1"
-                  inset
-                />
-              </section>
-            )}
-            {insertOpen && (
-              <section
-                aria-label="Prompt"
-                className={cn(
-                  "min-h-0 flex-1 overflow-y-auto p-3",
-                  activeLeftTab === "insert" ? "block" : "hidden",
-                )}
-              >
+  /** The Prompt panel's form. One element, drawn as the left column's tab,
+   *  as a card on the canvas, or in a window of its own. */
+  const insertForm = (
                 <MusicRequestForm
                   settings={musicSession.settings}
                   patch={musicSession.patch}
@@ -2242,48 +2028,15 @@ export function StudioEditor({
                   submitLabel="Generate & insert"
                   canSeparate={Boolean(models.data?.some((m) => m.task === "sep"))}
                 />
-              </section>
-            )}
-          </div>
-        </div>
-      )}
+  );
 
-      {leftOpen && (
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          // Not "the script" any more: this edge is the left column's, and
-          // that column is the chat and the prompt.
-          aria-label="Resize the left panels"
-          className="hover:bg-primary/40 active:bg-primary/60 hidden w-1 shrink-0 cursor-col-resize touch-none rounded-full transition-colors @3xl:block"
-          onPointerDown={(e) => onResizeDown(e, "left")}
-          onPointerMove={onResizeMove}
-          onPointerUp={onResizeUp}
-          onPointerCancel={onResizeUp}
-        />
-      )}
-
-      {/* ------------------------------ centre: the script and the timeline */}
-      {/* The two views of the same list, in the column that gets the space.
-          The script reads down and the timeline reads across, and both are
-          about clips that already exist — which is what separates them from
-          the chat and the prompt box on the left.
-
-          The script used to sit in the left column, which had two costs. It
-          was capped at that column's fifth of the page, so writing happened
-          in a strip; and this column only existed while the timeline was
-          open, so shutting the timeline to get room for the script did the
-          exact opposite of what it looked like it would do. Here it takes
-          the free width by default and keeps it when the timeline goes.
-
-          Every panel in here has an X, this column included. It goes when
-          the last of them does: an empty frame where the arrangement used to
-          be is worse than the space going to the panels still open. */}
-      {centreOpen && (
-      <div className="flex h-[26rem] min-h-0 w-full min-w-0 flex-col @3xl:h-auto @3xl:flex-1">
-        <ArtifactStack
-          className="flex-1"
-          artifacts={[
+  /**
+   * Every panel, as data, in the three groups the column layout draws them
+   * in. The canvas and the pop-out windows read the same definitions, so a
+   * panel is the same panel — same header, same tools, same body — wherever
+   * you have put it.
+   */
+  const centreArtifacts: Artifact[] = [
               // The script shares the middle with the timeline, above it:
               // they are the two views of the same story — what it says and
               // where it sits — and reading a line while looking at the clip
@@ -2331,6 +2084,26 @@ export function StudioEditor({
                         onSelect={setSelectedId}
                         onPatch={(id, patch) => updateSegment.mutate({ id, patch })}
                         onCreate={(values) => createSegment.mutate(values)}
+                        onCreateMany={async (values) => {
+                          // One at a time, awaited: the server appends each
+                          // after the last, so firing them together would
+                          // leave the order to the network.
+                          // Stops at the first line the server refuses and
+                          // says how far it got: the rest would only land
+                          // out of order, and the paste panel has closed.
+                          // useCreateSegment already toasts the error itself.
+                          let added = 0;
+                          try {
+                            for (const v of values) {
+                              await createSegment.mutateAsync(v);
+                              added++;
+                            }
+                          } catch {
+                            toast.error(
+                              `Added ${added} of ${values.length} lines. The rest were not added; paste them again to continue.`,
+                            );
+                          }
+                        }}
                         onDelete={removeLine}
                         onGenerate={speakLine}
                         generating={generatingIds}
@@ -2595,33 +2368,8 @@ export function StudioEditor({
                 ),
                 onClose: () => showPanel("roll", false),
               },
-          ].filter((a) => !closedPanels.has(a.id))}
-        />
-      </div>
-      )}
-
-      {panelsOpen && (
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize the panels"
-          className="hover:bg-primary/40 active:bg-primary/60 hidden w-1 shrink-0 cursor-col-resize touch-none rounded-full transition-colors @3xl:block"
-          onPointerDown={(e) => onResizeDown(e, "right")}
-          onPointerMove={onResizeMove}
-          onPointerUp={onResizeUp}
-          onPointerCancel={onResizeUp}
-        />
-      )}
-
-      {/* ----------------------------------------------- right: the panels */}
-      {panelsOpen && (
-        <div
-          className="flex h-[22rem] min-h-0 w-full min-w-0 flex-col @3xl:h-auto @3xl:flex-none"
-          style={{ flexBasis: `${rightPct}%`, maxWidth: `${rightPct}%` }}
-        >
-          <ArtifactStack
-            className="flex-1"
-            artifacts={[
+  ];
+  const rightArtifacts: Artifact[] = [
               // Where the next thing on this timeline comes from. On the
               // right with everything else you drag onto a lane, rather than
               // in a tab on the far side of the script: a sound you are
@@ -2753,13 +2501,486 @@ export function StudioEditor({
                 ),
                 onClose: () => showPanel("logs", false),
               },
-            ].filter((a) => !closedPanels.has(a.id))}
+  ];
+  /** The two the left column draws as tabs, as panels in their own right for
+   *  the canvas and for windows. */
+  const leftArtifacts: Artifact[] = [
+    ...(assistantEnabled
+      ? [
+          {
+            id: "chat",
+            icon: panelIcon("chat"),
+            label: "Chat",
+            title: <span className="text-xs font-medium">Chat</span>,
+            body: (
+              <AssistantChat threadKey={studioThread(storyId)} className="min-h-0 flex-1" inset />
+            ),
+            onClose: () => showPanel("chat", false),
+          },
+        ]
+      : []),
+    {
+      id: "insert",
+      icon: panelIcon("insert"),
+      label: "Prompt",
+      title: <span className="text-xs font-medium">Prompt</span>,
+      body: <div className="min-h-0 flex-1 overflow-y-auto p-3">{insertForm}</div>,
+      onClose: () => showPanel("insert", false),
+    },
+  ];
+  // Every panel can leave the page for a window of its own.
+  const withPopOut = (list: Artifact[]): Artifact[] =>
+    list.map((a) => ({ ...a, onPopOut: (at: PopOutAt) => popOut(a.id, at) }));
+  const allArtifacts = [...leftArtifacts, ...centreArtifacts, ...rightArtifacts];
+  const columnOf = (id: string): CanvasColumn =>
+    leftArtifacts.some((a) => a.id === id) ? 0 : rightArtifacts.some((a) => a.id === id) ? 2 : 1;
+
+  return (
+    // Container queries rather than viewport ones: this page sits inside the
+    // shell's padded column, so what decides whether the timeline can sit
+    // beside the script is how much room *this* element got, not how wide the
+    // window happens to be. The @container and the flex row have to be two
+    // elements — an element cannot query its own size, so a `@3xl:` class on
+    // the container itself would never match.
+    // Height from the layout rather than from a viewport calculation: the
+    // studio is a fixed frame whose panels scroll inside it, and a magic
+    // `100vh - 4.5rem` was 24px out — enough to give the whole document a
+    // scrollbar and let the page drift under the header. `flex-1` inside the
+    // shell's own column is exactly the space that is left, whatever the
+    // header and the padding turn out to be.
+    <div className="@container flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+      {/* The story's own controls, in the app's top bar beside the
+          breadcrumbs — see `header-slot`. There is no back button: the crumb
+          that names this builder is one, and it is where you would look for
+          it. The title sits first because it names what the tools act on, and
+          the tools are pushed right, away from it. */}
+      <PageHeader>
+        <Input
+          // Keyed on the server's title so a rename from elsewhere — an agent,
+          // another tab — actually appears. The field is uncontrolled so that
+          // typing does not fight a refetch, and this is what stops that
+          // costing us external changes. Safe while typing: the title is only
+          // written on blur, so the key cannot change mid-edit.
+          key={story.data.title}
+          className="focus-visible:border-input focus-visible:bg-background @3xl:w-72 @5xl:w-96 h-7 w-40 min-w-0 border-transparent bg-transparent px-1.5 text-sm font-medium shadow-none"
+          defaultValue={story.data.title}
+          aria-label="Story title"
+          onBlur={(e) => {
+            const title = e.target.value.trim();
+            if (title && title !== story.data!.title) {
+              renameStory.mutate({ id: storyId, title });
+            }
+          }}
+        />
+
+        <div className="ml-auto flex items-center gap-2">
+          {/* The voice every line is read with, in the bar because it applies
+              to the whole script. The Music Builder has no script to read, and
+              its model — the one that renders a take — is picked in the Prompt
+              panel beside the prompt it renders, so a TTS picker here would be
+              a control with nothing to act on. */}
+          {/* No voice or model picker here: a voice is cast per line, in the
+              script, and the model comes with it. */}
+          <Button
+            size="sm"
+            disabled={
+              agent.active || generated === 0 || exportStory.isPending || exportJob.active
+            }
+            onClick={runExport}
+          >
+            <DownloadIcon />
+            Export
+          </Button>
+          {/* Columns or canvas, one press away: the Panels menu has the same
+              choice, but switching is something you do while looking at the
+              layout, not something to go looking for. */}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={layoutMode === "canvas" ? "Use the column layout" : "Use the canvas layout"}
+            title={layoutMode === "canvas" ? "Columns" : "Canvas: place panels anywhere"}
+            onClick={() =>
+              setUiPrefs({ studioLayout: layoutMode === "canvas" ? "columns" : "canvas" })
+            }
+          >
+            {layoutMode === "canvas" ? <Columns3Icon /> : <LayoutDashboardIcon />}
+          </Button>
+          {/* Everything the studio can show, in one menu — which is also the
+              only way back for a panel you have X'd out of. The timeline is
+              not in here: it is the one panel with no X, and closing every
+              panel that has one already gives it the whole page. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <PanelRightOpenIcon />
+                Panels
+              </Button>
+            </DropdownMenuTrigger>
+            {/* Drawn from `panels`, the same list the shortcuts and the
+                palette read — a panel cannot appear in one and be missing
+                from another, and its key is printed here so the menu is
+                where you learn the shortcut. */}
+            <DropdownMenuContent align="end" className="w-52">
+              {panels.map((panel) => (
+                <DropdownMenuCheckboxItem
+                  key={panel.id}
+                  checked={!closedPanels.has(panel.id)}
+                  onCheckedChange={(on) => showPanel(panel.id, Boolean(on))}
+                >
+                  {/* The same glyph the panel's own header wears, so the menu
+                      row and the thing it opens are recognisably one panel. */}
+                  <panel.icon className="text-muted-foreground" aria-hidden="true" />
+                  <span className="flex-1">{panel.label}</span>
+                  {popped.has(panel.id) && !closedPanels.has(panel.id) && (
+                    <ExternalLinkIcon
+                      className="text-muted-foreground size-3"
+                      aria-label="In its own window"
+                    />
+                  )}
+                  <kbd className="text-muted-foreground ml-2 font-mono text-[10px]">
+                    {MOD_LABEL}
+                    {panel.key.toUpperCase()}
+                  </kbd>
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+                Layout
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={layoutMode}
+                onValueChange={(mode) => setUiPrefs({ studioLayout: mode as "columns" | "canvas" })}
+              >
+                <DropdownMenuRadioItem value="columns">
+                  <Columns3Icon className="text-muted-foreground" aria-hidden="true" />
+                  Columns
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="canvas">
+                  <LayoutDashboardIcon className="text-muted-foreground" aria-hidden="true" />
+                  Canvas
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              {layoutMode === "canvas" && (
+                <DropdownMenuItem onSelect={() => setTidyRequest((n) => n + 1)}>
+                  Tidy the canvas
+                </DropdownMenuItem>
+              )}
+              {popped.size > 0 && (
+                <DropdownMenuItem onSelect={() => setPopped(new Map())}>
+                  Put every window back
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <StoryMenu
+            onDelete={(deleteSounds) =>
+              deleteStory.mutate(
+                { id: storyId, deleteSounds },
+                { onSuccess: () => navigate(shelfHref, { replace: true }) },
+              )
+            }
+          />
+        </div>
+      </PageHeader>
+
+      {agent.active && (
+        /* Shown, not hidden: you can still read the script and hear it while an
+           agent works. What is withheld is editing, because two writers on one
+           line is a race nobody wins — and the work is usually seconds, not
+           minutes. */
+        <div className="border-primary/30 bg-primary/5 mb-3 flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2">
+          <Loader2Icon className="text-primary size-4 shrink-0 animate-spin" />
+          <p className="text-sm">
+            An agent is {agent.label ?? "working on this story"}
+            {agent.count > 1 ? ` (${agent.count} in flight)` : ""}. Editing is paused until
+            it finishes.
+          </p>
+        </div>
+      )}
+
+      {exportJobId && (
+        <div className="shrink-0 pb-3">
+          <JobResult job={exportJob.job} />
+        </div>
+      )}
+      {layoutMode === "canvas" ? (
+        /* The same panels as cards you place yourself. `soloChat` does not
+           apply: on a canvas a lone chat is a card like any other, where you
+           put it. */
+        allArtifacts.some((a) => inPage(a.id)) ? (
+          <PanelCanvas
+            layoutKey={builder}
+            artifacts={withPopOut(allArtifacts.filter((a) => inPage(a.id)))}
+            columnOf={columnOf}
+            onPopOut={popOut}
+            tidyRequest={tidyRequest}
+          />
+        ) : (
+          <AllPanelsAway
+            popped={popped.size}
+            onOpenTimeline={() => showPanel("timeline", true)}
+          />
+        )
+      ) : soloChat ? (
+        /* A new studio, before it has anything in it: the conversation, on
+           its own, in the middle. Same component and same store as the
+           panel — opening the timeline or the script simply puts it back in
+           the column beside them. */
+        <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
+          <AssistantChat threadKey={studioThread(storyId)} />
+        </div>
+      ) : (
+      <div ref={rowRef} className="flex min-h-0 flex-1 flex-col gap-4 @3xl:flex-row">
+      {/* Three columns: what the story says, what it is, and what you are
+          working on it with. The timeline takes the middle and the larger
+          share, because it is the one you are always looking at; the script
+          and the panels are quarters either side of it, each draggable.
+
+          Below @3xl they stack — script, timeline, panels — rather than any of
+          them disappearing. Arranging is half the job on a narrow window too.
+
+          A column with nothing in it is not rendered at all: close the script
+          and the timeline simply moves left. */}
+
+      {/* Every panel closed. Reachable before this state was drawn, and more
+          reachable now that the chat is not always there to be the last one
+          standing — the studio was simply blank, with the way back hidden in
+          a menu. */}
+      {!leftOpen && !centreOpen && !panelsOpen && (
+        <AllPanelsAway popped={popped.size} onOpenTimeline={() => showPanel("timeline", true)} />
+      )}
+
+      {/* -------------------------------------------- left: chat and prompt */}
+      {/* The column you *ask* in — the two places you describe something that
+          does not exist yet, as tabs of one panel rather than a stack of two.
+
+          They were stacked, and the stack was the problem: a fifth of the
+          window split three-to-two gave you a conversation four messages tall
+          above a form you had to scroll to fill, and both were the *same
+          request* at two levels of precision. You are never writing in one
+          while reading the other; you pick how you want to say it. So one
+          frame, one body, and a tab strip that says which.
+
+          The chat used to be deliberately un-framed — everything else in the
+          studio is a bordered artifact because everything else is a view *of
+          the story*, and the chat is the thing you are talking to. That still
+          holds for `soloChat`, which is bare. But a tab is a frame by
+          definition, and a frame the Prompt shares is not a label saying
+          "this box contains a chat" — it is the seam between two ways of
+          asking. The close button belongs to the strip for the same reason,
+          so the chat no longer needs its own ghost X floating over the
+          thread.
+
+          The script is not here: it is a view of the story, like the
+          timeline, so it lives in the middle with it. */}
+      {leftOpen && (
+        <div
+          className="flex h-[18rem] min-h-0 w-full min-w-0 flex-col @3xl:h-auto @3xl:flex-none"
+          // `flexBasis` alone loses to the panels' own content width — the
+          // column cannot shrink past what its header needs — so the cap is
+          // what actually makes a fifth a fifth.
+          style={{ flexBasis: `${leftPct}%`, maxWidth: `${leftPct}%` }}
+        >
+          <div
+            data-left-column
+            className="border-border bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border"
+          >
+            {/* One tab per panel that is *open*, not one per panel that
+                exists: closing the Prompt should leave the chat filling the
+                column, not a dead tab beside it. With one open the strip is a
+                single tab — still worth drawing, because it is where the icon
+                and the close control live, and a header that appears only
+                sometimes is a layout that jumps. */}
+            <div
+              role="tablist"
+              aria-label="Chat and prompt"
+              className="border-border/60 flex shrink-0 items-center gap-0.5 border-b px-1.5 py-1"
+            >
+              {leftTabs.map((tab) => (
+                <Button
+                  key={tab.id}
+                  role="tab"
+                  aria-selected={activeLeftTab === tab.id}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-7 gap-1.5 rounded-md px-2 text-xs",
+                    activeLeftTab === tab.id
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground",
+                  )}
+                  onClick={() => setLeftTab(tab.id)}
+                >
+                  <tab.icon aria-hidden="true" />
+                  {tab.label}
+                </Button>
+              ))}
+              <div className="flex-1" />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Open ${activeLeftTab === "chat" ? "Chat" : "Prompt"} in a new window`}
+                title="Open in a new window"
+                className="text-muted-foreground"
+                onClick={(e) => {
+                  const rect = e.currentTarget.closest("[data-left-column]")?.getBoundingClientRect();
+                  popOut(activeLeftTab, {
+                    left: rect ? window.screenX + rect.left : undefined,
+                    top: rect ? window.screenY + rect.top : undefined,
+                    width: rect?.width ?? 420,
+                    height: rect?.height ?? 640,
+                  });
+                }}
+              >
+                <ExternalLinkIcon />
+              </Button>
+              {/* Closes the tab you are looking at, which is the one the X is
+                  beside. Ctrl/⌘T and Ctrl/⌘P bring it back, as does the
+                  Panels menu. */}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Close ${activeLeftTab === "chat" ? "Chat" : "Prompt"}`}
+                className="text-muted-foreground"
+                onClick={() => showPanel(activeLeftTab, false)}
+              >
+                <XIcon />
+              </Button>
+            </div>
+
+            {/* Both bodies stay mounted, hidden rather than removed — the
+                same rule the artifact stack keeps for a collapsed panel.
+                Switching to the Prompt and back must not lose where you were
+                in the thread, and switching away from a half-written prompt
+                must not empty the field. */}
+            {chatOpen && (
+              <section
+                aria-label="Chat"
+                className={cn(
+                  "min-h-0 flex-1 flex-col",
+                  activeLeftTab === "chat" ? "flex" : "hidden",
+                )}
+              >
+                {/* No scroller here: the chat scrolls its own thread and keeps
+                    its composer at the bottom of the column (see
+                    `assistant-chat`). Wrapping it in one put the box you type
+                    in at the bottom of the *conversation* instead, which is
+                    somewhere off-screen after a few turns. */}
+                <AssistantChat
+                  threadKey={studioThread(storyId)}
+                  className="min-h-0 flex-1"
+                  inset
+                />
+              </section>
+            )}
+            {insertOpen && (
+              <section
+                aria-label="Prompt"
+                className={cn(
+                  "min-h-0 flex-1 overflow-y-auto p-3",
+                  activeLeftTab === "insert" ? "block" : "hidden",
+                )}
+              >
+                {insertForm}
+              </section>
+            )}
+          </div>
+        </div>
+      )}
+
+      {leftOpen && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          // Not "the script" any more: this edge is the left column's, and
+          // that column is the chat and the prompt.
+          aria-label="Resize the left panels"
+          className="hover:bg-primary/40 active:bg-primary/60 hidden w-1 shrink-0 cursor-col-resize touch-none rounded-full transition-colors @3xl:block"
+          onPointerDown={(e) => onResizeDown(e, "left")}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeUp}
+          onPointerCancel={onResizeUp}
+        />
+      )}
+
+      {/* ------------------------------ centre: the script and the timeline */}
+      {/* The two views of the same list, in the column that gets the space.
+          The script reads down and the timeline reads across, and both are
+          about clips that already exist — which is what separates them from
+          the chat and the prompt box on the left.
+
+          The script used to sit in the left column, which had two costs. It
+          was capped at that column's fifth of the page, so writing happened
+          in a strip; and this column only existed while the timeline was
+          open, so shutting the timeline to get room for the script did the
+          exact opposite of what it looked like it would do. Here it takes
+          the free width by default and keeps it when the timeline goes.
+
+          Every panel in here has an X, this column included. It goes when
+          the last of them does: an empty frame where the arrangement used to
+          be is worse than the space going to the panels still open. */}
+      {centreOpen && (
+      <div className="flex h-[26rem] min-h-0 w-full min-w-0 flex-col @3xl:h-auto @3xl:flex-1">
+        <ArtifactStack
+          className="flex-1"
+          artifacts={withPopOut(centreArtifacts.filter((a) => inPage(a.id)))}
+        />
+      </div>
+      )}
+
+      {panelsOpen && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize the panels"
+          className="hover:bg-primary/40 active:bg-primary/60 hidden w-1 shrink-0 cursor-col-resize touch-none rounded-full transition-colors @3xl:block"
+          onPointerDown={(e) => onResizeDown(e, "right")}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeUp}
+          onPointerCancel={onResizeUp}
+        />
+      )}
+
+      {/* ----------------------------------------------- right: the panels */}
+      {panelsOpen && (
+        <div
+          className="flex h-[22rem] min-h-0 w-full min-w-0 flex-col @3xl:h-auto @3xl:flex-none"
+          style={{ flexBasis: `${rightPct}%`, maxWidth: `${rightPct}%` }}
+        >
+          <ArtifactStack
+            className="flex-1"
+            artifacts={withPopOut(rightArtifacts.filter((a) => inPage(a.id)))}
           />
         </div>
       )}
 
       </div>
       )}
+
+      {/* Panels in windows of their own. Rendered here, in the studio's own
+          tree, so they share its state — see `lib/popout.ts`. */}
+      {[...popped].map(([id, win]) => {
+        const artifact = allArtifacts.find((a) => a.id === id);
+        if (!artifact || closedPanels.has(id)) return null;
+        return (
+          <PopoutWindow
+            key={id}
+            win={win}
+            title={`${artifact.label} · ${story.data.title} · Soundbox`}
+            onClosed={() => dock(id)}
+          >
+            <PopoutPanelFrame
+              icon={artifact.icon}
+              label={artifact.label}
+              title={artifact.title}
+              trailing={artifact.trailing}
+              body={artifact.body}
+              onDock={() => dock(id)}
+              onClose={artifact.onClose}
+            />
+          </PopoutWindow>
+        );
+      })}
 
       <CommandPalette
         open={paletteOpen}
@@ -2840,6 +3061,25 @@ export function StudioEditor({
         }}
       />
 
+    </div>
+  );
+}
+
+/** What the studio shows when nothing is left on the page: every panel
+ *  closed, or every open one out in a window of its own. */
+function AllPanelsAway({ popped, onOpenTimeline }: { popped: number; onOpenTimeline: () => void }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center">
+      <p className="text-muted-foreground text-sm">
+        {popped > 0
+          ? `Every open panel is in a window of its own. Close a window to bring its panel back here.`
+          : `Every panel is closed. ${MOD_LABEL}L brings the timeline back.`}
+      </p>
+      {popped === 0 && (
+        <Button variant="outline" size="sm" onClick={onOpenTimeline}>
+          <PanelRightOpenIcon /> Open the timeline
+        </Button>
+      )}
     </div>
   );
 }
