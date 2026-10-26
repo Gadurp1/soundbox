@@ -1,6 +1,8 @@
 # NVIDIA GPU override for docker-compose.yml:
 #
-#   docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
+#
+# Pulls the prebuilt CUDA image; add --build to build it from this checkout.
 #
 # Needs an NVIDIA driver and the NVIDIA Container Toolkit on the host
 # (`docker run --rm --gpus all ubuntu nvidia-smi` should list your GPU).
@@ -9,12 +11,11 @@
 
 services:
   soundbox:
-    # uncomment to perform a local build instead
-    # image: soundbox:cuda
-    # build:
-    #  args:
-    #    AUDIOCPP_TAG: full-cuda12
-    #    AUDIOCPP_BACKEND: cuda
+    image: ghcr.io/hamsanders/soundbox:cuda
+    build:
+      args:
+        AUDIOCPP_TAG: full-cuda12
+        AUDIOCPP_BACKEND: cuda
     deploy:
       resources:
         reservations:
