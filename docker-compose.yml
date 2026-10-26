@@ -1,10 +1,14 @@
 # Soundbox, headless. See docs/INSTALL.md#docker.
 #
-#   docker compose up -d --build
+#   docker compose up -d
 #
 # NVIDIA GPU (needs the NVIDIA Container Toolkit on the host):
 #
-#   docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
+#
+# Either one pulls the prebuilt image from GHCR. To build it from this checkout
+# instead, add docker-compose.build.yml (see the header there). To pin a release, change :latest to a version tag
+# such as :v0.4.0 (and :cuda to :v0.4.0-cuda in the override).
 #
 # Then open http://localhost:17494 and download a model from the Models page,
 # or: docker compose exec soundbox soundbox pull audiocpp-stable-audio-3-sfx
@@ -17,9 +21,7 @@
 
 services:
   soundbox:
-    image: soundbox:cpu
-    build:
-      context: .
+    image: ghcr.io/hamsanders/soundbox:latest
     restart: unless-stopped
     ports:
       - "127.0.0.1:17494:17494"

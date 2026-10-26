@@ -8,6 +8,11 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Prebuilt Docker images.** `ghcr.io/hamsanders/soundbox` is published per
+  release (`:vX.Y.Z`, `:vX.Y.Z-cuda`, plus `:latest` and `:cuda`) by a manual
+  `docker-publish` workflow. `docker compose up -d` now pulls the image instead
+  of building; to build from the checkout, add `-f docker-compose.build.yml`
+  (see docs/INSTALL.md). amd64 only.
 - **`SOUNDBOX_LOG_LEVEL`.** Sets the server's log level (`debug`, `info`,
   `warning`, `error`, `critical`) when `--log-level` isn't given. Unlike the
   flag, it reaches `npm run dev`, Docker and the desktop app. The startup banner
