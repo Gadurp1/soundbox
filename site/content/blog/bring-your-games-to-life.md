@@ -8,66 +8,58 @@ draft: true
 image: /blog/bring-your-games-to-life.jpg
 ---
 
-On 23 October I asked Claude Code for the sounds in a small Godot platformer,
-and it got them from Soundbox, the local app I build, over MCP: open-weight
-models on my own GPU, no account, no credits. This post is that run, call by
-call — the sentence I typed, the six prompts the agent wrote from it, the seeds,
-the server's own timings, and the level-complete jingle that came back wrong and
-what fixing it taught me about which model to ask.
+On 23 October I asked Claude Code to make the sounds for a small Godot
+platformer. It got them from Soundbox, the app I build, over MCP. The models
+ran on my own GPU. This post goes through that run call by call, including the
+jingle that came back wrong.
 
-It does not cover setting up the MCP connection in detail (that is
-[point your agent at Soundbox](/blog/point-your-agent-at-soundbox)), why there is
-no Python anywhere in this (that is
-[what audio.cpp replaced](/blog/what-audio-cpp-replaced)), or voices.
+Setting up the MCP connection is covered in
+[point your agent at Soundbox](/blog/point-your-agent-at-soundbox), and why
+none of this needs Python is in
+[what audio.cpp replaced](/blog/what-audio-cpp-replaced).
 
 ![The finished run: the Godot platformer playing its six generated sounds, then the Soundbox library and Agents page showing the calls that made them](/media/godot.mp4 "/media/posters/godot.jpg")
 
-The game audio in that clip is this run's sounds: five first takes and the
-retaken jingle, levelled for video and otherwise untouched. The synthwave bed
-under it is a Soundbox render from an earlier film, not part of this run.
+The game audio in the clip is the sounds from this run, loudness-matched for
+video. The synthwave bed under it is from an earlier Soundbox film.
 
 ## The setup
 
-Three things, all on one Windows machine with an RTX 5080:
+Everything ran on one Windows machine with an RTX 5080.
 
-- **Soundbox, running.** Its MCP server lives inside the main process at
-  `http://127.0.0.1:17494/mcp`, so if the app is open the tools are there.
-- **Claude Code, pointed at it.** One command:
+- **Soundbox, open.** The MCP server runs inside the app at
+  `http://127.0.0.1:17494/mcp`.
+- **Claude Code, connected with one command.**
 
   ```bash
   claude mcp add --transport http soundbox http://127.0.0.1:17494/mcp
   ```
 
-- **A new Godot 4.5.1 project.** One `Node2D` that draws itself in `_draw`,
-  six `AudioStreamPlayer` nodes in `main.tscn`, and a `main.gd` that calls
-  `play()` on the right one when the character jumps, lands, picks up a coin,
-  smashes a crate, opens the door and reaches the flag.
+- **A new Godot 4.5.1 project.** One `Node2D` that draws itself, six
+  `AudioStreamPlayer` nodes, and a script that plays the right one on jump,
+  land, coin, crate, door and win.
 
-The game is scripted rather than played — no input, a fixed course, the same
-event frames on every run — because it was built to be recorded. That makes it
-a demo, not a game, and I would rather say so than let the video imply
-otherwise.
+The game has no input. The character runs a fixed course so it could be
+recorded the same way every time. It is a demo.
 
 ![The Godot scene: a teal block runs a fixed course, collecting coins, breaking a crate and passing a stone door before the flag](/blog/godot-game.gif)
 
-## One sentence in
+## The request
 
-This is the whole request, verbatim:
+This is everything I typed:
 
 ```text
 Make sound effects for my little Godot platformer: jump, coin pickup,
 landing, a crate breaking, a stone door opening and a level-complete jingle.
 ```
 
-Nothing in it is a usable prompt. "Jump" is a label, and these models respond
-to material, action and space, not to labels. The interesting part is not that
-the agent made six calls; it is what it wrote in each one.
+"Jump" won't get you much from these models. They respond to material, action
+and space. So what matters is what the agent wrote for each sound.
 
-## Six calls out
+## Six calls
 
-Every call went to `soundbox.generate` on **Stable Audio 3.0 SFX**. The times are
-`elapsed_s`, the server's own figure, and the arguments are copied from the
-call log rather than from memory:
+Each call went to `soundbox.generate` on Stable Audio 3.0 SFX. The arguments
+are copied from the call log. The times are the server's own `elapsed_s`.
 
 | Sound | Prompt the agent wrote | Seed | Asked | Got | Time |
 | --- | --- | --- | --- | --- | --- |
@@ -78,47 +70,36 @@ call log rather than from memory:
 | Door | heavy stone door grinding open slowly, low rumble, echoing dungeon corridor | 505 | 2.0 s | 1.62 s | 0.52 s |
 | Win | short triumphant retro synth fanfare, rising arpeggio, video game level complete jingle | 606 | 2.5 s | 2.50 s | 0.74 s |
 
-Three things in that table matter.
+The first call took 10.57 s because it included loading the model. The model
+then stayed in VRAM, and the coin took 0.26 s. That's on a 16 GB card. On a
+CPU, expect minutes.
 
-**The first call is ten seconds and the rest are not.** The 10.57 s on the jump
-includes loading the model into VRAM; after that it stays resident, and a coin
-chime takes a quarter of a second. Those are numbers from a 16 GB desktop GPU.
-On a CPU, the README warns, a clip that takes seconds takes minutes.
+I didn't tell the agent how to write prompts. The `generate` tool's
+description of its `prompt` argument says "Describe material, action and
+space", and all six prompts do that.
 
-**The prompts describe things, not feelings.** "Rubber sneakers on a hollow
-wooden platform" and "dry room" are the kind of detail that changes the output;
-"satisfying landing sound" is not. The agent wrote all six in that register
-without my asking, and the reason is mundane: the description of `generate`'s
-`prompt` argument says "Describe material, action and space", and a tool's
-description is the one piece of documentation an agent always reads.
+The sounds came back shorter than asked because Soundbox trims trailing
+silence. A 1-second coin request gave 0.2 s of coin. For game sounds I want
+that.
 
-**What comes back is shorter than what was asked for.** Soundbox trims trailing
-silence, so a 1-second request for a coin returns 0.2 seconds of coin. For game
-sounds that is the right default: a pickup with 800 ms of nothing after it is a
-pickup that clips the next one.
-
-Every result carries an absolute path to a WAV. The files went into the
-project's `sfx/` folder under the names the scene expects — `jump.wav`,
-`coin.wav` and so on — and the six players were pointed at them. The agent was
-handed a path, not a payload, which is why none of this needed base64 or a
-download step.
+Each result includes the WAV's full path on disk. The files were copied into
+the project's `sfx/` folder under the names the scene expects. Nothing had to
+be downloaded or decoded.
 
 ![The Soundbox SFX library filtered to the godot-video tag: six sounds, each with its model, seed and the label claude-code 2.1.299](/blog/godot-sfx-library.png)
 
-Every one of them is in the library with its prompt, model, seed and the client
-that asked for it. If the crate is right but too long, the take to iterate on
-is one click away rather than buried in an agent transcript.
+All six are in the library with prompt, model, seed and the client that asked
+for them. If I want another take of the crate, I start from that row.
 
 ## The jingle was wrong
 
-Five of the six were fine on the first take. The win sound was not, and the
-agent could not have known: it does not listen. I did, and it was a wash of
-bright noise where a fanfare should have been.
+Five sounds were fine first time. The win sound was a wash of bright noise.
+The agent couldn't know that, because it can't listen. I did.
 
-Asked to fix it, the agent made four more calls, each with `variations: 3`, for
-twelve takes. Unable to hear them, it ranked them by what it could measure —
-the spectrogram (are there discrete notes, or broadband noise?), a note track
-(does it climb?), and the last 100 ms (does it decay, or stop at full level?):
+I asked it to fix the jingle. It made four more calls with `variations: 3`,
+so twelve takes. Since it couldn't hear them, it ranked them by what it could
+measure: whether the spectrogram showed separate notes, whether a pitch track
+climbed, and whether the last 100 ms faded out or stopped at full volume.
 
 | Call | Model | Seed | Time for 3 takes | What came back |
 | --- | --- | --- | --- | --- |
@@ -127,102 +108,88 @@ the spectrogram (are there discrete notes, or broadband noise?), a note track
 | "short cheerful chiptune victory fanfare, 8-bit, rising arpeggio, major key, 140 BPM" | Stable Audio 3.0 Small Music | 631 | 6.49 s | Real notes, but drums, and cut off mid-phrase |
 | "short 8-bit chiptune victory fanfare, square wave lead, quick rising major arpeggio then a long held final note, no drums, major key, 140 BPM" | Stable Audio 3.0 Small Music | 641 | 3.40 s | Real notes that climb and end |
 
-Six takes from the SFX model, on two prompts that asked for notes by name, and
-not one of them has a note in it — the model makes textures, and a melody is
-not a texture however you phrase the request. Similar prompts on **Stable Audio
-3.0 Small Music**, the music fine-tune of the same model at the same ~2.5 GB of
-VRAM, gave pitched notes on every take.
+The SFX model made six more takes from prompts that asked for notes by name.
+None of them had a single note. Rewording the prompt was the obvious fix, and
+it did nothing.
 
-The rejected fix was the obvious one: keep the SFX model and rewrite the
-prompt. Two calls proved that was the wrong lever. The model was the problem,
-and changing it took one argument.
+Changing the model did. Stable Audio 3.0 Small Music is the music fine-tune of
+the same model, at the same ~2.5 GB of VRAM. It gave pitched notes on every
+take.
 
-Within the music model the prompt still mattered. The first music call
-produced drums and phrases that ran straight into the cut — the start of a
-loop, not a sting. Saying what the ending does — "a long held final note, no
-drums" — is what produced endings. The take now in the game is seed 544958598,
-the third take of that call: 3.44 s of notes that climb and end on the highest
-one, decaying to −38 dB by the end, so nothing is chopped.
+The prompt still mattered after that. The first music call gave drums and
+phrases that ran into the cut, like the start of a loop. Adding "a long held
+final note, no drums" got takes with endings. The one in the game is seed
+544958598, the third take of that call. It's 3.44 s long, the notes climb and
+finish on the highest one, and it fades to −38 dB, so the end isn't chopped.
 
-A jingle is music, so ask a music model. And the ear caught what the agent's
-measurements then explained; neither would have fixed it alone.
+A jingle is music, so it needed the music model. And it took my ear to find
+the problem and the agent's measurements to pick the fix.
 
-## What the Agents page shows
+## The Agents page
 
-Every call an agent makes is logged in the app with the client that made it,
-the prompt, how many sounds it returned and how long it took. This is the real
-list from the run, newest first:
+Soundbox logs every agent call with the client, the prompt, how many sounds
+came back and how long it took. These are the ten calls from this run, newest
+first:
 
 ![The Agents page's Recent calls: ten generate calls from claude-code, the six original sounds at the bottom with the 10569 ms first call, the four three-take win retakes at the top](/blog/godot-recent-calls.png)
 
-It exists because an agent that generates audio as a side effect of writing
-code is an agent you will want to audit afterwards. "What did it ask for, and
-which of these files came from that?" should not need a transcript search.
+If an agent makes files while it writes your code, you will want to know
+later which call made which file. This page answers that without a trip
+through the chat history.
 
-## The licence, before you ship
+## The licence
 
-Both models used here are under the **Stability AI Community License**:
-commercial use, including selling what you make, is free while you or your
-organisation have under US$1M in total annual revenue, and above that you need
-an Enterprise licence from Stability AI. That is on each model's card in the
-app before you download it, and on the site for
+Both models here use the Stability AI Community License. Commercial use is
+free while you or your organisation make under US$1M a year in total revenue.
+Above that you need an Enterprise licence from Stability AI. The app shows
+this on each model's card before you download it. So does the site, for
 [Stable Audio 3.0 SFX](/models/stable-audio-3-sfx) and
 [Small Music](/models/stable-audio-3-small-music).
 
-Some models in the catalogue are non-commercial; you should know that before
-you ship a game with their output in it. Soundbox treats any model whose
-licence it could not establish as non-commercial, and the summary on a card is
-a summary, not legal advice.
+Some models in the catalogue are non-commercial. Check before you ship a game
+with their output in it. If Soundbox can't establish a model's licence, it
+treats it as non-commercial. The card is a summary, not legal advice.
 
-## If you came for a local Suno alternative
+## If you're looking for a local Suno alternative
 
-Most of this run was sound effects, but the jingle is the small end of the
-other thing people ask about. Soundbox does music with lyrics locally:
-**ACE-Step 1.5 Turbo** (MIT, commercial use allowed) and **MiniMax Music 3**
-(about 10 GB of VRAM, conditional commercial terms) both take a lyric sheet, and
-ACE-Step can also extend, cover and repaint a take. Because every model runs
-through the same audio.cpp binary, the same prompt and seed can go to all three
-music models and be compared side by side:
+Soundbox also makes songs with lyrics. ACE-Step 1.5 Turbo is MIT-licensed and
+allows commercial use. MiniMax Music 3 needs about 10 GB of VRAM and has
+conditional commercial terms. Both take a lyric sheet, and ACE-Step can also
+extend, cover and repaint a take. Every model runs through the same audio.cpp
+binary, so you can send one prompt and seed to three music models and compare:
 
 ![The same prompt and seed rendered by Stable Audio 3.0 Small Music, MiniMax Music 3 and ACE-Step 1.5 Turbo, with measured render times on an RTX 5080](/product/same-prompt-three-models.gif)
 
-It is not Suno, and the README's comparison table says so: hosted services run
-closed, tuned models with consistent output; here the weights are open and
-quality varies by model. What you get in exchange is no account, no credits,
-output under the licence of the model that made it, and an agent that can ask
-for a song the same way it asked for a coin.
+It isn't Suno. Suno runs closed, tuned models and its output is consistent.
+These are open models and quality varies between them. What you get instead
+is no account and no credits, output under the licence of the model that made
+it, and an agent that can ask for a song the way it asked for a coin.
 
-The cost is time on first load. Measured on the same RTX 5080 with audio.cpp
-0.9.2: a 15-second song with lyrics on ACE-Step took 151 s the first time,
-while the model loaded, and about 15 s warm; a 10-second Small Music loop took
-8 s. That is fine for a jingle and slow for an album.
+The first load is slow. On the same RTX 5080 with audio.cpp 0.9.2, a
+15-second song with lyrics on ACE-Step took 151 s the first time and about
+15 s after that. A 10-second Small Music loop took 8 s.
 
-## What is still rough
+## What's still rough
 
-- **Four models are verified end to end.** Stable Audio 3.0 SFX, Small Music,
-  ACE-Step 1.5 Turbo and MiniMax Music 3 are on by default; 61 more can be
-  switched on and are marked unverified until someone reports. Four of those
-  (VibeVoice 1.5B, MiDashengLM-Gen, HTDemucs 6-stem and Chatterbox Turbo) have
-  also been run end to end.
-- **The hardware that matters is an NVIDIA GPU.** A few GB of VRAM covers the
-  verified models, except MiniMax Music 3 at about 10 GB. AMD and Intel GPUs
-  fall back to the CPU unless you opt into Vulkan, which nobody has confirmed
-  on the verified models yet. Mac installers exist and the verified models have
-  not been confirmed on Apple silicon.
-- **Unsigned installers.** The first launch asks you to confirm.
-- **An agent that cannot hear.** It can measure a spectrogram and write a
-  sensible prompt, and it will still hand you a noise wash called a fanfare.
-  Listen before you commit.
+- **Only four models are verified end to end.** They are Stable Audio 3.0 SFX,
+  Small Music, ACE-Step 1.5 Turbo and MiniMax Music 3. The other 61 are
+  marked unverified until someone reports back. Four of those have also been
+  run end to end: VibeVoice 1.5B, MiDashengLM-Gen, HTDemucs 6-stem and
+  Chatterbox Turbo.
+- **You want an NVIDIA GPU.** A few GB of VRAM covers the verified models,
+  apart from MiniMax Music 3 at about 10 GB. AMD and Intel GPUs use the CPU
+  unless you opt into Vulkan, which nobody has confirmed on the verified
+  models. There are Mac installers, but nobody has confirmed the verified
+  models on Apple silicon.
+- **The installers aren't signed.** The first launch asks you to confirm.
+- **The agent can't hear.** It will hand you a noise wash and call it a
+  fanfare. Listen before you commit.
 
-## Try the same run
+## Try it
 
 Install Soundbox from the
 [latest release](https://github.com/HamSanders/soundbox/releases/latest),
-open it, connect Claude Code with the one command above, and hand it the
-sentence from this post — or your own game. The tools it gets, the
-`soundbox-sound-pass` skill that reads a project and derives the list of sounds
-itself, and the stdio bridge for clients that cannot speak HTTP are all in
-[docs/MCP.md](./MCP.md).
-
-A sound you asked for in a sentence and placed in a scene beats a library you
-searched for an afternoon. Start with the jump.
+connect Claude Code with the command above, and give it the sentence from this
+post or one about your own game. [docs/MCP.md](./MCP.md) lists the tools, the
+`soundbox-sound-pass` skill that reads a project and works out which sounds it
+needs, and the stdio bridge for clients that don't speak HTTP.
