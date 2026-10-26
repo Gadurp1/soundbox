@@ -7,30 +7,22 @@
  * release) and, once mounted, asks the GitHub API for that release and for the
  * repository, then swaps in the direct asset links, version and sizes and fills
  * in the star, fork and download counts. If either request fails or is rate
- * limited, the fallback links still work and the counts show a dash.
+ * limited, the fallback links still work and the readouts stay dark.
  *
- * The visitor's OS is guessed after mount too, so the prerendered HTML is the
- * same for everyone and the big button only changes once the browser says what
- * it is running on.
+ * It is dressed in the console's hardware kit (`components/console`): panels
+ * with screws, LEDs, seven-segment readouts, a VU meter. The app's own
+ * instrument is the most recognisable thing Soundbox has, so the page that
+ * hands it over looks like it. The visitor's OS is guessed after mount, so the
+ * prerendered HTML is the same for everyone.
  */
 
-import {
-  ArrowDownIcon,
-  BotIcon,
-  DownloadIcon,
-  ExternalLinkIcon,
-  GitForkIcon,
-  LaptopIcon,
-  MonitorIcon,
-  StarIcon,
-  WifiOffIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowDownIcon, ExternalLinkIcon, StarIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Led, Meter, Panel, Seg } from "@/components/console/hardware";
+import "@/components/console/console.css";
 import { SiteVideo } from "@/components/site-video";
 import { SeoHead } from "@/components/seo-head";
-import { Button } from "@/components/ui/button";
 import { REPO_URL } from "@/lib/marketing-links";
 import { cn } from "@/lib/utils";
 
@@ -60,63 +52,72 @@ type PlatformId = "windows" | "mac-arm" | "mac-intel";
 
 interface Platform {
   id: PlatformId;
+  channel: string;
   label: string;
   short: string;
   detail: string;
-  icon: LucideIcon;
   match: (name: string) => boolean;
 }
 
 const PLATFORMS: Platform[] = [
   {
     id: "windows",
+    channel: "OUT 1",
     label: "Windows",
     short: "Windows",
-    detail: "Windows 10 and 11, x64",
-    icon: MonitorIcon,
+    detail: "10 / 11 · x64 · .exe",
     match: (n) => /x64-setup\.exe$/i.test(n),
   },
   {
     id: "mac-arm",
-    label: "macOS, Apple silicon",
+    channel: "OUT 2",
+    label: "Mac · Apple silicon",
     short: "Mac",
-    detail: "M1 and later",
-    icon: LaptopIcon,
+    detail: "M1 and later · .dmg",
     match: (n) => /aarch64\.dmg$/i.test(n),
   },
   {
     id: "mac-intel",
-    label: "macOS, Intel",
+    channel: "OUT 3",
+    label: "Mac · Intel",
     short: "Intel Mac",
-    detail: "x64",
-    icon: LaptopIcon,
+    detail: "x64 · .dmg",
     match: (n) => /x64\.dmg$/i.test(n),
   },
 ];
 
-const PERKS: { icon: LucideIcon; title: string; body: string }[] = [
-  {
-    icon: WifiOffIcon,
-    title: "Runs offline",
-    body: "Models run on your own GPU. No account, no credits, nothing sent anywhere.",
-  },
-  {
-    icon: DownloadIcon,
-    title: "One installer",
-    body: "The runtime ships inside. Models download from the app when you first use them.",
-  },
-  {
-    icon: BotIcon,
-    title: "Agents included",
-    body: "An MCP server for Claude Code and Cursor starts with the app.",
-  },
+/** The ticker: prompts in the material / action / space shape that works. */
+const PROMPTS = [
+  "heavy wooden door slamming in a stone corridor",
+  "rain on a tin roof, distant thunder",
+  "lo-fi hip hop, dusty vinyl, 82 bpm",
+  "boots on wet gravel at night",
+  "old freight lift motor starting under load",
+  "synthwave chorus, female vocal, big drums",
+  "glass bottle shattering on tile",
+  "a narrator, warm and close: “it began with a sound”",
 ];
 
-function megabytes(bytes: number): string {
-  return `${Math.round(bytes / 1024 / 1024)} MB`;
+/** Bar heights for the hero waveform: fixed, so the prerender matches. */
+const BARS = Array.from({ length: 120 }, (_, i) => {
+  const env = Math.sin((i / 119) * Math.PI);
+  const wobble = Math.abs(Math.sin(i * 1.7) * 0.6 + Math.sin(i * 0.43) * 0.4);
+  return 0.08 + env * (0.25 + wobble * 0.67);
+});
+
+const KEYFRAMES = `
+@keyframes dl-eq { 0%,100% { transform: scaleY(.45) } 50% { transform: scaleY(1) } }
+@keyframes dl-ticker { to { transform: translateX(-50%) } }
+`;
+
+function megabytes(bytes: number): number {
+  return Math.round(bytes / 1024 / 1024);
 }
 
-const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+/** Readout text: the number, or dashes until it arrives. */
+function readout(n: number | undefined, digits: number): string {
+  return n === undefined ? "-".repeat(digits) : String(n);
+}
 
 /** `GET` a GitHub API path and hand back the JSON, or null on any failure. */
 async function github<T>(path: string, signal: AbortSignal): Promise<T | null> {
@@ -143,31 +144,56 @@ function detectPlatform(): PlatformId | null {
   return null;
 }
 
-/** Five bars that bounce beside the version pill. Still for reduced motion. */
-function Equalizer() {
+/** A needle that drifts like it is riding a signal. Parked for reduced motion. */
+function useSignal(): number {
+  const [level, setLevel] = useState(0.55);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => setLevel(0.45 + Math.random() * 0.4), 220);
+    return () => window.clearInterval(id);
+  }, []);
+  return level;
+}
+
+function Waveform() {
   return (
-    <span aria-hidden="true" className="flex h-3 items-end gap-[2px]">
-      {[0.9, 0.5, 1, 0.65, 0.8].map((h, i) => (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none flex h-40 items-center gap-[3px] [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)] sm:h-56"
+    >
+      {BARS.map((h, i) => (
         <span
           key={i}
-          className="bg-primary w-[2px] origin-bottom rounded-full motion-safe:animate-[eq_1.1s_ease-in-out_infinite]"
-          style={{ height: `${h * 100}%`, animationDelay: `${i * -0.18}s` }}
+          className="bg-primary min-w-0 flex-1 rounded-full opacity-80 motion-safe:animate-[dl-eq_1.4s_ease-in-out_infinite]"
+          style={{
+            height: `${h * 100}%`,
+            animationDelay: `${(i % 17) * -0.09}s`,
+            boxShadow: "0 0 12px var(--cx-lamp-glow)",
+          }}
         />
       ))}
-    </span>
+    </div>
   );
 }
 
-function Stat({ icon: Icon, value, label }: { icon: LucideIcon; value: string; label: string }) {
+function Ticker() {
+  const row = [...PROMPTS, ...PROMPTS];
   return (
-    <div className="bg-card/60 ring-foreground/10 rounded-2xl px-5 py-4 text-left ring-1">
-      <p className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
-        <Icon className="size-3.5" aria-hidden="true" />
-        {label}
-      </p>
-      <p className="font-heading mt-1 text-3xl font-semibold tracking-tight tabular-nums">
-        {value}
-      </p>
+    <div
+      aria-hidden="true"
+      className="border-y border-[var(--cx-line)] bg-[var(--cx-seg-bg)] py-3 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]"
+    >
+      <div className="flex w-max motion-safe:animate-[dl-ticker_60s_linear_infinite]">
+        {row.map((p, i) => (
+          <span
+            key={i}
+            className="flex items-center gap-3 px-6 font-mono text-sm whitespace-nowrap text-[var(--cx-lamp)] [text-shadow:0_0_8px_var(--cx-lamp-glow)]"
+          >
+            <span className="text-[var(--cx-engrave-dim)]">▸</span>
+            {p}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -176,6 +202,7 @@ export function DownloadPage() {
   const [release, setRelease] = useState<Release | null>(null);
   const [repo, setRepo] = useState<Repo | null>(null);
   const [mine, setMine] = useState<PlatformId | null>(null);
+  const signal = useSignal();
 
   useEffect(() => {
     setMine(detectPlatform());
@@ -191,262 +218,236 @@ export function DownloadPage() {
   const downloads = release?.assets.reduce((sum, a) => sum + a.download_count, 0);
 
   return (
-    <div className="bg-background text-foreground min-h-svh overflow-x-clip">
+    <div className="console bg-background text-foreground min-h-svh overflow-x-clip">
       <SeoHead
         title="Download Soundbox for Windows and macOS | Soundbox"
         description="Download the Soundbox desktop app for Windows 10/11 or macOS. Free, open source, no account. Models download from inside the app."
         path="/download"
       />
-      <style>{`@keyframes eq { 0%,100% { transform: scaleY(.35) } 50% { transform: scaleY(1) } }`}</style>
+      <style>{KEYFRAMES}</style>
 
-      <section aria-labelledby="download-heading" className="relative px-4">
-        {/* Decorative: the landing page's teal wash, doubled up for a page
-            whose whole job is one button. */}
+      {/* ------------------------------------------------------------ hero */}
+      <section aria-labelledby="download-heading" className="relative pt-14 sm:pt-20">
         <div
           aria-hidden="true"
-          className="bg-primary/15 pointer-events-none absolute -top-56 left-1/2 size-[40rem] -translate-x-1/2 rounded-full blur-3xl"
+          className="bg-primary/20 pointer-events-none absolute top-40 left-1/2 h-72 w-[70rem] -translate-x-1/2 rounded-full blur-[120px]"
         />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_center,var(--color-foreground)_1px,transparent_1px)] [mask-image:linear-gradient(to_bottom,black,transparent)] bg-[size:22px_22px] opacity-[0.06]"
-        />
-
-        <div className="relative mx-auto w-full max-w-3xl pt-16 pb-12 text-center sm:pt-24">
+        <div className="relative mx-auto w-full max-w-6xl px-4">
           <a
             href={release?.html_url ?? LATEST_URL}
-            className="text-muted-foreground ring-border bg-card hover:text-foreground inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors"
+            className="inline-flex items-center gap-3 rounded-md border border-[var(--cx-line)] bg-[var(--cx-seg-bg)] px-3 py-1.5 transition-colors hover:border-[var(--cx-lamp)]"
           >
-            <Equalizer />
-            {release
-              ? `${release.tag_name} · out ${new Date(release.published_at).toLocaleDateString("en", { month: "short", day: "numeric" })}`
-              : "Latest release"}
-            <span className="text-primary">Release notes →</span>
+            <Led on blink color="red" label="New" />
+            <span className="cx-label">{release ? release.tag_name : "latest"}</span>
+            <span className="cx-label text-[var(--cx-lamp)]!">Release notes →</span>
           </a>
 
           <h1
             id="download-heading"
-            className="font-heading mt-6 text-5xl font-semibold tracking-tight text-balance sm:text-7xl"
+            className="font-heading text-foreground mt-6 text-[clamp(3.6rem,13vw,11rem)] leading-[0.85] font-black tracking-[-0.055em]"
           >
-            Your studio.{" "}
-            <span className="from-primary bg-gradient-to-r to-emerald-300 bg-clip-text text-transparent">
-              Your GPU.
-            </span>
+            Make
+            <br />
+            <span className="text-primary [text-shadow:0_0_40px_var(--cx-lamp-glow)]">noise.</span>
           </h1>
-          <p className="text-muted-foreground mx-auto mt-5 max-w-xl text-base leading-relaxed text-pretty sm:text-lg">
-            Sound effects, music and voices from open models, made on your own machine. Free and
-            open source, no account.
-          </p>
 
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <Button
-              size="lg"
-              asChild
-              className="shadow-primary/30 h-12 rounded-full px-7 text-base shadow-lg transition-transform hover:scale-[1.03] active:scale-95"
-            >
-              <a href={primaryAsset?.browser_download_url ?? "#platforms"}>
-                <DownloadIcon aria-hidden="true" />
-                {primary ? `Download for ${primary.short}` : "Choose your download"}
-                {primaryAsset ? (
-                  <span className="opacity-70">· {megabytes(primaryAsset.size)}</span>
-                ) : null}
-              </a>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              asChild
-              className="h-12 rounded-full px-6 text-base"
-            >
-              <a href={REPO_URL} target="_blank" rel="noreferrer noopener">
-                <StarIcon aria-hidden="true" className="text-amber-400" />
-                Star on GitHub
-                <span className="bg-muted rounded-full px-2 py-0.5 text-xs tabular-nums">
-                  {repo ? compact.format(repo.stargazers_count) : "—"}
+          <div className="mt-8 grid items-end gap-8 lg:grid-cols-[1fr_auto]">
+            <p className="text-muted-foreground max-w-md text-lg leading-relaxed text-pretty">
+              Sound effects, music and voices from open models, made on your own GPU. No account,
+              no credits, no cloud.
+            </p>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+              <a
+                href={primaryAsset?.browser_download_url ?? "#installers"}
+                className="cx-transport flex items-center gap-4 px-6 py-4 font-semibold"
+              >
+                <ArrowDownIcon className="size-6" aria-hidden="true" />
+                <span className="flex flex-col leading-tight">
+                  <span className="text-lg">
+                    {primary ? `Download for ${primary.short}` : "Choose your download"}
+                  </span>
+                  <span className="font-mono text-xs font-normal opacity-75">
+                    {primaryAsset
+                      ? `${release?.tag_name} · ${megabytes(primaryAsset.size)} MB`
+                      : "Windows · macOS"}
+                  </span>
                 </span>
               </a>
-            </Button>
+              <a
+                href={REPO_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="cx-push w-auto! items-center! gap-3! px-4!"
+              >
+                <StarIcon className="size-4 text-amber-400" aria-hidden="true" />
+                <span className="cx-label">Star</span>
+                <Seg value={readout(repo?.stargazers_count, 3)} digits={3} />
+              </a>
+            </div>
           </div>
-          <p className="text-muted-foreground mt-4 text-xs">
-            {primary ? (
-              <>
-                Not on {primary.short}?{" "}
-                <a href="#platforms" className="underline underline-offset-4">
-                  Every installer is below
-                </a>
-                .
-              </>
-            ) : (
-              "Windows 10/11 and macOS. Linux runs from source."
-            )}
-          </p>
         </div>
 
-        <div className="relative mx-auto w-full max-w-5xl">
-          <div
-            aria-hidden="true"
-            className="from-primary/40 absolute -inset-px rounded-2xl bg-gradient-to-b via-transparent to-transparent blur-xl"
-          />
-          <div className="ring-primary/30 relative rounded-2xl p-1.5 ring-1 backdrop-blur">
-            <SiteVideo
-              src="/media/launch.mp4"
-              poster="/media/posters/launch.jpg"
-              label="The Soundbox launch film: the app making sound effects, music and speech on a local machine"
-            />
-          </div>
-          <p className="text-muted-foreground mt-3 text-center text-xs">
-            The launch film. Turn your sound on.
-          </p>
+        <div className="relative mt-10">
+          <Waveform />
         </div>
       </section>
 
-      <section aria-label="Project numbers" className="px-4 pt-14">
-        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-3 sm:grid-cols-3">
-          <Stat
-            icon={StarIcon}
-            label="GitHub stars"
-            value={repo ? compact.format(repo.stargazers_count) : "—"}
-          />
-          <Stat
-            icon={DownloadIcon}
-            label={release ? `Downloads of ${release.tag_name}` : "Downloads"}
-            value={downloads !== undefined ? compact.format(downloads) : "—"}
-          />
-          <Stat icon={GitForkIcon} label="Forks" value={repo ? compact.format(repo.forks_count) : "—"} />
-        </div>
-      </section>
+      <Ticker />
 
-      <section id="platforms" aria-labelledby="platforms-heading" className="scroll-mt-20 px-4 pt-20">
-        <div className="mx-auto w-full max-w-5xl">
-          <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">
-            Installers
-          </p>
-          <h2
-            id="platforms-heading"
-            className="font-heading mt-2 text-2xl font-semibold tracking-tight sm:text-3xl"
+      {/* --------------------------------------------------- monitor + meters */}
+      <section aria-label="Launch film and project numbers" className="px-4 pt-16">
+        <div className="mx-auto grid w-full max-w-6xl gap-4 lg:grid-cols-[1fr_17rem]">
+          <Panel
+            title="Monitor · soundbox-vibe.mp4"
+            aside={<Led on blink color="red" label="Rec" />}
+            bodyClassName="pb-5"
           >
-            Pick your machine
+            <SiteVideo
+              src="/media/soundbox-vibe.mp4"
+              poster="/media/posters/vibe.jpg"
+              label="Soundbox in thirty seconds: type a prompt, hear sound effects, music and voices, switch models"
+            />
+          </Panel>
+
+          <Panel title="Counters" aside={<Led on={Boolean(repo)} color="green" label="Live" />}>
+            <div className="flex flex-col items-center gap-5 pt-1">
+              <Meter value={signal} label="Signal" />
+              <dl className="grid w-full gap-4">
+                {[
+                  { label: "GitHub stars", value: repo?.stargazers_count },
+                  { label: release ? `Downloads ${release.tag_name}` : "Downloads", value: downloads },
+                  { label: "Forks", value: repo?.forks_count },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex flex-col gap-1.5">
+                    <dt className="cx-label">{label}</dt>
+                    <dd>
+                      <Seg
+                        value={readout(value, 5)}
+                        digits={5}
+                        className="w-full text-4xl"
+                        dim={value === undefined}
+                      />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </Panel>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------- installers */}
+      <section id="installers" aria-labelledby="installers-heading" className="scroll-mt-20 px-4 pt-20">
+        <div className="mx-auto w-full max-w-6xl">
+          <h2
+            id="installers-heading"
+            className="font-heading text-foreground text-4xl font-black tracking-[-0.04em] sm:text-6xl"
+          >
+            Pick your <span className="text-primary">output.</span>
           </h2>
-          <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+          <ul className="mt-8 grid gap-4 md:grid-cols-3">
             {PLATFORMS.map((platform) => {
               const asset = assetFor(platform);
               const isMine = platform.id === mine;
-              const Icon = platform.icon;
               return (
-                <li
-                  key={platform.id}
-                  className={cn(
-                    "bg-card relative flex flex-col rounded-2xl p-5 ring-1 transition-shadow",
-                    isMine
-                      ? "ring-primary/60 shadow-primary/10 shadow-xl"
-                      : "ring-foreground/10 hover:ring-foreground/20",
-                  )}
-                >
-                  {isMine ? (
-                    <span className="bg-primary text-primary-foreground absolute -top-2.5 right-4 rounded-full px-2 py-0.5 text-[11px] font-semibold">
-                      Your system
-                    </span>
-                  ) : null}
-                  <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </div>
-                  <h3 className="font-heading mt-4 text-lg font-semibold">{platform.label}</h3>
-                  <p className="text-muted-foreground mt-1 text-sm">{platform.detail}</p>
-                  <Button
-                    asChild
-                    variant={isMine ? "default" : "outline"}
-                    className="mt-5 w-full rounded-full"
+                <li key={platform.id}>
+                  <Panel
+                    title={platform.channel}
+                    aside={<Led on={isMine} label={isMine ? "Your system" : "Ready"} />}
+                    className={cn(isMine && "ring-primary/70 shadow-primary/20 shadow-2xl ring-2")}
                   >
-                    <a href={asset?.browser_download_url ?? LATEST_URL}>
-                      <ArrowDownIcon aria-hidden="true" />
-                      {asset ? `Download · ${megabytes(asset.size)}` : "Download"}
-                    </a>
-                  </Button>
-                  {asset ? (
-                    <p className="text-muted-foreground mt-2 font-mono text-[11px] break-all">
-                      {asset.name}
+                    <p className="font-heading text-2xl font-bold tracking-tight text-[var(--cx-nameplate)]">
+                      {platform.label}
                     </p>
-                  ) : null}
+                    <p className="cx-label mt-1 text-[var(--cx-engrave-dim)]!">{platform.detail}</p>
+                    <div className="mt-5 flex items-end justify-between gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="cx-label">Size · MB</span>
+                        <Seg
+                          value={asset ? String(megabytes(asset.size)) : "--"}
+                          digits={3}
+                          size="lg"
+                          dim={!asset}
+                        />
+                      </div>
+                      <a
+                        href={asset?.browser_download_url ?? LATEST_URL}
+                        className={cn(
+                          "flex items-center gap-2 px-5 py-3 text-sm font-semibold",
+                          isMine ? "cx-transport" : "cx-push w-auto!",
+                        )}
+                      >
+                        <ArrowDownIcon className="size-4" aria-hidden="true" />
+                        Download
+                      </a>
+                    </div>
+                    <p className="mt-4 truncate font-mono text-[11px] text-[var(--cx-engrave-dim)]">
+                      {asset?.name ?? "fetching the latest build…"}
+                    </p>
+                  </Panel>
                 </li>
               );
             })}
           </ul>
-
-          <ul className="mt-12 grid gap-6 sm:grid-cols-3">
-            {PERKS.map(({ icon: Icon, title, body }) => (
-              <li key={title} className="flex gap-3">
-                <Icon className="text-primary mt-0.5 size-5 shrink-0" aria-hidden="true" />
-                <div>
-                  <h3 className="font-semibold">{title}</h3>
-                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{body}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <p className="text-muted-foreground mt-6 text-sm">
+            Linux: no installer yet, so{" "}
+            <a className="text-foreground underline underline-offset-4" href={`${REPO_URL}#run-from-source`}>
+              run it from source
+            </a>
+            . Older builds are on the{" "}
+            <a className="text-foreground underline underline-offset-4" href={`${REPO_URL}/releases`}>
+              releases page
+            </a>
+            .
+          </p>
         </div>
       </section>
 
-      <section aria-labelledby="first-launch-heading" className="px-4 pt-20">
-        <div className="mx-auto w-full max-w-5xl">
-          <div>
-            <h2 id="first-launch-heading" className="font-heading text-xl font-semibold">
-              Linux, or from source
-            </h2>
-            <p className="text-muted-foreground mt-2 leading-relaxed">
-              There is no Linux installer yet. Follow{" "}
-              <a
-                className="text-foreground underline underline-offset-4"
-                href={`${REPO_URL}#run-from-source`}
+      {/* ----------------------------------------------------------- github */}
+      <section aria-labelledby="github-heading" className="px-4 py-24">
+        <Panel className="mx-auto w-full max-w-6xl" bodyClassName="px-6 py-12 sm:px-12">
+          <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
+            <div>
+              <p className="cx-title">Open source</p>
+              <h2
+                id="github-heading"
+                className="font-heading mt-3 text-4xl font-black tracking-[-0.04em] text-[var(--cx-nameplate)] sm:text-6xl"
               >
-                Run from source
-              </a>{" "}
-              instead. Older versions are on the{" "}
-              <a className="text-foreground underline underline-offset-4" href={`${REPO_URL}/releases`}>
-                releases page
+                Patch in.
+              </h2>
+              <p className="text-muted-foreground mt-3 max-w-md leading-relaxed">
+                Read the code, file an issue, send a pull request. A star helps the next person
+                find it.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <a
+                href={REPO_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="cx-transport flex items-center justify-between gap-6 px-5 py-3 font-semibold"
+              >
+                <span className="flex items-center gap-2">
+                  <StarIcon className="size-4" aria-hidden="true" />
+                  Star on GitHub
+                </span>
+                <span className="font-mono tabular-nums">
+                  {readout(repo?.stargazers_count, 2)}
+                </span>
               </a>
-              .
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="github-heading" className="px-4 py-20">
-        <div className="bg-card ring-foreground/10 relative mx-auto w-full max-w-5xl overflow-hidden rounded-3xl px-6 py-12 text-center ring-1 sm:px-12">
-          <div
-            aria-hidden="true"
-            className="bg-primary/20 pointer-events-none absolute -bottom-40 left-1/2 size-[28rem] -translate-x-1/2 rounded-full blur-3xl"
-          />
-          <div className="relative">
-            <h2
-              id="github-heading"
-              className="font-heading text-2xl font-semibold tracking-tight text-balance sm:text-4xl"
-            >
-              Built in the open
-            </h2>
-            <p className="text-muted-foreground mx-auto mt-3 max-w-lg leading-relaxed">
-              Read the code, file an issue, send a pull request. A star helps other people find
-              it.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3">
-              <Button size="lg" asChild className="rounded-full">
-                <a href={REPO_URL} target="_blank" rel="noreferrer noopener">
-                  <StarIcon aria-hidden="true" />
-                  Star Soundbox
-                  {repo ? (
-                    <span className="opacity-70 tabular-nums">
-                      · {compact.format(repo.stargazers_count)}
-                    </span>
-                  ) : null}
-                </a>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="rounded-full">
-                <a href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer noopener">
-                  Issues
-                  <ExternalLinkIcon aria-hidden="true" />
-                </a>
-              </Button>
+              <a
+                href={`${REPO_URL}/issues`}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="cx-push justify-between! px-5!"
+              >
+                <span className="cx-label">Issues</span>
+                <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
+              </a>
             </div>
           </div>
-        </div>
+        </Panel>
       </section>
     </div>
   );
