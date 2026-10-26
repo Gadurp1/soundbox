@@ -56,43 +56,43 @@ const RELEASES_URL = `${REPO_URL}/releases/latest`;
 /* ------------------------------------------------------------------ words */
 
 const ONE_LINE =
-  "Soundbox is a free, open-source app that makes sound effects, music and voices from open-weight AI models on your own computer, with no account and no cloud service.";
+  "Soundbox is a free, open-source app that generates sound effects, music and speech on your own computer from open-weight AI models, with no account and nothing uploaded.";
 
-const ONE_PARAGRAPH = `Soundbox is a free, MIT-licensed app for Windows and macOS that generates sound effects, music, songs with lyrics and speech from open-weight models running on your own GPU. Every model runs through audio.cpp, a native C++ runtime, so there is no Python environment to set up, and nothing is uploaded: the weights, the generation and the WAV files all stay on your machine. Four models are verified end to end and on by default, ${OPT_IN_MODELS} more can be switched on, and each one's licence is shown before it downloads. Results can be arranged on a multi-track timeline, and a built-in MCP server lets coding agents such as Claude Code and Cursor generate audio and put it straight into a project.`;
+const ONE_PARAGRAPH = `Soundbox is a free, MIT-licensed app for Windows and macOS that generates sound effects, music, songs with lyrics and speech on your own computer. It runs open-weight models through audio.cpp, a C++ runtime, so there is no Python to install. Nothing is uploaded and there is no account. Four models are verified end to end and on by default; another ${OPT_IN_MODELS}, most of them text-to-speech, can be switched on, and each shows its licence before it downloads. On an RTX 5080 a five-second sound effect takes 1.3 seconds once the model is loaded. Clips can be arranged on a multi-track timeline, and a built-in MCP server lets coding agents such as Claude Code and Cursor make sounds and save them into a project.`;
 
 const FACTS: { term: string; detail: ReactNode }[] = [
-  { term: "Price", detail: "Free. No subscription, no credits, no account." },
+  { term: "Price", detail: "Free, with no subscription, credits or account." },
   {
     term: "Licence",
     detail: (
       <>
-        MIT for Soundbox itself. The model weights are not MIT: each carries its own licence, shown
-        before download, and that licence governs what you may do with its output.
+        Soundbox itself is MIT. Each model's weights carry their own licence, shown before
+        download, and that licence decides what you may do with the output.
       </>
     ),
   },
   {
     term: "Runs on",
     detail:
-      "Your own machine. NVIDIA GPUs through CUDA; Apple silicon through Metal, though no verified model has been confirmed on a Mac yet; anything else on the CPU, slowly. Works offline once the weights are downloaded.",
+      "Your own computer. NVIDIA GPUs use CUDA and Apple silicon uses Metal, though none of the verified models has been confirmed on a Mac yet. Without a supported GPU it runs on the CPU, where a clip takes minutes rather than seconds. It works offline once the weights are downloaded.",
   },
   {
     term: "Runtime",
     detail: (
       <>
         Every model runs through <a href="https://github.com/0xShug0/audio.cpp" target="_blank" rel="noreferrer noopener" className="text-primary underline underline-offset-4">audio.cpp</a>,
-        a native C++ runtime. No Python, no CUDA toolkit.
+        a native C++ runtime, so neither Python nor the CUDA toolkit is needed.
       </>
     ),
   },
   {
     term: "Models",
-    detail: `${VERIFIED_MODELS} verified and on by default (Stable Audio 3.0 SFX, Stable Audio 3.0 Small Music, ACE-Step 1.5 Turbo, MiniMax Music 3); ${OPT_IN_MODELS} more opt-in, most of them text-to-speech.`,
+    detail: `${VERIFIED_MODELS} verified end to end and on by default: Stable Audio 3.0 SFX, Stable Audio 3.0 Small Music, ACE-Step 1.5 Turbo and MiniMax Music 3. Another ${OPT_IN_MODELS} can be switched on, 45 of them text-to-speech.`,
   },
   {
     term: "Makes",
     detail:
-      "Sound effects and ambience, instrumentals, songs from a lyric sheet, speech, voice cloning and conversion, stem separation.",
+      "Sound effects and ambience, instrumentals, songs from a lyric sheet, speech, cloned voices, voice conversion and stem separation.",
   },
   {
     term: "Install",
@@ -105,7 +105,7 @@ const FACTS: { term: string; detail: ReactNode }[] = [
   },
   {
     term: "Data",
-    detail: "One SQLite file and a folder of WAVs under ~/.soundbox. Nothing leaves the machine.",
+    detail: "Audio is saved as WAV files under ~/.soundbox, and the library is one SQLite file beside them. Nothing is sent anywhere.",
   },
 ];
 
@@ -138,7 +138,7 @@ const VIDEOS: Video[] = [
     poster: "/press/poster-vibe.jpg",
     seconds: 29.6,
     bytes: 4_131_653,
-    goodFor: "An opener: what Soundbox makes and who it is for, set to a song made in it.",
+    goodFor: "What Soundbox makes and who it is for, cut to a song that was generated in it.",
   },
   {
     title: "Under the hood",
@@ -146,7 +146,7 @@ const VIDEOS: Video[] = [
     poster: "/press/poster-tech.jpg",
     seconds: 43.0,
     bytes: 8_293_156,
-    goodFor: "A technical audience: audio.cpp, no Python, swapping models, measured timings.",
+    goodFor: "audio.cpp in place of a Python setup, swapping models, and measured render times. Suits a technical audience.",
   },
   {
     title: "Agents and MCP",
@@ -154,7 +154,7 @@ const VIDEOS: Video[] = [
     poster: "/press/poster-agents.jpg",
     seconds: 20.8,
     bytes: 5_124_673,
-    goodFor: "Coverage of AI coding tools: an agent asks for a sound and gets a WAV on disk.",
+    goodFor: "An agent asks for a door slam over MCP and gets back the path to a WAV. Suits coverage of AI coding tools.",
   },
   {
     title: "Bring your games to life",
@@ -162,7 +162,7 @@ const VIDEOS: Video[] = [
     poster: "/press/poster-games.jpg",
     seconds: 33.1,
     bytes: 9_168_595,
-    goodFor: "Game development: Claude Code makes six sounds and wires them into a Godot game.",
+    goodFor: "Claude Code makes six sounds and wires them into a small Godot game.",
   },
   {
     title: "Bring your 3D models to life",
@@ -170,7 +170,7 @@ const VIDEOS: Video[] = [
     poster: "/press/poster-3d-models.jpg",
     seconds: 28.6,
     bytes: 8_675_009,
-    goodFor: "3D and animation: a silent Blender creature wakes, chatters and roars.",
+    goodFor: "A silent Blender creature wakes up, chatters and roars.",
   },
   {
     title: "Bring your playlist to life",
@@ -178,7 +178,7 @@ const VIDEOS: Video[] = [
     poster: "/press/poster-playlist.jpg",
     seconds: 32.2,
     bytes: 6_318_268,
-    goodFor: "Music: an empty playlist filled with six tracks, songs and instrumentals, from three models.",
+    goodFor: "Six tracks from three models fill an empty playlist. Two of them are songs with lyrics.",
   },
   {
     title: "Bring your haunted house to life",
@@ -186,7 +186,7 @@ const VIDEOS: Video[] = [
     poster: "/press/poster-haunted-house.jpg",
     seconds: 30.5,
     bytes: 8_994_534,
-    goodFor: "Seasonal pieces: a silent haunted house gets seven sound effects and a music bed.",
+    goodFor: "A silent haunted house gets seven sound effects and a music bed, for Halloween.",
   },
   {
     title: "Bring your games to life (vertical)",
@@ -195,7 +195,7 @@ const VIDEOS: Video[] = [
     seconds: 33.1,
     bytes: 9_076_270,
     vertical: true,
-    goodFor: "Shorts, Reels and TikTok.",
+    goodFor: "The same film, cut for Shorts, Reels and TikTok.",
   },
   {
     title: "Bring your playlist to life (vertical)",
@@ -204,7 +204,7 @@ const VIDEOS: Video[] = [
     seconds: 32.2,
     bytes: 6_456_301,
     vertical: true,
-    goodFor: "Shorts, Reels and TikTok.",
+    goodFor: "The same film, cut for Shorts, Reels and TikTok.",
   },
 ];
 
@@ -222,43 +222,43 @@ const SCREENSHOTS: Still[] = [
   {
     src: "/product/studio.png",
     alt: "The Soundbox studio: a script cast across three speakers above a multi-track timeline holding spoken lines, a music bed and sound effects",
-    caption: "Studio: a cast script over a multi-track timeline.",
+    caption: "The studio, with a script cast across three voices above the timeline.",
     size: "1600 × 1000",
   },
   {
     src: "/product/sfx.png",
     alt: "The SFX library with waveforms, models and seeds, and the prompt composer",
-    caption: "Sound effects, each kept with its prompt, model and seed.",
+    caption: "The sound effects library. Each take keeps its prompt, model and seed.",
     size: "1600 × 1000",
   },
   {
     src: "/product/music-studio.png",
     alt: "The Music page: a request form with model, licence, styles, tempo, key and length beside a shelf of generated takes",
-    caption: "Music: a style prompt or a lyric sheet in, takes out.",
+    caption: "The music page takes a style prompt or a lyric sheet.",
     size: "1600 × 1000",
   },
   {
     src: "/product/models.png",
     alt: "The Models page: each model with its licence badge, size and install state",
-    caption: "Models, with the licence and VRAM shown before download.",
+    caption: "The models page shows each licence and VRAM figure before download.",
     size: "1600 × 1000",
   },
   {
     src: "/product/agents.png",
     alt: "The Agents page: connected MCP clients, copy-paste connection commands, and a log of recent calls",
-    caption: "Agents: every MCP client that connected, and what it called.",
+    caption: "The agents page lists each MCP client that has connected and what it called.",
     size: "1600 × 1000",
   },
   {
     src: "/product/library.png",
     alt: "The Soundbox library: generated sounds with waveforms, prompts, models and seeds",
-    caption: "The library across sound effects, music and speech.",
+    caption: "Sound effects, music and speech in one library.",
     size: "1600 × 1000",
   },
   {
     src: "/product/voice-lab.png",
     alt: "The Voice Lab: saved voices as cards, cloned from a clip or built into a model",
-    caption: "Voice Lab: saved and cloned voices.",
+    caption: "Saved and cloned voices in the Voice Lab.",
     size: "1600 × 470",
   },
 ];
@@ -267,13 +267,13 @@ const GIFS: Still[] = [
   {
     src: "/product/same-prompt-three-models.gif",
     alt: "The same prompt and seed rendered by Stable Audio 3.0 Small Music, MiniMax Music 3 and ACE-Step 1.5 Turbo, with measured render times on an RTX 5080",
-    caption: "One prompt, three music models, measured render times.",
+    caption: "The same prompt on three music models, with render times.",
     size: "640 × 360",
   },
   {
     src: "/press/tech-timings.gif",
     alt: "Render times for Soundbox's verified models, measured on an RTX 5080",
-    caption: "Measured timings on an RTX 5080.",
+    caption: "Render times measured on an RTX 5080.",
     size: "640 × 360",
   },
   {
@@ -285,7 +285,7 @@ const GIFS: Still[] = [
   {
     src: "/press/tech-no-python.gif",
     alt: "The usual Python setup for one model struck out, replaced by one native audio.cpp binary",
-    caption: "No Python: one native binary.",
+    caption: "One native binary in place of a Python setup.",
     size: "640 × 360",
   },
 ];
@@ -306,8 +306,8 @@ const MARKS: { label: string; svg: string; png: string; tile: string }[] = [
 ];
 
 const COLOURS: { name: string; hex: string; use: string; light?: boolean }[] = [
-  { name: "Teal", hex: "#2DD4BF", use: "The signal: the mark, waveforms, links." },
-  { name: "Ground", hex: "#0A0C0D", use: "Background in the app and every film." },
+  { name: "Teal", hex: "#2DD4BF", use: "The mark, waveforms and links." },
+  { name: "Ground", hex: "#0A0C0D", use: "The background of the app and every film." },
   { name: "Ink", hex: "#E6ECEC", use: "Text on the ground.", light: true },
   { name: "Muted", hex: "#8E999D", use: "Labels and secondary text." },
   { name: "Deep teal", hex: "#0D6B64", use: "Teal on a light background." },
@@ -445,7 +445,7 @@ export function PressPage() {
     <div className="bg-background text-foreground min-h-svh overflow-x-clip">
       <SeoHead
         title="Press kit | Soundbox"
-        description="Descriptions to quote, a fact sheet, measured timings, and downloadable videos, screenshots, GIFs and the Soundbox mark, free to use in coverage of Soundbox."
+        description="Descriptions to quote, a fact sheet and downloadable films, screenshots and logos for anyone covering Soundbox, the free app that generates sound effects, music and speech on your own computer."
         path="/press"
         imageAlt="Soundbox press kit"
       />
@@ -460,9 +460,9 @@ export function PressPage() {
             Soundbox, for anyone writing or filming about it
           </h1>
           <p className="text-muted-foreground mt-4 max-w-2xl leading-relaxed text-pretty sm:text-lg">
-            Words you can quote, the facts with their sources, and every video, screenshot and
-            mark as a direct download. Everything on this page is free to use in coverage of
-            Soundbox; credit is appreciated.
+            Everything on this page is free to use in coverage of Soundbox, and a credit is
+            appreciated. The numbers come from the README, the model catalog and runs measured on
+            one machine, and each file below downloads directly.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Button asChild>
@@ -478,7 +478,7 @@ export function PressPage() {
         <section id="describe" className="scroll-mt-20 border-t pt-12">
           <h2 className="font-heading text-2xl font-semibold tracking-tight">In a sentence</h2>
           <p className="text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-            Quote either of these as written. The name is one word with a capital S: Soundbox.
+            Quote either of these as written. Soundbox is one word, with a capital S.
           </p>
           <div className="mt-6 space-y-4">
             <Quotable label="One sentence" text={ONE_LINE} />
@@ -501,9 +501,8 @@ export function PressPage() {
             How long a generation takes
           </h3>
           <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
-            Measured on one machine: an RTX 5080 (16 GB) with audio.cpp 0.9.2. Warm means the model
-            is already loaded. On a smaller GPU expect longer; on the CPU alone, minutes rather than
-            seconds.
+            Measured on an RTX 5080 (16 GB) with audio.cpp 0.9.2. Warm means the model was already
+            loaded. A smaller GPU is slower, and on the CPU alone the same clip takes minutes.
           </p>
           <div className="mt-4 overflow-x-auto rounded-xl border">
             <table className="w-full min-w-[32rem] text-sm">
@@ -530,9 +529,9 @@ export function PressPage() {
         {/* ---------------------------------------------------------- videos */}
         <Section id="videos" title="Videos">
           <p className="text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-            Free to use in coverage of Soundbox, whole or cut down; credit is appreciated. Each is
-            an H.264 MP4 under 10 MB, small enough to upload to X as it is. The sound in every
-            "Bring your ___ to life" film was generated in Soundbox from the prompt shown on screen.
+            Use them whole or cut down in coverage of Soundbox, and a credit is appreciated. Each
+            is an H.264 MP4 under 10 MB, which X accepts as it is. In the "Bring your ___ to life"
+            films, every sound was generated in Soundbox from the prompt shown on screen.
           </p>
           <ul className="mt-6 grid gap-5 sm:grid-cols-2">
             {landscape.map((video) => (
@@ -560,7 +559,7 @@ export function PressPage() {
         {/* ---------------------------------------------------------- stills */}
         <Section id="screenshots" title="Screenshots and GIFs">
           <p className="text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-            The running app in its dark theme. Click one for the full-size file.
+            Taken from the running app in its dark theme. Click one for the full-size file.
           </p>
           <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {SCREENSHOTS.map((still) => (
@@ -578,8 +577,8 @@ export function PressPage() {
         {/* ----------------------------------------------------------- brand */}
         <Section id="brand" title="Mark, colours and type">
           <p className="text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-            The mark is a waveform on a rounded tile. Use it as supplied, on whichever tile suits
-            your background; please do not recolour or redraw it.
+            The mark is a waveform on a rounded tile. Use whichever tile suits your background,
+            and please don't recolour or redraw it.
           </p>
           <ul className="mt-6 grid gap-5 sm:grid-cols-2">
             {MARKS.map((mark) => (
