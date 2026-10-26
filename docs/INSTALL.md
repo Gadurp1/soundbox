@@ -224,8 +224,12 @@ docker compose exec soundbox soundbox pull audiocpp-stable-audio-3-sfx
 
 That pulls the prebuilt image, `ghcr.io/hamsanders/soundbox:latest`. Each
 release is also tagged by version (`:v0.4.0`), so change the `image:` line to
-pin one. Prebuilt images are amd64 only for now; on arm64, or to run your own
-changes, build from the checkout instead with `docker compose up -d --build`.
+pin one. Prebuilt images are amd64 only for now. On arm64, or to run your own
+changes, build from the checkout with the build override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
 
 Without Compose:
 
@@ -331,7 +335,13 @@ docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
 ```
 
 which pulls `ghcr.io/hamsanders/soundbox:cuda` (per release:
-`:v0.4.0-cuda`); add `--build` to build it locally. By hand:
+`:v0.4.0-cuda`). To build it locally, add both build overrides:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.cuda.yml   -f docker-compose.build.yml -f docker-compose.build-cuda.yml up -d --build
+```
+
+By hand:
 
 ```bash
 docker run -d --gpus all -p 127.0.0.1:17494:17494 \

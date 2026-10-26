@@ -6,8 +6,8 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
 #
-# Either one pulls the prebuilt image from GHCR. Add --build to build it from
-# this checkout instead. To pin a release, change :latest to a version tag
+# Either one pulls the prebuilt image from GHCR. To build it from this checkout
+# instead, add docker-compose.build.yml (see the header there). To pin a release, change :latest to a version tag
 # such as :v0.4.0 (and :cuda to :v0.4.0-cuda in the override).
 #
 # Then open http://localhost:17494 and download a model from the Models page,
@@ -22,8 +22,6 @@
 services:
   soundbox:
     image: ghcr.io/hamsanders/soundbox:latest
-    build:
-      context: .
     restart: unless-stopped
     ports:
       - "127.0.0.1:17494:17494"

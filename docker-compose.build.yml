@@ -1,0 +1,13 @@
+# Build the image from this checkout instead of pulling the prebuilt one:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# NVIDIA GPU, built locally:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.cuda.yml \
+#     -f docker-compose.build.yml -f docker-compose.build-cuda.yml up -d --build
+
+services:
+  soundbox:
+    build:
+      context: .

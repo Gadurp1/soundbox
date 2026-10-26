@@ -11,7 +11,8 @@ to follow [Semantic Versioning](https://semver.org/).
 - **Prebuilt Docker images.** `ghcr.io/hamsanders/soundbox` is published per
   release (`:vX.Y.Z`, `:vX.Y.Z-cuda`, plus `:latest` and `:cuda`) by a manual
   `docker-publish` workflow. `docker compose up -d` now pulls the image instead
-  of building; add `--build` to build from the checkout as before. amd64 only.
+  of building; to build from the checkout, add `-f docker-compose.build.yml`
+  (see docs/INSTALL.md). amd64 only.
 
 ## [0.4.0] - 2026-10-25
 

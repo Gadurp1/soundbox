@@ -2,7 +2,8 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
 #
-# Pulls the prebuilt CUDA image; add --build to build it from this checkout.
+# Pulls the prebuilt CUDA image. To build it from this checkout instead, add
+# docker-compose.build.yml and docker-compose.build-cuda.yml (header there).
 #
 # Needs an NVIDIA driver and the NVIDIA Container Toolkit on the host
 # (`docker run --rm --gpus all ubuntu nvidia-smi` should list your GPU).
@@ -12,10 +13,6 @@
 services:
   soundbox:
     image: ghcr.io/hamsanders/soundbox:cuda
-    build:
-      args:
-        AUDIOCPP_TAG: full-cuda12
-        AUDIOCPP_BACKEND: cuda
     deploy:
       resources:
         reservations:
