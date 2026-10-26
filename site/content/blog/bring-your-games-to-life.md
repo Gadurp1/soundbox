@@ -1,6 +1,6 @@
 ---
 title: "Bring your games to life: Claude Code, Soundbox and Godot"
-description: One sentence to Claude Code, six local generations, one jingle that failed by ear and the retake that fixed it. Every prompt, seed and timing.
+description: One sentence to Claude Code, six local sounds, one jingle that failed by ear and the retake that fixed it, with prompts, seeds and timings from the call log.
 date: 2026-10-26
 author: Anthony Saviano
 tags: [games, mcp, agents, godot]
@@ -10,8 +10,8 @@ image: /blog/bring-your-games-to-life.jpg
 
 On 23 October I asked Claude Code to make the sounds for a small Godot
 platformer. It got them from Soundbox, the app I build, over MCP. The models
-ran on my own GPU. This post goes through that run call by call, including the
-jingle that came back wrong.
+ran on my own GPU. Here is the run call by call, including the jingle that
+came back wrong.
 
 Setting up the MCP connection is covered in
 [point your agent at Soundbox](/blog/point-your-agent-at-soundbox), and why
@@ -40,7 +40,7 @@ Everything ran on one Windows machine with an RTX 5080.
   land, coin, crate, door and win.
 
 The game has no input. The character runs a fixed course so it could be
-recorded the same way every time. It is a demo.
+recorded the same way every time.
 
 ![The Godot scene: a teal block runs a fixed course, collecting coins, breaking a crate and passing a stone door before the flag](/blog/godot-game.gif)
 
@@ -54,7 +54,7 @@ landing, a crate breaking, a stone door opening and a level-complete jingle.
 ```
 
 "Jump" won't get you much from these models. They respond to material, action
-and space. So what matters is what the agent wrote for each sound.
+and space, so what matters is what the agent wrote for each sound.
 
 ## Six calls
 
@@ -82,9 +82,8 @@ The sounds came back shorter than asked because Soundbox trims trailing
 silence. A 1-second coin request gave 0.2 s of coin. For game sounds I want
 that.
 
-Each result includes the WAV's full path on disk. The files were copied into
-the project's `sfx/` folder under the names the scene expects. Nothing had to
-be downloaded or decoded.
+Each result includes the WAV's full path on disk, so the files were copied
+straight into the project's `sfx/` folder under the names the scene expects.
 
 ![The Soundbox SFX library filtered to the godot-video tag: six sounds, each with its model, seed and the label claude-code 2.1.299](/blog/godot-sfx-library.png)
 
@@ -97,8 +96,7 @@ Five sounds were fine first time. The win sound was a wash of bright noise.
 The agent couldn't know that, because it can't listen. I did.
 
 I asked it to fix the jingle. It made four more calls with `variations: 3`,
-so twelve takes. Since it couldn't hear them, it ranked them by what it could
-measure: whether the spectrogram showed separate notes, whether a pitch track
+so twelve takes, and ranked them by what it could measure: whether the spectrogram showed separate notes, whether a pitch track
 climbed, and whether the last 100 ms faded out or stopped at full volume.
 
 | Call | Model | Seed | Time for 3 takes | What came back |
@@ -109,21 +107,18 @@ climbed, and whether the last 100 ms faded out or stopped at full volume.
 | "short 8-bit chiptune victory fanfare, square wave lead, quick rising major arpeggio then a long held final note, no drums, major key, 140 BPM" | Stable Audio 3.0 Small Music | 641 | 3.40 s | Real notes that climb and end |
 
 The SFX model made six more takes from prompts that asked for notes by name.
-None of them had a single note. Rewording the prompt was the obvious fix, and
-it did nothing.
+None of them had a single note. Rewording was the obvious fix, and it did
+nothing.
 
 Changing the model did. Stable Audio 3.0 Small Music is the music fine-tune of
 the same model, at the same ~2.5 GB of VRAM. It gave pitched notes on every
-take.
+take on this prompt.
 
 The prompt still mattered after that. The first music call gave drums and
 phrases that ran into the cut, like the start of a loop. Adding "a long held
 final note, no drums" got takes with endings. The one in the game is seed
 544958598, the third take of that call. It's 3.44 s long, the notes climb and
 finish on the highest one, and it fades to −38 dB, so the end isn't chopped.
-
-A jingle is music, so it needed the music model. And it took my ear to find
-the problem and the agent's measurements to pick the fix.
 
 ## The Agents page
 
@@ -133,9 +128,8 @@ first:
 
 ![The Agents page's Recent calls: ten generate calls from claude-code, the six original sounds at the bottom with the 10569 ms first call, the four three-take win retakes at the top](/blog/godot-recent-calls.png)
 
-If an agent makes files while it writes your code, you will want to know
-later which call made which file. This page answers that without a trip
-through the chat history.
+When an agent makes files while it writes your code, this is how you find out
+later which call made which file, without searching the chat history.
 
 ## The licence
 
@@ -160,10 +154,9 @@ binary, so you can send one prompt and seed to three music models and compare:
 
 ![The same prompt and seed rendered by Stable Audio 3.0 Small Music, MiniMax Music 3 and ACE-Step 1.5 Turbo, with measured render times on an RTX 5080](/product/same-prompt-three-models.gif)
 
-It isn't Suno. Suno runs closed, tuned models and its output is consistent.
-These are open models and quality varies between them. What you get instead
-is no account and no credits, output under the licence of the model that made
-it, and an agent that can ask for a song the way it asked for a coin.
+It isn't Suno. These are open models and quality varies between them. What
+you get is no account and no credits, output under the licence of the model
+that made it, and an agent that can ask for a song the way it asked for a coin.
 
 The first load is slow. On the same RTX 5080 with audio.cpp 0.9.2, a
 15-second song with lyrics on ACE-Step took 151 s the first time and about
@@ -190,6 +183,7 @@ The first load is slow. On the same RTX 5080 with audio.cpp 0.9.2, a
 Install Soundbox from the
 [latest release](https://github.com/HamSanders/soundbox/releases/latest),
 connect Claude Code with the command above, and give it the sentence from this
-post or one about your own game. [docs/MCP.md](./MCP.md) lists the tools, the
-`soundbox-sound-pass` skill that reads a project and works out which sounds it
+post or one about your own game.
+[docs/MCP.md](https://github.com/HamSanders/soundbox/blob/main/docs/MCP.md)
+lists the tools, the `soundbox-sound-pass` skill that reads a project and works out which sounds it
 needs, and the stdio bridge for clients that don't speak HTTP.
