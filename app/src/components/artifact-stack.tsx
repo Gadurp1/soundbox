@@ -25,10 +25,12 @@
 
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { ChevronDownIcon, XIcon } from "lucide-react";
+import { ChevronDownIcon, ExternalLinkIcon, XIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useDragOut } from "@/hooks/use-drag-out";
+import type { PopOutAt } from "@/lib/popout";
 import { cn } from "@/lib/utils";
 
 /** No panel can be dragged smaller than this. Below it the body is a sliver
@@ -89,6 +91,12 @@ export interface Artifact {
    * says "not right now", the other "not on this screen".
    */
   onClose?: () => void;
+  /**
+   * Give the panel a window of its own: the header's pop-out button, or its
+   * header dragged past the edge of the page. Omitted where a panel cannot
+   * leave — see `lib/popout.ts` for what a popped-out panel is.
+   */
+  onPopOut?: (at: PopOutAt) => void;
 }
 
 export function ArtifactStack({
@@ -262,7 +270,7 @@ export function ArtifactStack({
                 open && "flex-1",
               )}
             >
-              <div className="flex shrink-0 items-center gap-2 px-2 py-1.5">
+              <StackHeader onPopOut={artifact.onPopOut}>
                 {artifact.pinned ? (
                   // No control at all rather than a disabled one: a greyed-out
                   // chevron invites a click that will never do anything.
@@ -295,6 +303,25 @@ export function ArtifactStack({
                 {artifact.trailing != null && (
                   <div className="flex min-w-0 flex-1 overflow-x-auto">{artifact.trailing}</div>
                 )}
+                {artifact.onPopOut && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Open ${artifact.label} in a new window`}
+                    title="Open in a new window"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.closest("section")?.getBoundingClientRect();
+                      artifact.onPopOut?.({
+                        left: rect ? window.screenX + rect.left : undefined,
+                        top: rect ? window.screenY + rect.top : undefined,
+                        width: rect?.width ?? 640,
+                        height: rect?.height ?? 480,
+                      });
+                    }}
+                  >
+                    <ExternalLinkIcon />
+                  </Button>
+                )}
                 {artifact.onClose && (
                   <Button
                     variant="ghost"
@@ -305,7 +332,7 @@ export function ArtifactStack({
                     <XIcon />
                   </Button>
                 )}
-              </div>
+              </StackHeader>
 
               {/* Hidden, not unmounted — see the note at the top of the file. */}
               <div
@@ -320,6 +347,32 @@ export function ArtifactStack({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * A panel's header row, which is also where you pick the panel up to drag it
+ * out of the window. A header with nowhere to go is just a row.
+ */
+function StackHeader({
+  onPopOut,
+  children,
+}: {
+  onPopOut?: (at: PopOutAt) => void;
+  children: ReactNode;
+}) {
+  const { outside, handlers } = useDragOut(onPopOut);
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center gap-2 px-2 py-1.5",
+        onPopOut && "touch-none select-none",
+        outside && "bg-primary/10 ring-primary ring-2 ring-inset",
+      )}
+      {...handlers}
+    >
+      {children}
     </div>
   );
 }

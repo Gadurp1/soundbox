@@ -28,6 +28,9 @@ import { join } from "node:path";
 
 import { type Audio, decodeWav } from "../audio/dsp.js";
 import { CancelledJob, ModelError } from "../errors.js";
+import { getLogger } from "../logging.js";
+
+const log = getLogger("soundbox.endpoints");
 
 /** Long: Privateer's docs warn that a 60s client default abandons a track
  *  already paid for, and a long ACE-Step render on a homelab GPU takes minutes. */
@@ -90,6 +93,15 @@ async function post(
         }
       }, CANCEL_POLL_MS)
     : null;
+  const started = Date.now();
+  // The body's field names, not their values: the names are what a template
+  // gets wrong (`model` vs `model_id`), and the values are the user's prompt
+  // and lyrics. Never the key or the headers.
+  const fields =
+    req.body && typeof req.body === "object" && !Array.isArray(req.body)
+      ? Object.keys(req.body as Record<string, unknown>).join(", ")
+      : typeof req.body;
+  log.debug(`POST ${req.url} fields: ${fields}`);
   try {
     const resp = await fetchImpl(req.url, {
       method: "POST",
@@ -101,6 +113,10 @@ async function post(
       body: JSON.stringify(req.body),
       signal: controller.signal,
     });
+    log.debug(
+      `POST ${req.url} -> HTTP ${resp.status} ${resp.headers.get("content-type") ?? "(no content-type)"} ` +
+        `in ${Date.now() - started}ms`,
+    );
     if (!resp.ok) {
       const text = await resp.text().catch(() => "");
       throw new ModelError(

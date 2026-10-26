@@ -13,11 +13,38 @@ to follow [Semantic Versioning](https://semver.org/).
   `docker-publish` workflow. `docker compose up -d` now pulls the image instead
   of building; to build from the checkout, add `-f docker-compose.build.yml`
   (see docs/INSTALL.md). amd64 only.
+- **`SOUNDBOX_LOG_LEVEL`.** Sets the server's log level (`debug`, `info`,
+  `warning`, `error`, `critical`) when `--log-level` isn't given. Unlike the
+  flag, it reaches `npm run dev`, Docker and the desktop app. The startup banner
+  shows the level in force, and an unknown value warns instead of being
+  silently ignored. `debug` now logs each request to the prompt assistant,
+  artwork and custom endpoints (URL, status, timing; never keys or prompts).
+  Before this there were no debug lines at all, so `--log-level debug` showed
+  nothing extra. (#22)
+
+### Fixed
+
+- **Prompt assistant and artwork base URLs ending in `/v1`.** Soundbox added
+  `/v1/chat/completions` or `/v1/images/generations` to the base URL as typed,
+  so the `…/v1` form most servers document became `/v1/v1/…` and a 404. The
+  path is now joined without doubling, so a root, `…/v1`, `…/sdapi/v1` or the
+  full endpoint all work. Errors name the full URL tried, and a 404 explains
+  what to check. (#22)
 
 ## [0.4.0] - 2026-10-25
 
 ### Added
 
+- **Studio: canvas layout and pop-out windows.** The studio can lay its
+  panels out as free cards on a grid instead of three columns: drag a card's
+  header to move it, drag its edges to resize it, and Panels → Tidy puts it
+  back. Positions are remembered per builder. Any panel can also leave the
+  studio for a window of its own, so you can put it on another monitor. Drag
+  its header past the edge of the window, or press its pop-out button. A
+  popped-out panel shares the studio's state, opens its menus in its own
+  window and passes keyboard shortcuts through. Closing the window puts the
+  panel back, and docking or closing the panel, or leaving the studio, closes
+  the window. The desktop app opens these as native windows.
 - **Failure cards.** A generation or download that fails now says what
   happened, why, what to do and what is kept, with up to two fix links, Retry
   where a retry can help, the raw text under Details and a Copy diagnostic

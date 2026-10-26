@@ -46,7 +46,9 @@ your own setup:
   `soundbox model install llm`).
 - Point it at a `llama-server` you built, with `SOUNDBOX_LLAMA_SERVER_BIN`.
 - Set the mode to *external* and give it any OpenAI-compatible base URL
-  (Ollama, LM Studio, vLLM, a hosted endpoint).
+  (Ollama, LM Studio, vLLM, LocalAI, a hosted endpoint). With or without
+  `/v1` both work, since Soundbox adds `/v1/chat/completions` without
+  doubling it. An error names the full URL it tried.
 
 `soundbox model status llm` shows which one is live.
 

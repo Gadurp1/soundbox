@@ -17,7 +17,13 @@ import * as audiocpp from "./models/audiocpp.js";
 import * as audiocppBinary from "./models/audiocppBinary.js";
 import * as llamaServerBinary from "./models/llamaServerBinary.js";
 import { downloadWeights, isDownloaded, llmModelSpec, LLM_MODELS } from "./models/llmCatalog.js";
-import { configureLogging, getLogger, setLoggerLevel } from "./logging.js";
+import {
+  configureLogging,
+  getLogger,
+  LOG_LEVELS,
+  resolveLogLevel,
+  setLoggerLevel,
+} from "./logging.js";
 import * as skills from "./skills.js";
 import { writeWav } from "./audio/dsp.js";
 
@@ -441,7 +447,8 @@ Local sound-effects generation server (HTTP + MCP).
   --data-dir   default ~/.soundbox
   --profile    library to open (default: whichever was last active)
   --no-ui      serve the API only
-  --log-level  default info
+  --log-level  debug|info|warning|error|critical (default: SOUNDBOX_LOG_LEVEL,
+               else info)
 
 Also: \`soundbox model install audiocpp\` to install the audio.cpp runtime,
 \`soundbox pull|list|rm|run|ps\` to manage audio.cpp models without the server
@@ -459,7 +466,7 @@ async function serveMain(argv: string[]): Promise<number> {
       "data-dir": { type: "string" },
       profile: { type: "string" },
       "no-ui": { type: "boolean", default: false },
-      "log-level": { type: "string", default: "info" },
+      "log-level": { type: "string" },
       version: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -484,7 +491,15 @@ async function serveMain(argv: string[]): Promise<number> {
   // like duplicate output — while both trying to rotate it at 10MB, which is a
   // genuine race over the rename.
   const logPath = resolve(config.paths.root, `soundbox-${port}.log`);
-  configureLogging(values["log-level"], logPath);
+  const logLevel = resolveLogLevel(values["log-level"]);
+  configureLogging(logLevel.level, logPath);
+  if (logLevel.invalid !== null) {
+    log.warning(
+      `Unknown log level "${logLevel.invalid}" from ` +
+        `${logLevel.source === "flag" ? "--log-level" : "SOUNDBOX_LOG_LEVEL"}; using info. ` +
+        `Valid levels: ${LOG_LEVELS.join(", ")}.`,
+    );
+  }
   // Fastify's own request logging is one line per request — every UI poll tick —
   // which drowns the throttled, job-tagged lines that actually tell the story.
   setLoggerLevel("fastify", "warning");
@@ -508,7 +523,12 @@ async function serveMain(argv: string[]): Promise<number> {
   console.log(`  MCP endpoint       ->  http://${host}:${port}/mcp`);
   console.log(`  Profile            ->  ${config.profile}`);
   console.log(`  Data directory     ->  ${config.paths.root}`);
-  console.log(`  Log file           ->  ${logPath}\n`);
+  console.log(`  Log file           ->  ${logPath}`);
+  console.log(
+    `  Log level          ->  ${logLevel.level}` +
+      (logLevel.source === "env" && !logLevel.invalid ? " (SOUNDBOX_LOG_LEVEL)" : "") +
+      "\n",
+  );
   await app.listen({ host, port });
   closeOnSignals(app);
   return 0;

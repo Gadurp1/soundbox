@@ -34,6 +34,9 @@ services:
       SOUNDBOX_ALLOWED_HOSTS: "soundbox.example.lan"
       # Needed only for gated Hugging Face models (docs/INSTALL.md, Step 3).
       # HF_TOKEN: "hf_..."
+      # debug, info (default), warning, error or critical. Shown in the
+      # startup banner; `docker compose logs` and /data/soundbox-17494.log.
+      # SOUNDBOX_LOG_LEVEL: "debug"
     volumes:
       # Settings, library database, generated sounds — ~/.soundbox on a desktop.
       - soundbox-data:/data
