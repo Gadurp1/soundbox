@@ -155,7 +155,7 @@ function bump(how) {
 /** One release's changelog section, without its heading: the release notes. */
 function notes(version) {
   const text = read("CHANGELOG.md");
-  const escaped = version.replace(/\./g, "\\.");
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const head = new RegExp(`^## \\[${escaped}\\][^\\n]*\\n`, "m").exec(text);
   if (!head) fail(`CHANGELOG.md has no section for ${version}`);
   const rest = text.slice(head.index + head[0].length);
