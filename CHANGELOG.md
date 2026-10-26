@@ -22,6 +22,19 @@ to follow [Semantic Versioning](https://semver.org/).
   Before this there were no debug lines at all, so `--log-level debug` showed
   nothing extra. (#22)
 
+### Security
+
+- **Dependency updates for the open Dependabot alerts.** Vite, the MCP SDK,
+  Fastify, Hono, js-yaml, brace-expansion, proxy-addr, source-map-js,
+  postcss-selector-parser and the app's react-router move to patched releases.
+  The server's zod moves to 4.6.7 (the 3.x line has no fix for the
+  oversized-collection memory issue).
+- **Code-scanning fixes.** The MCP endpoint's trailing-slash trim no longer
+  backtracks on a long run of slashes, profile ids are checked before they are
+  joined into a path that delete can remove recursively, HTML-tag stripping in
+  the docs search and heading plugin repeats until nothing is left, and the
+  release scripts escape every regular-expression character.
+
 ### Fixed
 
 - **Prompt assistant and artwork base URLs ending in `/v1`.** Soundbox added

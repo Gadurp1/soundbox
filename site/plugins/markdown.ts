@@ -25,6 +25,16 @@ import type { Plugin } from "vite";
 
 import { splitFrontmatter, type FmValue } from "./frontmatter";
 
+/** Strip tags until none are left: one pass turns `<<b>script>` into `<script>`. */
+function stripTags(html: string): string {
+  let text = html;
+  for (let prev = ""; prev !== text; ) {
+    prev = text;
+    text = text.replace(/<[^>]*>/g, "");
+  }
+  return text;
+}
+
 /** A heading worth a line in the on-page contents. `h1` is the page title and
  *  `h4`+ is detail nobody navigates by, so the table is h2 and h3. */
 export interface DocHeading {
@@ -137,7 +147,7 @@ export function markdownDocs(): Plugin {
         // The heading's own markdown, rendered — `**bold**` in a heading is
         // rare but a backticked identifier is not.
         const parsed = marked.parseInline(text) as string;
-        const plain = parsed.replace(/<[^>]+>/g, "");
+        const plain = stripTags(parsed);
         // The first `# Title` becomes the page's own header, drawn by the
         // route with the site's display type. Rendering it again at the top of
         // the prose would print the same words twice in two different sizes.
