@@ -986,6 +986,14 @@ function Footer() {
             </li>
             <li>
               <Link
+                to="/press"
+                className="hover:text-foreground focus-visible:ring-ring rounded focus-visible:ring-2 focus-visible:outline-none"
+              >
+                Press kit
+              </Link>
+            </li>
+            <li>
+              <Link
                 to="/docs/install"
                 className="hover:text-foreground focus-visible:ring-ring rounded focus-visible:ring-2 focus-visible:outline-none"
               >
