@@ -42,7 +42,7 @@ jobs:
         run: node scripts/test-summary.mjs server/test-results/results.json "Server tests (Node 24)"
       - name: Upload test report
         if: ${{ !cancelled() && matrix.node == 24 }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-report
           path: |
