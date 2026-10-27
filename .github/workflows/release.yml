@@ -132,7 +132,7 @@ jobs:
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config src-tauri/tauri.bundle.conf.json ${{ env.UPDATER_ARGS }}
 
       - name: Keep the installer as an artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: soundbox-${{ matrix.target }}
           path: |
