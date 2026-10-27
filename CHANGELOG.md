@@ -44,6 +44,10 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Soundbox starts again on libraries from the voice-profiles era. Their old
+  `voice_samples` table stopped the server with "no such column: voice_id"
+  before it could write a log. The table is now renamed to
+  `voice_samples_legacy` and kept, not dropped.
 - **Prompt assistant and artwork base URLs ending in `/v1`.** Soundbox added
   `/v1/chat/completions` or `/v1/images/generations` to the base URL as typed,
   so the `…/v1` form most servers document became `/v1/v1/…` and a 404. The
