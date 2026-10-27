@@ -816,7 +816,7 @@ function Developers() {
         <p className="text-muted-foreground flex items-start gap-2 text-sm leading-relaxed">
           <BotIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
-            21 tools, including{" "}
+            24 tools, including{" "}
             <code className="font-mono text-xs">generate</code>,{" "}
             <code className="font-mono text-xs">speak</code>,{" "}
             <code className="font-mono text-xs">separate</code>,{" "}

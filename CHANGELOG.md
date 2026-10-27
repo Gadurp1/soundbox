@@ -8,6 +8,14 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Device tools for agents.** `soundbox.add_device`, `soundbox.set_device`
+  and `soundbox.remove_device` put a device on a story track, turn its knobs or
+  bypass it, and take it off, with the same eight kinds, knobs and ranges as the
+  studio's rack. Over-range values land at the end of the knob and are reported;
+  unknown knobs are an error. An open studio shows the change as it lands.
+  `soundbox.get_story` now returns each track's chain. Devices are still heard
+  on the timeline only; `export_story` mixes dry.
+
 - **Docker images publish with each release.** When a release is tagged,
   `ghcr.io/hamsanders/soundbox:<version>` and `:<version>-cuda` are built and
   pushed automatically; a full release also moves `latest` and `cuda`.
@@ -28,6 +36,16 @@ to follow [Semantic Versioning](https://semver.org/).
   artwork and custom endpoints (URL, status, timing; never keys or prompts).
   Before this there were no debug lines at all, so `--log-level debug` showed
   nothing extra. (#22)
+
+### Changed
+
+- **Device racks are stored with the story.** Each track's chain is saved on
+  the server next to its name, mute, solo and volume
+  (`PATCH /api/stories/:id/tracks/:n` takes `devices`), instead of in the
+  browser's localStorage, so it reaches other windows and machines and follows
+  its lane when a lane below it is removed. A rack saved by 0.4 is moved up the
+  first time its story is opened. A dial sweep is saved once the dial settles,
+  not on every step.
 
 ### Security
 
@@ -54,6 +72,10 @@ to follow [Semantic Versioning](https://semver.org/).
   path is now joined without doubling, so a root, `…/v1`, `…/sdapi/v1` or the
   full endpoint all work. Errors name the full URL tried, and a 404 explains
   what to check. (#22)
+
+- **Studio assistant: add a device, then set it.** A plan that added a device
+  and then turned its knobs applied the second step to the rack as it was
+  before the plan, which wrote the new device back out again.
 
 ## [0.4.0] - 2026-10-25
 
