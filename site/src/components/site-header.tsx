@@ -20,6 +20,7 @@ const NAV_LINKS = [
   { to: "/mcp", label: "MCP" },
   { to: "/docs", label: "Docs" },
   { to: "/blog", label: "Blog" },
+  { to: "/download", label: "Download" },
 ];
 
 export function SiteHeader() {

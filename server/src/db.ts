@@ -476,6 +476,7 @@ export class Database {
     // fail against a pre-rename database that still has the old column, since
     // CREATE TABLE IF NOT EXISTS leaves an existing table's columns untouched.
     this.renameEngineColumn();
+    this.setAsideLegacyVoiceSamples();
     this.conn.exec(SCHEMA);
     this.migrate();
     // After SCHEMA: `conversations.story_id` references `stories`, and SCHEMA
@@ -499,6 +500,17 @@ export class Database {
     if (columns.some((c) => c.name === "engine") && !columns.some((c) => c.name === "model")) {
       this.conn.exec("ALTER TABLE sounds RENAME COLUMN engine TO model");
     }
+  }
+
+  /** Libraries from the voice-profiles era have a `voice_samples` table keyed
+   *  by `profile_id`, not `voice_id`. CREATE TABLE IF NOT EXISTS keeps it, and
+   *  SCHEMA's index on voice_samples(voice_id) then fails, so the server never
+   *  starts. It is renamed to `voice_samples_legacy` rather than dropped, and
+   *  migrate() gives every clone voice a sample row again from voices.filename. */
+  private setAsideLegacyVoiceSamples(): void {
+    const columns = this.conn.prepare("PRAGMA table_info(voice_samples)").all() as { name: string }[];
+    if (columns.length === 0 || columns.some((c) => c.name === "voice_id")) return;
+    this.conn.exec("ALTER TABLE voice_samples RENAME TO voice_samples_legacy");
   }
 
   /**

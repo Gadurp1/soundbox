@@ -200,6 +200,15 @@ export function markdownDocs(): Plugin {
       // site/public) and need the base for the same reason links do.
       renderer.image = ({ href, title: imageTitle, text: alt }) => {
         const src = withBase(base, href ?? "");
+        // An `.mp4` written as an image is a clip, and the title slot carries
+        // its poster: `![what it shows](/media/godot.mp4 "/media/posters/godot.jpg")`.
+        // Click to play and `preload="none"`, as on the rest of the site:
+        // every clip here is about sound, and a muted autoplay shows the
+        // wrong half of it.
+        if (/\.mp4$/i.test(href ?? "")) {
+          const poster = imageTitle ? ` poster="${escapeAttr(withBase(base, imageTitle))}"` : "";
+          return `<video src="${escapeAttr(src)}"${poster} controls preload="none" playsinline aria-label="${escapeAttr(alt)}"></video>`;
+        }
         const titleAttr = imageTitle ? ` title="${escapeAttr(imageTitle)}"` : "";
         return `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${titleAttr}>`;
       };

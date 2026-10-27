@@ -8,6 +8,13 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Docker images publish with each release.** When a release is tagged,
+  `ghcr.io/hamsanders/soundbox:<version>` and `:<version>-cuda` are built and
+  pushed automatically; a full release also moves `latest` and `cuda`.
+- **A download page on the site.** `/download` links the latest release's
+  installers directly, picks the visitor's OS, plays the 30-second Soundbox
+  film and shows live GitHub stars, downloads and forks. Every Download CTA on
+  the site points at it.
 - **Prebuilt Docker images.** `ghcr.io/hamsanders/soundbox` is published per
   release (`:vX.Y.Z`, `:vX.Y.Z-cuda`, plus `:latest` and `:cuda`) by a manual
   `docker-publish` workflow. `docker compose up -d` now pulls the image instead
@@ -41,6 +48,10 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Soundbox starts again on libraries from the voice-profiles era. Their old
+  `voice_samples` table stopped the server with "no such column: voice_id"
+  before it could write a log. The table is now renamed to
+  `voice_samples_legacy` and kept, not dropped.
 - **Prompt assistant and artwork base URLs ending in `/v1`.** Soundbox added
   `/v1/chat/completions` or `/v1/images/generations` to the base URL as typed,
   so the `…/v1` form most servers document became `/v1/v1/…` and a 404. The

@@ -8,6 +8,7 @@ import { BlogIndexPage } from "./routes/blog-index";
 import { BlogPostPage } from "./routes/blog-post";
 import { McpPage } from "./routes/mcp";
 import { PressPage } from "./routes/press";
+import { DownloadPage } from "./routes/download";
 import { DOC_PAGES } from "./docs/pages";
 import { BLOG_POSTS } from "./blog/posts";
 import { SfxHubPage } from "@/routes/sfx/hub";
@@ -135,6 +136,11 @@ export const routes: RouteRecord[] = [
         path: "press",
         Component: PressPage,
         entry: "src/routes/press.tsx",
+      },
+      {
+        path: "download",
+        Component: DownloadPage,
+        entry: "src/routes/download.tsx",
       },
       {
         path: "blog/:slug",
