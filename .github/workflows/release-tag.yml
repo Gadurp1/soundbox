@@ -4,8 +4,10 @@ name: Tag release
 # tag yet, which happens once, when a "Release X.Y.Z" PR merges, tag that
 # commit vX.Y.Z and start release.yml on the tag.
 #
-# release.yml is started by dispatch because a tag pushed with this
-# workflow's token does not trigger `on: push: tags` itself.
+# release.yml and publish-docker.yml are started by dispatch because a tag
+# pushed with this workflow's token does not trigger `on: push: tags` itself.
+# Pre-releases get versioned images only; `latest` and `cuda` move on a
+# full release.
 
 on:
   push:
@@ -40,4 +42,7 @@ jobs:
           git tag -a "$tag" -m "Soundbox $version" "$GITHUB_SHA"
           git push -q origin "$tag"
           gh workflow run release.yml --ref "$tag"
-          echo "Tagged $tag at $GITHUB_SHA and started the release build." >> "$GITHUB_STEP_SUMMARY"
+          latest=true
+          [[ "$tag" == *-* ]] && latest=false
+          gh workflow run publish-docker.yml --ref "$tag"             -f tag="$tag" -f publish_docker=true -f publish_cuda=true -f publish_latest="$latest"
+          echo "Tagged $tag at $GITHUB_SHA and started the release build and Docker publish." >> "$GITHUB_STEP_SUMMARY"
