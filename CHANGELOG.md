@@ -36,6 +36,10 @@ to follow [Semantic Versioning](https://semver.org/).
   artwork and custom endpoints (URL, status, timing; never keys or prompts).
   Before this there were no debug lines at all, so `--log-level debug` showed
   nothing extra. (#22)
+- **Press kit on the website.** `/press/` collects quotable descriptions, a
+  fact sheet, the launch films with direct MP4 downloads, screenshots, GIFs
+  and the mark for anyone writing or filming about Soundbox, and the landing
+  page footer links to it.
 
 ### Changed
 
