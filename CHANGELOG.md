@@ -8,6 +8,10 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **A download page on the site.** `/download` links the latest release's
+  installers directly, picks the visitor's OS, plays the 30-second Soundbox
+  film and shows live GitHub stars, downloads and forks. Every Download CTA on
+  the site points at it.
 - **Prebuilt Docker images.** `ghcr.io/hamsanders/soundbox` is published per
   release (`:vX.Y.Z`, `:vX.Y.Z-cuda`, plus `:latest` and `:cuda`) by a manual
   `docker-publish` workflow. `docker compose up -d` now pulls the image instead

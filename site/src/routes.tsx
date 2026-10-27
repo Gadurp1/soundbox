@@ -7,6 +7,7 @@ import { DocPageRoute } from "./routes/doc";
 import { BlogIndexPage } from "./routes/blog-index";
 import { BlogPostPage } from "./routes/blog-post";
 import { McpPage } from "./routes/mcp";
+import { DownloadPage } from "./routes/download";
 import { DOC_PAGES } from "./docs/pages";
 import { BLOG_POSTS } from "./blog/posts";
 import { SfxHubPage } from "@/routes/sfx/hub";
@@ -127,6 +128,11 @@ export const routes: RouteRecord[] = [
         path: "mcp",
         Component: McpPage,
         entry: "src/routes/mcp.tsx",
+      },
+      {
+        path: "download",
+        Component: DownloadPage,
+        entry: "src/routes/download.tsx",
       },
       {
         path: "blog/:slug",

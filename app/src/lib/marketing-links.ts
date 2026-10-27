@@ -47,7 +47,7 @@ export const SITE_URL = REPO_URL;
  * the marketing site does not have it yet. Sending them to a route that only
  * exists on `127.0.0.1` would be a broken link dressed as a CTA.
  */
-export const GENERATOR_HREF = `${REPO_URL}#download`;
+export const GENERATOR_HREF = "/download";
 
 /** "What Soundbox is" — the landing page, which is now the site's front door. */
 export const WELCOME_HREF = "/";
