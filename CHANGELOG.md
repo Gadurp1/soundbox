@@ -16,6 +16,18 @@ to follow [Semantic Versioning](https://semver.org/).
   `soundbox.get_story` now returns each track's chain. Devices are still heard
   on the timeline only; `export_story` mixes dry.
 
+- **Docker images publish with each release.** When a release is tagged,
+  `ghcr.io/hamsanders/soundbox:<version>` and `:<version>-cuda` are built and
+  pushed automatically; a full release also moves `latest` and `cuda`.
+- **A download page on the site.** `/download` links the latest release's
+  installers directly, picks the visitor's OS, plays the 30-second Soundbox
+  film and shows live GitHub stars, downloads and forks. Every Download CTA on
+  the site points at it.
+- **Prebuilt Docker images.** `ghcr.io/hamsanders/soundbox` is published per
+  release (`:vX.Y.Z`, `:vX.Y.Z-cuda`, plus `:latest` and `:cuda`) by a manual
+  `docker-publish` workflow. `docker compose up -d` now pulls the image instead
+  of building; to build from the checkout, add `-f docker-compose.build.yml`
+  (see docs/INSTALL.md). amd64 only.
 - **`SOUNDBOX_LOG_LEVEL`.** Sets the server's log level (`debug`, `info`,
   `warning`, `error`, `critical`) when `--log-level` isn't given. Unlike the
   flag, it reaches `npm run dev`, Docker and the desktop app. The startup banner
@@ -35,8 +47,25 @@ to follow [Semantic Versioning](https://semver.org/).
   first time its story is opened. A dial sweep is saved once the dial settles,
   not on every step.
 
+### Security
+
+- **Dependency updates for the open Dependabot alerts.** Vite, the MCP SDK,
+  Fastify, Hono, js-yaml, brace-expansion, proxy-addr, source-map-js,
+  postcss-selector-parser and the app's react-router move to patched releases.
+  The server's zod moves to 4.6.7 (the 3.x line has no fix for the
+  oversized-collection memory issue).
+- **Code-scanning fixes.** The MCP endpoint's trailing-slash trim no longer
+  backtracks on a long run of slashes, profile ids are checked before they are
+  joined into a path that delete can remove recursively, HTML-tag stripping in
+  the docs search and heading plugin repeats until nothing is left, and the
+  release scripts escape every regular-expression character.
+
 ### Fixed
 
+- Soundbox starts again on libraries from the voice-profiles era. Their old
+  `voice_samples` table stopped the server with "no such column: voice_id"
+  before it could write a log. The table is now renamed to
+  `voice_samples_legacy` and kept, not dropped.
 - **Prompt assistant and artwork base URLs ending in `/v1`.** Soundbox added
   `/v1/chat/completions` or `/v1/images/generations` to the base URL as typed,
   so the `…/v1` form most servers document became `/v1/v1/…` and a 404. The

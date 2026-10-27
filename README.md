@@ -183,12 +183,18 @@ This starts the server on port 17494 and the UI on <http://localhost:5174>.
 `npm run dev:mock` runs the UI with no GPU or server (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 **Docker.** The server and web UI run headless in one container with the
-audio.cpp runtime inside. CPU by default; add the CUDA override for a GPU.
+audio.cpp runtime inside. CPU by default; add the CUDA override for a GPU. Both
+pull the prebuilt image from GHCR (`:latest`, `:cuda`, or a version such as
+`:v0.4.0` and `:v0.4.0-cuda`).
 
 ```bash
-docker compose up -d --build
-docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d --build
+docker compose up -d
+docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
 ```
+
+To build from the checkout instead, add `-f docker-compose.build.yml`
+(and `-f docker-compose.build-cuda.yml` for CUDA) and `--build`; see
+[docs/INSTALL.md](docs/INSTALL.md#docker).
 
 There is no authentication, so keep the port on localhost or behind a reverse
 proxy that has some, and set `SOUNDBOX_ALLOWED_HOSTS` to the name you reach it

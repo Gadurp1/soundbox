@@ -209,10 +209,10 @@ exist yet, it is created on save.
 ## Docker
 
 For a server or NAS: the server and web UI in one container, no desktop app.
-Build from a checkout:
+From a checkout (or just the two compose files):
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 and open <http://localhost:17494>. The audio.cpp runtime is already in the
@@ -222,13 +222,25 @@ image, so skip Step 1: download a model from the Models page, or
 docker compose exec soundbox soundbox pull audiocpp-stable-audio-3-sfx
 ```
 
+That pulls the prebuilt image, `ghcr.io/hamsanders/soundbox:latest`. Each
+release is also tagged by version (`:v0.4.0`), so change the `image:` line to
+pin one. Prebuilt images are amd64 only for now. On arm64, or to run your own
+changes, build from the checkout with the build override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
 Without Compose:
 
 ```bash
-docker build -t soundbox .
 docker run -d --name soundbox -p 127.0.0.1:17494:17494 \
-  -v soundbox-data:/data -v soundbox-models:/data/models soundbox
+  -v soundbox-data:/data -v soundbox-models:/data/models \
+  ghcr.io/hamsanders/soundbox:latest
 ```
+
+or build it yourself with `docker build -t soundbox .` and run `soundbox` in
+place of the image name.
 
 **No authentication.** The server has no login of any kind. Anyone who can
 reach the port can generate audio, read and delete your library, change
@@ -312,17 +324,32 @@ Behind a proxy on the same machine, `SOUNDBOX_ALLOWED_HOSTS` alone is enough;
 point the proxy at `127.0.0.1:5174`. Vite accepts IP addresses as `Host` on
 its own, so a LAN IP only needs `SOUNDBOX_DEV_HOST`.
 
-**NVIDIA GPUs.** The default image is CPU-only and runs anywhere (amd64 and
-arm64). For CUDA, install the
+**NVIDIA GPUs.** The default image is CPU-only and runs anywhere (amd64, and
+arm64 when built from source). For CUDA, install the
 [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 on the host, check that `docker run --rm --gpus all ubuntu nvidia-smi` lists
 your GPU, then:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
 ```
 
-or by hand:
+which pulls `ghcr.io/hamsanders/soundbox:cuda` (per release:
+`:v0.4.0-cuda`). To build it locally, add both build overrides:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.cuda.yml   -f docker-compose.build.yml -f docker-compose.build-cuda.yml up -d --build
+```
+
+By hand:
+
+```bash
+docker run -d --gpus all -p 127.0.0.1:17494:17494 \
+  -v soundbox-data:/data -v soundbox-models:/data/models \
+  ghcr.io/hamsanders/soundbox:cuda
+```
+
+or build it:
 
 ```bash
 docker build -t soundbox:cuda \

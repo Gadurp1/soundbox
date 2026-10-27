@@ -124,6 +124,13 @@ import { McpTelemetry } from "./telemetry.js";
 
 const log = getLogger("soundbox.service");
 
+/** `replace(/\/+$/, "")` backtracks quadratically on a long run of slashes. */
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1;
+  return value.slice(0, end);
+}
+
 function now(): string {
   return new Date().toISOString();
 }
@@ -3435,7 +3442,7 @@ export class SoundboxService {
     const running = this.telemetry.running();
     const sessions = new Set(running.map((c) => c.session_id).filter(Boolean));
     return {
-      endpoint: `${baseUrl.replace(/\/+$/, "")}/mcp`,
+      endpoint: `${trimTrailingSlashes(baseUrl)}/mcp`,
       // The absolute path to this install's own bridge, not a name.
       //
       // `npx soundbox-mcp` cannot work: the package is private and named

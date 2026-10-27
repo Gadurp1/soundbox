@@ -142,7 +142,14 @@
   color: var(--foreground);
 }
 
-.soundbox-doc img {
+.soundbox-doc video {
+  display: block;
+  width: 100%;
+  background: #000;
+}
+
+.soundbox-doc img,
+.soundbox-doc video {
   max-width: 100%;
   height: auto;
   border-radius: var(--radius-xl, 0.9rem);
