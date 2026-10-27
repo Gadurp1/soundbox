@@ -8,6 +8,9 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Docker images publish with each release.** When a release is tagged,
+  `ghcr.io/hamsanders/soundbox:<version>` and `:<version>-cuda` are built and
+  pushed automatically; a full release also moves `latest` and `cuda`.
 - **A download page on the site.** `/download` links the latest release's
   installers directly, picks the visitor's OS, plays the 30-second Soundbox
   film and shows live GitHub stars, downloads and forks. Every Download CTA on
