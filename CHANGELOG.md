@@ -66,6 +66,12 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **macOS: the server starts again.** The ad-hoc signed app gave its bundled
+  Node the hardened runtime without the JIT entitlements, so Node died with a
+  trace trap before writing a log and the app said the server did not start in
+  time (0.3.0 and 0.4.0). Ad-hoc builds now leave the hardened runtime off, and
+  every build embeds Node's entitlements for when a Developer ID build turns it
+  on. (#71)
 - Soundbox starts again on libraries from the voice-profiles era. Their old
   `voice_samples` table stopped the server with "no such column: voice_id"
   before it could write a log. The table is now renamed to
