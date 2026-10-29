@@ -66,6 +66,9 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Trackpad gestures work on the story timeline. Only a pinch (or Ctrl+wheel)
+  zooms now; a two-finger swipe pans left and right and a two-finger scroll
+  moves the lanes up and down, where before every scroll was read as a zoom.
 - Soundbox starts again on libraries from the voice-profiles era. Their old
   `voice_samples` table stopped the server with "no such column: voice_id"
   before it could write a log. The table is now renamed to
