@@ -6,6 +6,8 @@ to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-29
+
 ### Added
 
 - **Device tools for agents.** `soundbox.add_device`, `soundbox.set_device`
@@ -279,7 +281,8 @@ Initial public release, MIT-licensed. Everything below is new.
   `SOUNDBOX_ALLOWED_HOSTS`), and requires JSON or an `X-Soundbox` header on
   mutating API requests.
 
-[Unreleased]: https://github.com/HamSanders/soundbox/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/HamSanders/soundbox/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/HamSanders/soundbox/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/HamSanders/soundbox/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/HamSanders/soundbox/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/HamSanders/soundbox/compare/v0.1.0...v0.2.0
